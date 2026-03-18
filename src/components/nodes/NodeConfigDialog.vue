@@ -117,13 +117,21 @@ const isVmessProtocol = computed(function isVmessProtocol() {
     return currentProtocol.value === "vmess";
 });
 
+const isTrojanProtocol = computed(function isTrojanProtocol() {
+    return currentProtocol.value === "trojan";
+});
+
 const showTransportConfigEditor = computed(function showTransportConfigEditor() {
-    return isVmessProtocol.value && form.transportProtocol;
+    return (isVmessProtocol.value || isTrojanProtocol.value) && form.transportProtocol;
 });
 
 const protocolDisplayName = computed(function protocolDisplayName() {
     if (isVmessProtocol.value) {
         return "VMess";
+    }
+
+    if (isTrojanProtocol.value) {
+        return "Trojan";
     }
 
     return "Shadowsocks";
@@ -146,6 +154,8 @@ function createDefaultForm() {
         tls: "none",
         transportProtocol: "tcp",
         transportConfig: "",
+        sni: "",
+        allowInsecure: false,
         parentId: "",
         routeGroup: "",
     };
@@ -221,6 +231,8 @@ function createFormFromNode(node) {
         tls: node.tls || "none",
         transportProtocol: node.transportProtocol || "tcp",
         transportConfig: node.transportConfig || "",
+        sni: node.sni || "",
+        allowInsecure: Boolean(node.allowInsecure),
         parentId: node.parentId ? String(node.parentId) : "",
         routeGroup: node.routeId || node.routeGroup || "",
     };
@@ -358,6 +370,8 @@ function handleSubmit() {
         tls: form.tls,
         transportProtocol: form.transportProtocol,
         transportConfig: form.transportConfig,
+        sni: String(form.sni || "").trim(),
+        allowInsecure: Boolean(form.allowInsecure),
         parentId: form.parentId,
         routeGroup: String(form.routeGroup || "").trim(),
     });
@@ -550,7 +564,7 @@ function handleSubmit() {
             </div>
 
             <el-form-item
-                v-if="!isVmessProtocol"
+                v-if="!isVmessProtocol && !isTrojanProtocol"
                 label="加密算法"
                 class="node-config-form__item"
             >
@@ -577,7 +591,7 @@ function handleSubmit() {
             </el-form-item>
 
             <el-form-item
-                v-if="!isVmessProtocol"
+                v-if="!isVmessProtocol && !isTrojanProtocol"
                 label="插件"
                 class="node-config-form__item"
             >
@@ -602,7 +616,31 @@ function handleSubmit() {
                 </el-select>
             </el-form-item>
 
-            <el-form-item v-if="isVmessProtocol" class="node-config-form__item">
+            <div
+                v-if="isTrojanProtocol"
+                class="node-config-form__row node-config-form__row--split"
+            >
+                <el-form-item
+                    label="服务器名称指示(SNI)"
+                    class="node-config-form__item"
+                >
+                    <el-input
+                        v-model="form.sni"
+                        placeholder="当节点地址与证书不一致时用于证书验证"
+                    />
+                </el-form-item>
+                <el-form-item
+                    label="允许不安全?"
+                    class="node-config-form__item node-config-form__item--switch"
+                >
+                    <el-switch v-model="form.allowInsecure" />
+                </el-form-item>
+            </div>
+
+            <el-form-item
+                v-if="isVmessProtocol || isTrojanProtocol"
+                class="node-config-form__item"
+            >
                 <template #label>
                     <div class="node-config-form__label">
                         <span>传输协议</span>
@@ -738,6 +776,15 @@ function handleSubmit() {
 
 .node-config-form__row--head {
     grid-template-columns: minmax(0, 1fr) minmax(0, 100px);
+}
+
+.node-config-form__row--split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 140px);
+    gap: 14px;
+}
+
+.node-config-form__item--switch {
+    align-self: center;
 }
 
 .node-config-form__item {

@@ -8,13 +8,13 @@ export default {
       zhCN: '简体中文',
     },
     eyebrow: {
-      login: 'LongtengCloud / 登录',
-      dashboard: 'LongtengCloud / 管理后台',
-      business: 'LongtengCloud / 业务模块',
-      userCenter: 'LongtengCloud / 用户中心',
-      system: 'LongtengCloud / 系统管理',
-      support: 'LongtengCloud / 用户支持',
-      content: 'LongtengCloud / 内容运营',
+      login: '登录',
+      dashboard: '管理后台',
+      business: '业务模块',
+      userCenter: '用户中心',
+      system: '系统管理',
+      support: '用户支持',
+      content: '内容运营',
     },
     status: {
       servicesHealthy: '系统运行正常 · 队列与支付服务在线',
@@ -23,43 +23,43 @@ export default {
   routes: {
     login: {
       title: '登录',
-      eyebrow: 'LongtengCloud / 登录',
+      eyebrow: '登录',
     },
     dashboard: {
       title: '仪表盘',
-      eyebrow: 'LongtengCloud / 管理后台',
+      eyebrow: '管理后台',
     },
     plans: {
       title: '套餐管理',
-      eyebrow: 'LongtengCloud / 业务模块',
+      eyebrow: '业务模块',
     },
     orders: {
       title: '订单管理',
-      eyebrow: 'LongtengCloud / 业务模块',
+      eyebrow: '业务模块',
     },
     users: {
       title: '用户管理',
-      eyebrow: 'LongtengCloud / 用户中心',
+      eyebrow: '用户中心',
     },
     nodes: {
       title: '节点管理',
-      eyebrow: 'LongtengCloud / 系统管理',
+      eyebrow: '系统管理',
     },
     plugins: {
       title: '插件管理',
-      eyebrow: 'LongtengCloud / 系统管理',
+      eyebrow: '系统管理',
     },
     tickets: {
       title: '工单管理',
-      eyebrow: 'LongtengCloud / 用户支持',
+      eyebrow: '用户支持',
     },
     notices: {
       title: '公告管理',
-      eyebrow: 'LongtengCloud / 内容运营',
+      eyebrow: '内容运营',
     },
     settings: {
       title: '系统配置',
-      eyebrow: 'LongtengCloud / 系统管理',
+      eyebrow: '系统管理',
     },
   },
   nav: {
@@ -321,6 +321,19 @@ export default {
       showUpdateFailed: '更新显示状态失败',
       updated: '节点已更新',
       added: '{protocol} 节点已添加',
+    },
+  },
+  plugins: {
+    status: {
+      enabled: '已启用',
+      disabled: '已停用',
+      notInstalled: '未安装',
+      protected: '受保护',
+    },
+    types: {
+      feature: '功能',
+      payment: '支付',
+      other: '其他',
     },
   },
   users: {

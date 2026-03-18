@@ -1,11 +1,10 @@
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import {
     ArrowDown,
     FolderOpened,
-    Promotion,
     Search,
     SwitchButton,
 } from "@element-plus/icons-vue";
@@ -18,6 +17,34 @@ const router = useRouter();
 const adminStore = useAdminStore();
 const authStore = useAuthStore();
 const { t, locale } = useI18n();
+
+const isMobile = ref(false);
+const isMobileNavOpen = ref(false);
+const isSidebarCollapsed = ref(false);
+
+function updateViewportMode() {
+    const nextIsMobile = window.innerWidth <= 980;
+
+    if (isMobile.value !== nextIsMobile) {
+        isMobile.value = nextIsMobile;
+
+        if (!nextIsMobile) {
+            isMobileNavOpen.value = false;
+        }
+    }
+}
+
+function toggleMobileNav() {
+    isMobileNavOpen.value = !isMobileNavOpen.value;
+}
+
+function toggleSidebar() {
+    isSidebarCollapsed.value = !isSidebarCollapsed.value;
+}
+
+function closeMobileNav() {
+    isMobileNavOpen.value = false;
+}
 
 const languageOptions = computed(function languageOptions() {
     return [
@@ -82,6 +109,7 @@ function resolveItemLabel(item) {
 
 function handleMenuSelect(routeName) {
     router.push({ name: routeName });
+    closeMobileNav();
 }
 
 function handleAccountCommand(command) {
@@ -92,11 +120,35 @@ function handleAccountCommand(command) {
     authStore.logout();
     router.push({ name: "login" });
 }
+
+onMounted(function attachResizeListener() {
+    updateViewportMode();
+    window.addEventListener("resize", updateViewportMode);
+});
+
+onUnmounted(function detachResizeListener() {
+    window.removeEventListener("resize", updateViewportMode);
+});
 </script>
 
 <template>
-    <el-container class="app-shell">
+    <el-container
+        class="app-shell"
+        :class="{
+            'is-mobile-nav-open': isMobileNavOpen,
+            'is-sidebar-collapsed': isSidebarCollapsed,
+        }"
+    >
+        <div class="sidebar-backdrop" @click="closeMobileNav"></div>
         <el-aside class="sidebar" width="288px">
+            <button
+                v-if="!isMobile"
+                class="sidebar-toggle"
+                type="button"
+                @click="toggleSidebar"
+            >
+                <span class="sidebar-toggle__icon">‹</span>
+            </button>
             <div class="brand-panel">
                 <div class="brand-mark">L</div>
                 <div>
@@ -144,17 +196,19 @@ function handleAccountCommand(command) {
                     </el-menu>
                 </section>
             </div>
-
-            <div class="sidebar-footer">
-                <span class="status-dot"></span>
-                <span>{{ t("app.status.servicesHealthy") }}</span>
-            </div>
         </el-aside>
 
         <el-main class="main-panel">
             <header class="topbar">
+                <button
+                    v-if="isMobile"
+                    class="mobile-nav-toggle"
+                    type="button"
+                    @click="toggleMobileNav"
+                >
+                    <el-icon><FolderOpened /></el-icon>
+                </button>
                 <div>
-                    <div class="eyebrow">{{ pageEyebrow }}</div>
                     <h1>{{ pageTitle }}</h1>
                 </div>
 
@@ -220,33 +274,3 @@ function handleAccountCommand(command) {
         </el-main>
     </el-container>
 </template>
-
-<style scoped>
-.topbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.topbar-language {
-    min-width: 120px;
-}
-
-.topbar-language :deep(.el-input__inner) {
-    background: #0f1c2d;
-    border-color: #1f3144;
-    color: #dce7f4;
-}
-
-.topbar-language :deep(.el-input__inner::placeholder) {
-    color: #9fb3c7;
-}
-
-.topbar-language :deep(.el-input__wrapper) {
-    box-shadow: none;
-}
-
-.topbar-language :deep(.el-select__caret) {
-    color: #9fb3c7;
-}
-</style>

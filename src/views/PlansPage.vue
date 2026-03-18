@@ -16,7 +16,7 @@ const planColumns = [
   { label: t('plans.columns.status'), slot: 'status' },
 ]
 
-const planMetrics = adminStore.metrics.slice(0, 3)
+const planMetrics = adminStore.dashboardMetrics.slice(0, 3)
 </script>
 
 <template>

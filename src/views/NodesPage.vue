@@ -463,6 +463,18 @@ function resolveNodeTypeTagClass(type) {
         return "node-type-tag--vless";
     }
 
+    if (normalizedType === "socks" || normalizedType === "socks5") {
+        return "node-type-tag--socks";
+    }
+
+    if (normalizedType === "naive") {
+        return "node-type-tag--naive";
+    }
+
+    if (normalizedType === "http") {
+        return "node-type-tag--http";
+    }
+
     if (normalizedType === "anytls") {
         return "node-type-tag--anytls";
     }
@@ -526,7 +538,9 @@ function openCreateNodeDialog(protocol = "shadowsocks") {
 
 function openEditNodeDialog(node) {
     nodeDialogMode.value = "edit";
-    nodeDialogProtocol.value = String(node?.type || "shadowsocks").toLowerCase();
+    nodeDialogProtocol.value = String(
+        node?.type || "shadowsocks",
+    ).toLowerCase();
     const nextNode = cloneManagedNode(node);
 
     if (Array.isArray(nextNode.groupNames) && nextNode.groupNames.length > 0) {
@@ -596,7 +610,9 @@ async function handleCopyNode(node) {
         ElMessage.success(t("nodes.messages.copySuccess"));
     } catch (error) {
         ElMessage.error(
-            error instanceof Error ? error.message : t("nodes.messages.copyFailed"),
+            error instanceof Error
+                ? error.message
+                : t("nodes.messages.copyFailed"),
         );
     }
 }
@@ -612,18 +628,33 @@ async function handleNodeDialogSubmit(payload) {
             ? {
                   tls: payload.tls === "tls" ? 1 : 0,
                   network: String(payload.transportProtocol || "tcp"),
-                  transport_config: String(payload.transportConfig || "").trim(),
+                  transport_config: String(
+                      payload.transportConfig || "",
+                  ).trim(),
               }
-            : {
-                  cipher: payload.encryption,
-                  plugin: payload.plugin === "None" ? "" : payload.plugin,
-                  plugin_opts: "",
-                  client_fingerprint: "chrome",
-              };
+            : protocolType === "trojan"
+              ? {
+                    server_name: String(payload.sni || "").trim(),
+                    allow_insecure: payload.allowInsecure ? 1 : 0,
+                    network: String(payload.transportProtocol || "tcp"),
+                    transport_config: String(
+                        payload.transportConfig || "",
+                    ).trim(),
+                }
+              : {
+                    cipher: payload.encryption,
+                    plugin: payload.plugin === "None" ? "" : payload.plugin,
+                    plugin_opts: "",
+                    client_fingerprint: "chrome",
+                };
 
     try {
         await adminStore.saveManagedNodeItem({
-            id: isEditing ? Number(activeNode.value?.rawId || activeNode.value?.id || 0) || null : null,
+            id: isEditing
+                ? Number(
+                      activeNode.value?.rawId || activeNode.value?.id || 0,
+                  ) || null
+                : null,
             specificKey: null,
             code: "",
             show: false,
@@ -670,7 +701,9 @@ async function handleNodeDialogSubmit(payload) {
         }
     } catch (error) {
         ElMessage.error(
-            error instanceof Error ? error.message : t("nodes.messages.saveFailed"),
+            error instanceof Error
+                ? error.message
+                : t("nodes.messages.saveFailed"),
         );
     }
 }
@@ -804,11 +837,6 @@ onUnmounted(function clearDebounceOnUnmount() {
         </el-alert>
 
         <div class="nodes-header">
-            <div>
-                <h2>{{ t("nodes.title") }}</h2>
-                <p>{{ t("nodes.description") }}</p>
-            </div>
-
             <div class="nodes-header__actions">
                 <el-dropdown trigger="click" @command="handleCreateNodeCommand">
                     <el-button class="ghost-btn" type="primary">
@@ -821,8 +849,17 @@ onUnmounted(function clearDebounceOnUnmount() {
                                 v-for="protocol in protocolOptions"
                                 :key="protocol"
                                 :command="protocol"
+                                class="node-protocol-item"
                             >
-                                {{ t("nodes.add") }} {{ protocol.toUpperCase() }}
+                                <span
+                                    :class="[
+                                        'node-type-tag',
+                                        'node-protocol-pill',
+                                        resolveNodeTypeTagClass(protocol),
+                                    ]"
+                                >
+                                    {{ protocol.toUpperCase() }}
+                                </span>
                             </el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
@@ -930,6 +967,21 @@ onUnmounted(function clearDebounceOnUnmount() {
                         />
                     </template>
                 </el-table-column>
+
+                <el-table-column
+                    :label="t('nodes.table.status')"
+                    min-width="70"
+                >
+                    <template #default="{ row }">
+                        <el-tag
+                            :type="resolveStatusType(row.status)"
+                            effect="dark"
+                        >
+                            {{ row.status }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+
                 <el-table-column :label="t('nodes.table.node')" min-width="160">
                     <template #default="{ row }">
                         <div class="node-name-cell">
@@ -939,7 +991,10 @@ onUnmounted(function clearDebounceOnUnmount() {
                     </template>
                 </el-table-column>
 
-                <el-table-column :label="t('nodes.table.address')" min-width="220">
+                <el-table-column
+                    :label="t('nodes.table.address')"
+                    min-width="220"
+                >
                     <template #default="{ row }">
                         <div class="node-name-cell">
                             <strong
@@ -970,20 +1025,16 @@ onUnmounted(function clearDebounceOnUnmount() {
                     </template>
                 </el-table-column>
 
-                <el-table-column :label="t('nodes.table.rate')" min-width="60" prop="rate" />
+                <el-table-column
+                    :label="t('nodes.table.rate')"
+                    min-width="60"
+                    prop="rate"
+                />
 
-                <el-table-column :label="t('nodes.table.status')" min-width="70">
-                    <template #default="{ row }">
-                        <el-tag
-                            :type="resolveStatusType(row.status)"
-                            effect="dark"
-                        >
-                            {{ row.status }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-
-                <el-table-column :label="t('nodes.table.groups')" min-width="140">
+                <el-table-column
+                    :label="t('nodes.table.groups')"
+                    min-width="140"
+                >
                     <template #default="{ row }">
                         <div class="node-tags">
                             <el-tag
@@ -998,19 +1049,31 @@ onUnmounted(function clearDebounceOnUnmount() {
                     </template>
                 </el-table-column>
 
-                <el-table-column :label="t('nodes.table.actions')" width="90" fixed="right">
+                <el-table-column
+                    :label="t('nodes.table.actions')"
+                    width="90"
+                    fixed="right"
+                >
                     <template #default="{ row }">
                         <el-dropdown trigger="click">
-                            <el-button class="node-action-trigger" type="primary" plain>
+                            <el-button
+                                class="node-action-trigger"
+                                type="primary"
+                                plain
+                            >
                                 ...
                             </el-button>
                             <template #dropdown>
                                 <el-dropdown-menu class="node-action-menu">
-                                    <el-dropdown-item @click="openEditNodeDialog(row)">
+                                    <el-dropdown-item
+                                        @click="openEditNodeDialog(row)"
+                                    >
                                         <el-icon><Edit /></el-icon>
                                         {{ t("nodes.actions.edit") }}
                                     </el-dropdown-item>
-                                    <el-dropdown-item @click="handleCopyNode(row)">
+                                    <el-dropdown-item
+                                        @click="handleCopyNode(row)"
+                                    >
                                         <el-icon><CopyDocument /></el-icon>
                                         {{ t("nodes.actions.copy") }}
                                     </el-dropdown-item>
@@ -1040,7 +1103,8 @@ onUnmounted(function clearDebounceOnUnmount() {
                                 total: Math.max(
                                     1,
                                     Math.ceil(
-                                        (pagination.total || 0) / pagination.limit,
+                                        (pagination.total || 0) /
+                                            pagination.limit,
                                     ),
                                 ),
                             })
@@ -1142,7 +1206,7 @@ onUnmounted(function clearDebounceOnUnmount() {
     padding: 11px 14px;
     border-radius: 14px;
     border: 1px solid var(--line);
-    background: rgba(8, 17, 34, 0.42);
+    background: var(--panel-strong);
     color: var(--muted);
     font-size: 13px;
 }
@@ -1166,9 +1230,9 @@ onUnmounted(function clearDebounceOnUnmount() {
 }
 
 .node-table :deep(.el-table__header-wrapper th) {
-    background: rgba(10, 18, 32, 0.92);
-    color: #c9d5e5;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    background: #f8fafc;
+    color: #64748b;
+    border-bottom: 1px solid var(--line);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -1176,21 +1240,21 @@ onUnmounted(function clearDebounceOnUnmount() {
 }
 
 .node-table :deep(.el-table__header-wrapper th.is-leaf) {
-    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    border-bottom: 1px solid var(--line);
 }
 
 .node-table :deep(.el-table__body-wrapper td) {
-    background: rgba(5, 11, 24, 0.72);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    background: #ffffff;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
     transition: background 0.2s ease;
 }
 
 .node-table :deep(.el-table__row:hover > td) {
-    background: rgba(16, 28, 48, 0.88) !important;
+    background: rgba(15, 23, 42, 0.04) !important;
 }
 
 .node-table :deep(.el-table__body tr.current-row > td) {
-    background: rgba(24, 39, 66, 0.9);
+    background: rgba(37, 99, 235, 0.08);
 }
 
 .node-table :deep(.el-table__body tr:hover .node-type-tag) {
@@ -1204,7 +1268,7 @@ onUnmounted(function clearDebounceOnUnmount() {
     gap: 18px;
     margin-top: 18px;
     padding-top: 14px;
-    border-top: 1px solid rgba(148, 163, 184, 0.12);
+    border-top: 1px solid var(--line);
 }
 
 .node-pagination__summary {
@@ -1213,7 +1277,7 @@ onUnmounted(function clearDebounceOnUnmount() {
 }
 
 .node-pagination__eyebrow {
-    color: rgba(148, 163, 184, 0.72);
+    color: var(--muted);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -1235,10 +1299,10 @@ onUnmounted(function clearDebounceOnUnmount() {
     --el-pagination-bg-color: transparent;
     --el-pagination-text-color: var(--muted);
     --el-pagination-button-color: var(--text);
-    --el-pagination-button-bg-color: rgba(15, 23, 42, 0.8);
-    --el-pagination-button-disabled-bg-color: rgba(15, 23, 42, 0.35);
-    --el-pagination-button-disabled-color: rgba(148, 163, 184, 0.45);
-    --el-pagination-hover-color: #86efac;
+    --el-pagination-button-bg-color: #ffffff;
+    --el-pagination-button-disabled-bg-color: rgba(15, 23, 42, 0.06);
+    --el-pagination-button-disabled-color: rgba(148, 163, 184, 0.7);
+    --el-pagination-hover-color: #2563eb;
     --el-pagination-font-size: 13px;
 }
 
@@ -1250,7 +1314,7 @@ onUnmounted(function clearDebounceOnUnmount() {
 .node-pagination :deep(.btn-next),
 .node-pagination :deep(.number),
 .node-pagination :deep(.el-select .el-input__wrapper) {
-    border: 1px solid rgba(148, 163, 184, 0.14);
+    border: 1px solid var(--line);
     box-shadow: none;
 }
 
@@ -1263,17 +1327,13 @@ onUnmounted(function clearDebounceOnUnmount() {
 
 .node-pagination :deep(.el-select .el-input__wrapper) {
     border-radius: 10px;
-    background: rgba(15, 23, 42, 0.82);
+    background: #ffffff;
 }
 
 .node-pagination :deep(.number.is-active) {
-    background: linear-gradient(
-        135deg,
-        rgba(34, 197, 94, 0.22),
-        rgba(59, 130, 246, 0.2)
-    );
-    border-color: rgba(96, 165, 250, 0.24);
-    color: #f8fafc;
+    background: rgba(37, 99, 235, 0.12);
+    border-color: rgba(37, 99, 235, 0.28);
+    color: #1d4ed8;
 }
 
 .node-pagination :deep(.el-pagination__total),
@@ -1288,19 +1348,20 @@ onUnmounted(function clearDebounceOnUnmount() {
 
 .node-name-cell strong {
     font-family: "Fira Code", monospace;
-    color: #f8fafc;
+    color: var(--text);
 }
 
 .node-name-cell span {
-    color: #8fa3ba;
+    color: var(--muted);
     font-size: 12px;
     line-height: 1.5;
 }
 
 .node-type-tag {
     border: 1px solid transparent;
-    color: #eff6ff;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    color: #1e3a8a;
+    box-shadow: none;
+    border-radius: 6px;
     transition:
         transform 0.2s ease,
         box-shadow 0.2s ease,
@@ -1308,86 +1369,75 @@ onUnmounted(function clearDebounceOnUnmount() {
 }
 
 .node-type-tag.node-type-tag--shadowsocks {
-    background: linear-gradient(
-        135deg,
-        rgba(37, 99, 235, 0.46),
-        rgba(59, 130, 246, 0.2)
-    );
-    border-color: rgba(147, 197, 253, 0.28);
+    background: #37b24d;
+    border-color: #2f9e44;
+    color: #ffffff;
 }
 
 .node-type-tag.node-type-tag--trojan {
-    background: linear-gradient(
-        135deg,
-        rgba(126, 34, 206, 0.46),
-        rgba(168, 85, 247, 0.2)
-    );
-    border-color: rgba(216, 180, 254, 0.28);
+    background: #f6b24a;
+    border-color: #e39a2f;
+    color: #1f2937;
 }
 
 .node-type-tag.node-type-tag--vmess {
-    background: linear-gradient(
-        135deg,
-        rgba(8, 145, 178, 0.46),
-        rgba(14, 165, 233, 0.2)
-    );
-    border-color: rgba(165, 243, 252, 0.28);
+    background: #d94884;
+    border-color: #c63d77;
+    color: #ffffff;
 }
 
 .node-type-tag.node-type-tag--hysteria {
-    background: linear-gradient(
-        135deg,
-        rgba(234, 88, 12, 0.46),
-        rgba(249, 115, 22, 0.22)
-    );
-    border-color: rgba(253, 186, 116, 0.3);
+    background: #5d77f3;
+    border-color: #4c67e6;
+    color: #ffffff;
 }
 
 .node-type-tag.node-type-tag--vless {
-    background: linear-gradient(
-        135deg,
-        rgba(22, 163, 74, 0.46),
-        rgba(34, 197, 94, 0.2)
-    );
-    border-color: rgba(134, 239, 172, 0.28);
+    background: #111827;
+    border-color: #0f172a;
+    color: #ffffff;
+}
+
+.node-type-tag.node-type-tag--socks {
+    background: #2f8cff;
+    border-color: #2677e6;
+    color: #ffffff;
+}
+
+.node-type-tag.node-type-tag--naive {
+    background: #8b3fd1;
+    border-color: #7a36ba;
+    color: #ffffff;
+}
+
+.node-type-tag.node-type-tag--http {
+    background: #ff6b2c;
+    border-color: #e35c26;
+    color: #ffffff;
 }
 
 .node-type-tag.node-type-tag--anytls {
-    background: linear-gradient(
-        135deg,
-        rgba(219, 39, 119, 0.46),
-        rgba(236, 72, 153, 0.2)
-    );
-    border-color: rgba(249, 168, 212, 0.3);
+    background: #7b5bd6;
+    border-color: #6d4fc4;
+    color: #ffffff;
 }
 
 .node-type-tag.node-type-tag--mieru {
-    background: linear-gradient(
-        135deg,
-        rgba(202, 138, 4, 0.46),
-        rgba(234, 179, 8, 0.22)
-    );
-    border-color: rgba(253, 224, 71, 0.3);
-    color: #fef9c3;
+    background: #69b34c;
+    border-color: #5aa142;
+    color: #ffffff;
 }
 
 .node-type-tag.node-type-tag--tuic {
-    background: linear-gradient(
-        135deg,
-        rgba(124, 58, 237, 0.5),
-        rgba(79, 70, 229, 0.24)
-    );
-    border-color: rgba(167, 139, 250, 0.34);
-    color: #ede9fe;
+    background: #18c964;
+    border-color: #14b35a;
+    color: #ffffff;
 }
 
 .node-type-tag.node-type-tag--default {
-    background: linear-gradient(
-        135deg,
-        rgba(51, 65, 85, 0.58),
-        rgba(71, 85, 105, 0.26)
-    );
-    border-color: rgba(148, 163, 184, 0.24);
+    background: rgba(71, 85, 105, 0.12);
+    border-color: rgba(100, 116, 139, 0.22);
+    color: #334155;
 }
 
 .node-tags {
@@ -1397,128 +1447,144 @@ onUnmounted(function clearDebounceOnUnmount() {
 }
 
 .node-tags :deep(.el-tag) {
-    border-color: rgba(96, 165, 250, 0.18);
-    background: rgba(15, 23, 42, 0.88);
-    color: #dbeafe;
+    border-color: rgba(37, 99, 235, 0.2);
+    background: rgba(37, 99, 235, 0.12);
+    color: #1d4ed8;
 }
 
 .node-table :deep(.el-tag--dark.el-tag--success) {
-    border-color: rgba(74, 222, 128, 0.26);
-    background: rgba(20, 83, 45, 0.82);
-    color: #dcfce7;
+    border-color: rgba(34, 197, 94, 0.24);
+    background: rgba(34, 197, 94, 0.12);
+    color: #166534;
 }
 
 .node-table :deep(.el-tag--dark.el-tag--warning) {
-    border-color: rgba(250, 204, 21, 0.24);
-    background: rgba(113, 63, 18, 0.82);
-    color: #fef3c7;
+    border-color: rgba(234, 179, 8, 0.26);
+    background: rgba(234, 179, 8, 0.12);
+    color: #92400e;
 }
 
 .node-table :deep(.el-tag--dark.el-tag--danger) {
-    border-color: rgba(248, 113, 113, 0.22);
-    background: rgba(127, 29, 29, 0.82);
-    color: #fee2e2;
+    border-color: rgba(239, 68, 68, 0.22);
+    background: rgba(239, 68, 68, 0.12);
+    color: #991b1b;
 }
 
-.node-action-menu :global(.el-dropdown-menu__item) {
+:global(.node-action-menu .el-dropdown-menu__item) {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 8px 14px;
     min-height: 32px;
     border-radius: 10px;
-    color: #e5e7eb;
+    color: #1f2937;
 }
 
-.node-action-menu :global(.el-dropdown-menu__item .el-icon) {
-    color: var(--muted);
+:global(.node-action-menu .node-protocol-item) {
+    justify-content: flex-start;
 }
 
-.node-action-menu :global(.el-dropdown-menu__item:hover) {
-    background: rgba(148, 163, 184, 0.12);
-    color: #f8fafc;
+:global(.node-action-menu .node-protocol-pill) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 76px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
-.node-action-menu :global(.el-dropdown-menu__item:hover .el-icon) {
-    color: #cbd5f5;
+:global(.node-action-menu .el-dropdown-menu__item .el-icon) {
+    color: #94a3b8;
 }
 
-.node-action-menu :global(.el-dropdown-menu__item.is-disabled) {
+:global(.node-action-menu .el-dropdown-menu__item:hover) {
+    background: rgba(37, 99, 235, 0.08);
+    color: #1e3a8a;
+}
+
+:global(.node-action-menu .el-dropdown-menu__item:hover .el-icon) {
+    color: #1d4ed8;
+}
+
+:global(.node-action-menu .el-dropdown-menu__item.is-disabled) {
     opacity: 0.6;
 }
 
-.node-action-menu :global(.el-dropdown-menu__item.is-disabled:hover) {
+:global(.node-action-menu .el-dropdown-menu__item.is-disabled:hover) {
     background: transparent;
 }
 
-.node-action-menu :global(.el-dropdown-menu) {
+:global(.node-action-menu .el-dropdown-menu) {
     padding: 6px;
     border-radius: 12px;
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    background: rgba(11, 18, 32, 0.98);
-    box-shadow: 0 18px 40px rgba(2, 8, 23, 0.5);
+    border: 1px solid var(--line);
+    background: #ffffff;
+    box-shadow: var(--shadow);
     outline: none;
 }
 
-.node-action-menu :global(.el-popper__arrow::before) {
-    background: rgba(11, 18, 32, 0.98);
-    border: 1px solid rgba(148, 163, 184, 0.16);
+:global(.node-action-menu .el-popper__arrow::before) {
+    background: #ffffff;
+    border: 1px solid var(--line);
 }
 
-.node-action-menu :global(.el-dropdown__popper) {
+:global(.node-action-menu.el-dropdown__popper) {
     border: none;
     box-shadow: none;
     background: transparent;
 }
 
-.node-action-menu :global(.el-popper),
-.node-action-menu :global(.el-popper.is-light) {
+:global(.node-action-menu.el-popper),
+:global(.node-action-menu.el-popper.is-light) {
     border: none;
     background: transparent;
     box-shadow: none;
 }
 
-.node-action-menu :global(.el-popper__arrow) {
+:global(.node-action-menu .el-popper__arrow) {
     background: transparent;
 }
 
 .node-action-menu {
     --el-border-color-light: transparent;
-    --el-bg-color-overlay: rgba(11, 18, 32, 0.98);
+    --el-bg-color-overlay: #ffffff;
 }
 
-.node-action-menu__danger :global(.el-dropdown-menu__item) {
-    color: #fca5a5;
+:global(.node-action-menu__danger.el-dropdown-menu__item) {
+    color: #dc2626;
 }
 
-.node-action-menu__danger :global(.el-dropdown-menu__item .el-icon) {
-    color: #fca5a5;
+:global(.node-action-menu__danger.el-dropdown-menu__item .el-icon) {
+    color: #dc2626;
 }
 
-.node-action-menu__danger :global(.el-dropdown-menu__item:hover) {
-    background: rgba(248, 113, 113, 0.14);
-    color: #fee2e2;
+:global(.node-action-menu__danger.el-dropdown-menu__item:hover) {
+    background: rgba(239, 68, 68, 0.12);
+    color: #991b1b;
 }
 
-.node-action-menu__danger :global(.el-dropdown-menu__item:hover .el-icon) {
-    color: #fecaca;
+:global(.node-action-menu__danger.el-dropdown-menu__item:hover .el-icon) {
+    color: #dc2626;
 }
 
 .node-action-trigger {
     padding: 0 10px;
     border-radius: 10px;
-    border: 1px solid rgba(59, 130, 246, 0.25);
-    background: rgba(15, 23, 42, 0.9);
-    color: #93c5fd;
+    border: 1px solid rgba(37, 99, 235, 0.28);
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
     font-weight: 600;
     letter-spacing: 1px;
 }
 
 .node-action-trigger:hover,
 .node-action-trigger:focus {
-    border-color: rgba(56, 189, 248, 0.4);
-    background: rgba(15, 23, 42, 0.96);
-    color: #38bdf8;
+    border-color: rgba(37, 99, 235, 0.4);
+    background: rgba(37, 99, 235, 0.14);
+    color: #1e40af;
 }
 
 .node-load-meta {
@@ -1531,7 +1597,7 @@ onUnmounted(function clearDebounceOnUnmount() {
 
 .node-load-meta strong {
     font-family: "Fira Code", monospace;
-    color: #dbeafe;
+    color: var(--text);
 }
 
 @media (max-width: 1380px) {

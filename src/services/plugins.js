@@ -29,14 +29,14 @@ function normalizePluginStatus(plugin) {
   const protectedFlag = Boolean(plugin?.is_protected)
 
   if (!installed) {
-    return '未安装'
+    return 'not_installed'
   }
 
   if (enabled) {
-    return '已启用'
+    return 'enabled'
   }
 
-  return protectedFlag ? '受保护' : '已停用'
+  return protectedFlag ? 'protected' : 'disabled'
 }
 
 function normalizePluginType(type) {

@@ -32,7 +32,6 @@ export function createEmptyManagedNodeRoutes() {
   return [];
 }
 
-
 function formatTimestamp(value) {
   const timestamp = Number(value || 0);
 
@@ -162,9 +161,7 @@ function resolveNodeShow(node) {
 
 function normalizeManagedNode(node, index) {
   const status = resolveNodeStatus(node);
-  const onlineUsers = Boolean(node.online || node.is_online)
-    ? Math.max((node.group_ids || []).length * 12, 8)
-    : 0;
+  const onlineUsers = Boolean(node.online || node.is_online) ? node.online : 0;
   const groupIdsFromGroups = Array.isArray(node.groups)
     ? node.groups
         .map(function mapGroupId(group) {
@@ -206,9 +203,11 @@ function normalizeManagedNode(node, index) {
     groupIds,
     groupNames: groupTags,
     rawTags: Array.isArray(node.tags)
-      ? node.tags.map(function mapTag(tag) {
-          return String(tag || '').trim();
-        }).filter(Boolean)
+      ? node.tags
+          .map(function mapTag(tag) {
+            return String(tag || "").trim();
+          })
+          .filter(Boolean)
       : [],
     tags: [
       String(node.type || "").toUpperCase(),
@@ -235,12 +234,12 @@ function normalizeManagedNodeGroup(group, index) {
 }
 
 function normalizeManagedNodeRoute(route, index) {
-  const remark = String(route?.remarks || '').trim();
+  const remark = String(route?.remarks || "").trim();
 
   return {
     id: String(route?.id || index + 1),
     remarks: remark || `路由组 ${index + 1}`,
-    action: String(route?.action || '--'),
+    action: String(route?.action || "--"),
     matchCount: Array.isArray(route?.match) ? route.match.length : 0,
     updatedAt: formatTimestamp(route?.updated_at),
   };
@@ -293,7 +292,7 @@ export async function fetchManagedNodeGroups() {
 }
 
 export async function fetchManagedNodeRoutes() {
-  const apiUrl = buildDashboardApiUrl('server/route/fetch');
+  const apiUrl = buildDashboardApiUrl("server/route/fetch");
   const payload = await requestDashboardApi(apiUrl);
   const list = Array.isArray(payload?.data) ? payload.data : [];
 
