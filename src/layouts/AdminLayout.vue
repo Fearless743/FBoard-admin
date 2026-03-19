@@ -12,6 +12,9 @@ import {
 import { useAdminStore } from "../stores/admin";
 import { useAuthStore } from "../stores/auth";
 
+const HEADER_AVATAR_FALLBACK =
+    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' fill='%23e2e8f0'/><circle cx='32' cy='26' r='12' fill='%2394a3b8'/><path d='M12 56c3.5-12 16-18 20-18s16.5 6 20 18' fill='%2394a3b8'/></svg>";
+
 const route = useRoute();
 const router = useRouter();
 const adminStore = useAdminStore();
@@ -56,6 +59,10 @@ const languageOptions = computed(function languageOptions() {
 });
 
 const pageTitle = computed(function pageTitle() {
+    if (typeof window !== "undefined" && window.settings?.title) {
+        return window.settings.title;
+    }
+
     if (route.meta.titleKey) {
         return t(route.meta.titleKey);
     }
@@ -91,6 +98,16 @@ const headerUserEmail = computed(function headerUserEmail() {
         : t("app.adminFallback");
 });
 
+const headerUserAvatar = computed(function headerUserAvatar() {
+    const avatarUrl = adminStore.userInfo?.avatarUrl;
+
+    if (avatarUrl) {
+        return avatarUrl;
+    }
+
+    return HEADER_AVATAR_FALLBACK;
+});
+
 function resolveGroupTitle(group) {
     if (group?.titleKey) {
         return t(group.titleKey);
@@ -123,6 +140,7 @@ function handleAccountCommand(command) {
 
 onMounted(function attachResizeListener() {
     updateViewportMode();
+    adminStore.loadUserInfo();
     window.addEventListener("resize", updateViewportMode);
 });
 
@@ -152,7 +170,7 @@ onUnmounted(function detachResizeListener() {
             <div class="brand-panel">
                 <div class="brand-mark">L</div>
                 <div>
-                    <strong>{{ t("app.brand") }}</strong>
+                    <strong>{{ pageTitle }}</strong>
                     <p>{{ t("app.console") }}</p>
                 </div>
             </div>
@@ -240,17 +258,10 @@ onUnmounted(function detachResizeListener() {
 
                             <div class="header-account__avatar-wrap">
                                 <img
-                                    v-if="adminStore.userInfo.avatarUrl"
-                                    :src="adminStore.userInfo.avatarUrl"
+                                    :src="headerUserAvatar"
                                     :alt="headerUserEmail"
                                     class="header-account__avatar"
                                 />
-                                <div
-                                    v-else
-                                    class="header-account__avatar header-account__avatar--fallback"
-                                >
-                                    {{ headerUserInitial }}
-                                </div>
                             </div>
 
                             <el-icon class="header-account__arrow"

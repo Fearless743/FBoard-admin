@@ -121,6 +121,20 @@ const isTrojanProtocol = computed(function isTrojanProtocol() {
     return currentProtocol.value === "trojan";
 });
 
+const pluginOptionsHint = computed(function pluginOptionsHint() {
+    const plugin = String(form.plugin || "").trim();
+
+    if (plugin === "simple-obfs") {
+        return "提示：配置格式如 obfs=http;obfs-host=www.bing.com;path=/";
+    }
+
+    if (plugin === "v2ray-plugin") {
+        return "提示：WebSocket模式格式为 mode=websocket;host=mydomain.me;path=/;tls=true，QUIC模式格式为 mode=quic;host=mydomain.me";
+    }
+
+    return "按照 key=value;key2=value2 格式输入插件选项";
+});
+
 const showTransportConfigEditor = computed(function showTransportConfigEditor() {
     return (isVmessProtocol.value || isTrojanProtocol.value) && form.transportProtocol;
 });
@@ -151,6 +165,7 @@ function createDefaultForm() {
         serverPort: "",
         encryption: "aes-128-gcm",
         plugin: "None",
+        pluginOpts: "",
         tls: "none",
         transportProtocol: "tcp",
         transportConfig: "",
@@ -228,6 +243,7 @@ function createFormFromNode(node) {
         serverPort: normalizePortValue(node.serverPort),
         encryption: node.encryption || "aes-128-gcm",
         plugin: node.plugin || "None",
+        pluginOpts: node.pluginOpts || "",
         tls: node.tls || "none",
         transportProtocol: node.transportProtocol || "tcp",
         transportConfig: node.transportConfig || "",
@@ -367,6 +383,7 @@ function handleSubmit() {
         serverPort: String(form.serverPort || "").trim(),
         encryption: form.encryption,
         plugin: form.plugin,
+        pluginOpts: String(form.pluginOpts || "").trim(),
         tls: form.tls,
         transportProtocol: form.transportProtocol,
         transportConfig: form.transportConfig,
@@ -604,6 +621,17 @@ function handleSubmit() {
                     />
                 </el-select>
             </el-form-item>
+            <el-form-item
+                v-if="!isVmessProtocol && !isTrojanProtocol"
+                label="插件选项"
+                class="node-config-form__item"
+            >
+                <el-input
+                    v-model="form.pluginOpts"
+                    placeholder="按照 key=value;key2=value2 格式输入插件选项"
+                />
+                <p class="node-config-form__hint">{{ pluginOptionsHint }}</p>
+            </el-form-item>
 
             <el-form-item v-if="isVmessProtocol" label="TLS" class="node-config-form__item">
                 <el-select v-model="form.tls" placeholder="请选择 TLS">
@@ -617,7 +645,7 @@ function handleSubmit() {
             </el-form-item>
 
             <div
-                v-if="isTrojanProtocol"
+                v-if="isTrojanProtocol || (isVmessProtocol && form.tls === 'tls')"
                 class="node-config-form__row node-config-form__row--split"
             >
                 <el-form-item

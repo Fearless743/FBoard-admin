@@ -151,6 +151,42 @@ export async function requestDashboardMutation(url, payload, method = 'POST') {
   return responsePayload
 }
 
+export async function requestDashboardUpload(url, formData, method = 'POST') {
+  const headers = {
+    ...getDashboardApiHeaders(),
+  }
+  const response = await fetch(url, {
+    method,
+    headers,
+    body: formData,
+  })
+
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(resolveMessage('defaults.dashboardStatsAuthFailed'))
+  }
+
+  if (!response.ok) {
+    throw new Error(resolveMessage('defaults.dashboardRequestFailed', {
+      status: response.status,
+    }))
+  }
+
+  const responsePayload = await response.json()
+
+  if (responsePayload?.status && responsePayload.status !== 'success') {
+    throw new Error(responsePayload.message || resolveMessage('defaults.dashboardStatusFailed'))
+  }
+
+  if (
+    responsePayload?.code !== undefined &&
+    Number(responsePayload.code) !== 0
+  ) {
+    throw new Error(responsePayload.message || resolveMessage('defaults.dashboardCodeFailed'))
+  }
+
+  return responsePayload
+ }
+
 function resolveMessage(key, values) {
   if (i18n?.global?.te?.(key)) {
     return i18n.global.t(key, values)

@@ -44,9 +44,16 @@ import {
   createEmptyPlugins,
   createEmptyPluginsFilters,
   createEmptyPluginsPagination,
+  createEmptyPluginTypes,
+  deletePlugin,
   disablePlugin,
   enablePlugin,
   fetchPlugins,
+  fetchPluginTypes,
+  installPlugin,
+  savePluginConfig,
+  uninstallPlugin,
+  uploadPlugin,
 } from "../services/plugins";
 
 export const useAdminStore = defineStore("admin", () => {
@@ -95,6 +102,9 @@ export const useAdminStore = defineStore("admin", () => {
   const pluginsPagination = ref(createEmptyPluginsPagination());
   const pluginsLoading = ref(false);
   const pluginsError = ref("");
+  const pluginTypes = ref(createEmptyPluginTypes());
+  const pluginTypesLoading = ref(false);
+  const pluginTypesError = ref("");
   const userInfo = ref(createEmptyUserInfo());
   const userInfoLoading = ref(false);
   const userInfoError = ref("");
@@ -704,6 +714,71 @@ export const useAdminStore = defineStore("admin", () => {
     }
   }
 
+  async function installPluginItem(code) {
+    const pluginCode = String(code || "").trim();
+
+    if (!pluginCode) {
+      throw new Error("缺少插件标识");
+    }
+
+    await installPlugin(pluginCode);
+  }
+
+  async function uninstallPluginItem(code) {
+    const pluginCode = String(code || "").trim();
+
+    if (!pluginCode) {
+      throw new Error("缺少插件标识");
+    }
+
+    await uninstallPlugin(pluginCode);
+  }
+
+  async function deletePluginItem(code) {
+    const pluginCode = String(code || "").trim();
+
+    if (!pluginCode) {
+      throw new Error("缺少插件标识");
+    }
+
+    await deletePlugin(pluginCode);
+  }
+
+  async function uploadPluginItem(file) {
+    if (!file) {
+      throw new Error("缺少插件文件");
+    }
+
+    await uploadPlugin(file);
+  }
+
+  async function loadPluginTypes() {
+    pluginTypesLoading.value = true;
+    pluginTypesError.value = "";
+
+    try {
+      const list = await fetchPluginTypes();
+      pluginTypes.value = list;
+      return list;
+    } catch (error) {
+      pluginTypesError.value = error?.message || "插件类型加载失败";
+      pluginTypes.value = createEmptyPluginTypes();
+      throw error;
+    } finally {
+      pluginTypesLoading.value = false;
+    }
+  }
+
+  async function savePluginConfigItem(code, config) {
+    const pluginCode = String(code || "").trim();
+
+    if (!pluginCode) {
+      throw new Error("缺少插件标识");
+    }
+
+    await savePluginConfig(pluginCode, config);
+  }
+
   return {
     activities,
     badgeType,
@@ -749,8 +824,17 @@ export const useAdminStore = defineStore("admin", () => {
     pluginsFilters,
     pluginsLoading,
     pluginsPagination,
+    pluginTypes,
+    pluginTypesLoading,
+    pluginTypesError,
     loadPlugins,
+    loadPluginTypes,
     togglePlugin,
+    installPlugin: installPluginItem,
+    uninstallPlugin: uninstallPluginItem,
+    deletePlugin: deletePluginItem,
+    uploadPlugin: uploadPluginItem,
+    savePluginConfig: savePluginConfigItem,
     navigationGroups,
     nodeTrafficRank,
     nodeTrafficRankError,

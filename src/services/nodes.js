@@ -186,6 +186,24 @@ function normalizeManagedNode(node, index) {
   const groupIds =
     groupIdsFromGroups.length > 0 ? groupIdsFromGroups : groupIdsFromNode;
 
+  const protocolSettings =
+    node && typeof node.protocol_settings === "object"
+      ? node.protocol_settings
+      : {};
+  const tlsSettings =
+    protocolSettings && typeof protocolSettings.tls_settings === "object"
+      ? protocolSettings.tls_settings
+      : {};
+  const tlsEnabled =
+    protocolSettings?.tls === 1 ||
+    protocolSettings?.tls === "1" ||
+    protocolSettings?.tls === true ||
+    protocolSettings?.tls === "true";
+  const cipher = String(protocolSettings?.cipher || "").trim();
+  const rawPlugin = String(protocolSettings?.plugin || "").trim();
+  const plugin = rawPlugin === "obfs" ? "simple-obfs" : rawPlugin;
+  const pluginOpts = String(protocolSettings?.plugin_opts || "").trim();
+
   return {
     id: String(node.id || `NODE-${1000 + index}`),
     rawId: Number(node.id || 0),
@@ -196,6 +214,16 @@ function normalizeManagedNode(node, index) {
     host: node.host,
     port: node.port,
     serverPort: node.server_port,
+    encryption: cipher || "aes-128-gcm",
+    plugin: plugin || "None",
+    pluginOpts,
+    tls: tlsEnabled ? "tls" : "none",
+    transportProtocol: protocolSettings?.network || "",
+    transportConfig: protocolSettings?.network_settings || "",
+    sni: tlsSettings?.server_name || protocolSettings?.server_name || "",
+    allowInsecure: Boolean(
+      tlsSettings?.allow_insecure ?? protocolSettings?.allow_insecure,
+    ),
     rate: formatNodeRate(node.rate),
     status,
     onlineUsers,

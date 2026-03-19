@@ -644,7 +644,7 @@ async function handleNodeDialogSubmit(payload) {
               : {
                     cipher: payload.encryption,
                     plugin: payload.plugin === "None" ? "" : payload.plugin,
-                    plugin_opts: "",
+                    plugin_opts: payload.pluginOpts,
                     client_fingerprint: "chrome",
                 };
 
@@ -1474,7 +1474,7 @@ onUnmounted(function clearDebounceOnUnmount() {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 14px;
+    padding: 6px 8px;
     min-height: 32px;
     border-radius: 10px;
     color: #1f2937;
@@ -1489,9 +1489,9 @@ onUnmounted(function clearDebounceOnUnmount() {
     align-items: center;
     justify-content: center;
     min-width: 76px;
-    padding: 4px 10px;
+    padding: 4px 8px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }

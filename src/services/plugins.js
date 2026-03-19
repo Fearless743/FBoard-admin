@@ -1,7 +1,9 @@
 import {
+  buildDashboardApiUrl,
   buildSecureV2ApiUrl,
   requestDashboardApi,
   requestDashboardMutation,
+  requestDashboardUpload,
 } from './api'
 
 export function createEmptyPlugins() {
@@ -21,6 +23,10 @@ export function createEmptyPluginsFilters() {
     type: 'all',
     status: 'all',
   }
+}
+
+export function createEmptyPluginTypes() {
+  return []
 }
 
 function normalizePluginStatus(plugin) {
@@ -113,6 +119,24 @@ export async function fetchPlugins(options = {}) {
   }
 }
 
+export async function fetchPluginTypes() {
+  const apiUrl = buildSecureV2ApiUrl('plugin/types')
+  const payload = await requestDashboardApi(apiUrl)
+  const rawData = payload?.data ?? payload ?? {}
+  const list = Array.isArray(rawData?.data)
+    ? rawData.data
+    : Array.isArray(rawData)
+      ? rawData
+      : []
+
+  return list.map((item) => ({
+    value: String(item?.value ?? ''),
+    label: item?.label ?? item?.value ?? '--',
+    description: item?.description ?? '',
+    icon: item?.icon ?? '',
+  }))
+}
+
 export async function enablePlugin(code) {
   if (!code) {
     throw new Error('缺少插件标识')
@@ -132,5 +156,61 @@ export async function disablePlugin(code) {
   const apiUrl = buildSecureV2ApiUrl('plugin/disable')
   return requestDashboardMutation(apiUrl, {
     code,
+  })
+}
+
+export async function installPlugin(code) {
+  if (!code) {
+    throw new Error('缺少插件标识')
+  }
+
+  const apiUrl = buildDashboardApiUrl('plugin/install')
+  return requestDashboardMutation(apiUrl, {
+    code,
+  })
+}
+
+export async function uninstallPlugin(code) {
+  if (!code) {
+    throw new Error('缺少插件标识')
+  }
+
+  const apiUrl = buildDashboardApiUrl('plugin/uninstall')
+  return requestDashboardMutation(apiUrl, {
+    code,
+  })
+}
+
+export async function deletePlugin(code) {
+  if (!code) {
+    throw new Error('缺少插件标识')
+  }
+
+  const apiUrl = buildSecureV2ApiUrl('plugin/delete')
+  return requestDashboardMutation(apiUrl, {
+    code,
+  })
+}
+
+export async function uploadPlugin(file) {
+  if (!file) {
+    throw new Error('缺少插件文件')
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const apiUrl = buildSecureV2ApiUrl('plugin/upload')
+  return requestDashboardUpload(apiUrl, formData)
+}
+
+export async function savePluginConfig(code, config) {
+  if (!code) {
+    throw new Error('缺少插件标识')
+  }
+
+  const apiUrl = buildSecureV2ApiUrl('plugin/config')
+  return requestDashboardMutation(apiUrl, {
+    code,
+    config,
   })
 }

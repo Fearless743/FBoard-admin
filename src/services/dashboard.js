@@ -313,7 +313,7 @@ function normalizeUserInfo(payload) {
 
   return {
     email: data.email || "--",
-    avatarUrl: data.avatar_url || "",
+    avatarUrl: data.avatar_url || data.avatar || "",
     planId: data.plan_id ? `#${data.plan_id}` : "--",
     balance: formatCurrencyFromCent(data.balance),
     commissionBalance: formatCurrencyFromCent(data.commission_balance),
