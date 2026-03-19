@@ -52,6 +52,61 @@ const encryptionOptions = [
 ];
 
 const pluginOptions = ["None", "simple-obfs", "v2ray-plugin"];
+const hysteriaVersionOptions = [
+    { label: "V2", value: "v2" },
+    { label: "V1", value: "v1" },
+];
+const hysteriaObfsTypeOptions = [
+    { label: "Salamander", value: "salamander" },
+];
+const tuicVersionOptions = [
+    { label: "V5", value: "v5" },
+    { label: "V4", value: "v4" },
+];
+const tuicCongestionControlOptions = [
+    { label: "BBR", value: "bbr" },
+    { label: "CUBIC", value: "cubic" },
+    { label: "NEW_RENO", value: "newreno" },
+];
+const tuicAlpnOptions = [
+    { label: "HTTP/3", value: "h3" },
+    { label: "HTTP/2", value: "h2" },
+    { label: "HTTP/1.1", value: "http/1.1" },
+];
+const tuicUdpRelayModeOptions = [
+    { label: "Native", value: "native" },
+    { label: "QUIC", value: "quic" },
+];
+const mieruBandwidthOptions = [
+    { label: "Off", value: "off" },
+    { label: "Low", value: "low" },
+    { label: "Middle", value: "middle" },
+    { label: "High", value: "high" },
+];
+const vlessSecurityOptions = [
+    { label: "无", value: "none" },
+    { label: "TLS", value: "tls" },
+    { label: "Reality", value: "reality" },
+];
+const vlessFlowOptions = [
+    { label: "none", value: "none" },
+    { label: "xtls-rprx-direct", value: "xtls-rprx-direct" },
+    { label: "xtls-rprx-splice", value: "xtls-rprx-splice" },
+    { label: "xtls-rprx-vision", value: "xtls-rprx-vision" },
+];
+const vlessEncryptionOptions = [
+    { label: "无", value: null },
+    { label: "mlkem768x25519plus", value: "mlkem768x25519plus" },
+];
+const vlessEncryptionModeOptions = [
+    { label: "native", value: "native" },
+    { label: "xorpub", value: "xorpub" },
+    { label: "random", value: "random" },
+];
+const vlessEncryptionRttOptions = [
+    { label: "0rtt", value: "0rtt" },
+    { label: "1rtt", value: "1rtt" },
+];
 const vmessTlsOptions = [
     { label: "不支持", value: "none" },
     { label: "TLS", value: "tls" },
@@ -60,6 +115,9 @@ const vmessTransportOptions = [
     { label: "TCP", value: "tcp" },
     { label: "Websocket", value: "ws" },
     { label: "gRPC", value: "grpc" },
+    { label: "mKCP", value: "mkcp" },
+    { label: "HttpUpgrade", value: "httpupgrade" },
+    { label: "XHTTP", value: "xhttp" },
 ];
 
 const vmessTransportTemplates = {
@@ -107,6 +165,66 @@ const vmessTransportTemplates = {
             serviceName: "GunService",
         }, null, 2),
     },
+    mkcp: {
+        label: "使用mKCP模板",
+        value: JSON.stringify({
+            mtu: 1350,
+            tti: 20,
+            uplinkCapacity: 5,
+            downlinkCapacity: 20,
+            congestion: false,
+            readBufferSize: 2,
+            writeBufferSize: 2,
+            header: { type: "none" },
+        }, null, 2),
+    },
+    httpupgrade: {
+        label: "使用HttpUpgrade模板",
+        value: JSON.stringify({
+            acceptProxyProtocol: false,
+            path: "/",
+            host: "xray.com",
+            headers: {
+                key: "value",
+            },
+        }, null, 2),
+    },
+    xhttp: {
+        label: "使用XHTTP模板",
+        value: JSON.stringify({
+            host: "example.com",
+            path: "/yourpath",
+            mode: "auto",
+            extra: {
+                headers: {},
+                xPaddingBytes: "100-1000",
+                noGRPCHeader: false,
+                noSSEHeader: false,
+                scMaxEachPostBytes: 1000000,
+                scMinPostsIntervalMs: 30,
+                scMaxBufferedPosts: 30,
+                xmux: {
+                    maxConcurrency: "16-32",
+                    maxConnections: 0,
+                    cMaxReuseTimes: "64-128",
+                    cMaxLifetimeMs: 0,
+                    hMaxRequestTimes: "800-900",
+                    hKeepAlivePeriod: 0,
+                },
+                downloadSettings: {
+                    address: "",
+                    port: 443,
+                    network: "xhttp",
+                    security: "tls",
+                    tlsSettings: {},
+                    xhttpSettings: {
+                        path: "/yourpath",
+                    },
+                    sockopt: {},
+                },
+            },
+        }, null, 2),
+    },
 };
 
 const currentProtocol = computed(function currentProtocol() {
@@ -119,6 +237,22 @@ const isVmessProtocol = computed(function isVmessProtocol() {
 
 const isTrojanProtocol = computed(function isTrojanProtocol() {
     return currentProtocol.value === "trojan";
+});
+
+const isHysteriaProtocol = computed(function isHysteriaProtocol() {
+    return currentProtocol.value === "hysteria";
+});
+
+const isVlessProtocol = computed(function isVlessProtocol() {
+    return currentProtocol.value === "vless";
+});
+
+const isTuicProtocol = computed(function isTuicProtocol() {
+    return currentProtocol.value === "tuic";
+});
+
+const isMieruProtocol = computed(function isMieruProtocol() {
+    return currentProtocol.value === "mieru";
 });
 
 const pluginOptionsHint = computed(function pluginOptionsHint() {
@@ -136,7 +270,26 @@ const pluginOptionsHint = computed(function pluginOptionsHint() {
 });
 
 const showTransportConfigEditor = computed(function showTransportConfigEditor() {
-    return (isVmessProtocol.value || isTrojanProtocol.value) && form.transportProtocol;
+    return (
+        (isVmessProtocol.value || isTrojanProtocol.value || isVlessProtocol.value) &&
+        form.transportProtocol
+    );
+});
+
+const transportOptions = computed(function transportOptions() {
+    if (isVlessProtocol.value) {
+        return vmessTransportOptions;
+    }
+
+    if (isMieruProtocol.value) {
+        return vmessTransportOptions.filter(function filterOption(option) {
+            return option.value === "tcp";
+        });
+    }
+
+    return vmessTransportOptions.filter(function filterOption(option) {
+        return ["tcp", "ws", "grpc"].includes(option.value);
+    });
 });
 
 const protocolDisplayName = computed(function protocolDisplayName() {
@@ -146,6 +299,22 @@ const protocolDisplayName = computed(function protocolDisplayName() {
 
     if (isTrojanProtocol.value) {
         return "Trojan";
+    }
+
+    if (isHysteriaProtocol.value) {
+        return "Hysteria";
+    }
+
+    if (isVlessProtocol.value) {
+        return "VLESS";
+    }
+
+    if (isTuicProtocol.value) {
+        return "TUIC";
+    }
+
+    if (isMieruProtocol.value) {
+        return "Mieru";
     }
 
     return "Shadowsocks";
@@ -163,6 +332,33 @@ function createDefaultForm() {
         host: "",
         port: "",
         serverPort: "",
+        vlessSecurity: "none",
+        vlessFlow: "none",
+        vlessEncryption: null,
+        vlessEncMode: "native",
+        vlessEncRtt: "0rtt",
+        vlessEncTicket: "0rtt",
+        vlessEncServerPadding: "",
+        vlessEncClientPadding: "",
+        vlessEncPrivateKey: "",
+        vlessEncPassword: "",
+        vlessRealityDest: "",
+        vlessRealityPort: "",
+        vlessRealityPrivateKey: "",
+        vlessRealityPublicKey: "",
+        vlessRealityShortId: "",
+        hysteriaVersion: "v2",
+        hysteriaObfs: false,
+        hysteriaObfsType: "salamander",
+        hysteriaObfsPassword: "",
+        hysteriaUpMbps: null,
+        hysteriaDownMbps: null,
+        hysteriaHopInterval: null,
+        tuicVersion: "v5",
+        tuicCongestionControl: "bbr",
+        tuicAlpn: [],
+        tuicUdpRelayMode: "native",
+        mieruBandwidth: "low",
         encryption: "aes-128-gcm",
         plugin: "None",
         pluginOpts: "",
@@ -174,6 +370,15 @@ function createDefaultForm() {
         parentId: "",
         routeGroup: "",
     };
+}
+
+function normalizeOptionalNumber(value) {
+    if (value === "" || value === null || value === undefined) {
+        return null;
+    }
+
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : null;
 }
 
 function createDefaultRateRule() {
@@ -241,6 +446,34 @@ function createFormFromNode(node) {
         host: node.host || "",
         port: normalizePortValue(node.port),
         serverPort: normalizePortValue(node.serverPort),
+        vlessSecurity: node.vlessSecurity || "none",
+        vlessFlow: node.vlessFlow || "none",
+        vlessEncryption:
+            node.vlessEncryption === undefined ? null : node.vlessEncryption,
+        vlessEncMode: node.vlessEncMode || "native",
+        vlessEncRtt: node.vlessEncRtt || "0rtt",
+        vlessEncTicket: node.vlessEncTicket || "0rtt",
+        vlessEncServerPadding: node.vlessEncServerPadding || "",
+        vlessEncClientPadding: node.vlessEncClientPadding || "",
+        vlessEncPrivateKey: node.vlessEncPrivateKey || "",
+        vlessEncPassword: node.vlessEncPassword || "",
+        vlessRealityDest: node.vlessRealityDest || "",
+        vlessRealityPort: node.vlessRealityPort || "",
+        vlessRealityPrivateKey: node.vlessRealityPrivateKey || "",
+        vlessRealityPublicKey: node.vlessRealityPublicKey || "",
+        vlessRealityShortId: node.vlessRealityShortId || "",
+        hysteriaVersion: node.hysteriaVersion || "v2",
+        hysteriaObfs: Boolean(node.hysteriaObfs),
+        hysteriaObfsType: node.hysteriaObfsType || "salamander",
+        hysteriaObfsPassword: node.hysteriaObfsPassword || "",
+        hysteriaUpMbps: normalizeOptionalNumber(node.hysteriaUpMbps),
+        hysteriaDownMbps: normalizeOptionalNumber(node.hysteriaDownMbps),
+        hysteriaHopInterval: normalizeOptionalNumber(node.hysteriaHopInterval),
+        tuicVersion: node.tuicVersion || "v5",
+        tuicCongestionControl: node.tuicCongestionControl || "bbr",
+        tuicAlpn: Array.isArray(node.tuicAlpn) ? [...node.tuicAlpn] : [],
+        tuicUdpRelayMode: node.tuicUdpRelayMode || "native",
+        mieruBandwidth: node.mieruBandwidth || "low",
         encryption: node.encryption || "aes-128-gcm",
         plugin: node.plugin || "None",
         pluginOpts: node.pluginOpts || "",
@@ -264,12 +497,10 @@ const dialogVisible = computed({
 });
 
 const form = reactive(createDefaultForm());
-const tagInput = ref("");
 const transportConfigDialogVisible = ref(false);
 
 function resetForm() {
     Object.assign(form, createFormFromNode(props.node));
-    tagInput.value = "";
 }
 
 watch(
@@ -300,23 +531,26 @@ function applyTransportTemplate(templateKey) {
     form.transportConfig = template.value;
 }
 
-function addTag() {
-    const nextTag = String(tagInput.value || "").trim();
-    if (!nextTag) {
-        return;
-    }
-
-    if (!form.tags.includes(nextTag)) {
-        form.tags.push(nextTag);
-    }
-
-    tagInput.value = "";
+function handleTagsChange(values) {
+    const normalized = Array.isArray(values)
+        ? values
+              .map(function mapTag(tag) {
+                  return String(tag || "").trim();
+              })
+              .filter(Boolean)
+        : [];
+    form.tags = Array.from(new Set(normalized));
 }
 
-function removeTag(tag) {
-    form.tags = form.tags.filter(function filterTag(currentTag) {
-        return currentTag !== tag;
-    });
+function handleTuicAlpnChange(values) {
+    const normalized = Array.isArray(values)
+        ? values
+              .map(function mapAlpn(alpn) {
+                  return String(alpn || "").trim();
+              })
+              .filter(Boolean)
+        : [];
+    form.tuicAlpn = Array.from(new Set(normalized));
 }
 
 function syncPortToServerPort() {
@@ -384,6 +618,38 @@ function handleSubmit() {
         encryption: form.encryption,
         plugin: form.plugin,
         pluginOpts: String(form.pluginOpts || "").trim(),
+        vlessSecurity: String(form.vlessSecurity || "none"),
+        vlessFlow: String(form.vlessFlow || "none"),
+        vlessEncryption:
+            form.vlessEncryption === ""
+                ? null
+                : form.vlessEncryption ?? null,
+        vlessEncMode: String(form.vlessEncMode || "native"),
+        vlessEncRtt: String(form.vlessEncRtt || "0rtt"),
+        vlessEncTicket: String(form.vlessEncTicket || "").trim(),
+        vlessEncServerPadding: String(form.vlessEncServerPadding || "").trim(),
+        vlessEncClientPadding: String(form.vlessEncClientPadding || "").trim(),
+        vlessEncPrivateKey: String(form.vlessEncPrivateKey || "").trim(),
+        vlessEncPassword: String(form.vlessEncPassword || "").trim(),
+        vlessRealityDest: String(form.vlessRealityDest || "").trim(),
+        vlessRealityPort: String(form.vlessRealityPort || "").trim(),
+        vlessRealityPrivateKey: String(form.vlessRealityPrivateKey || "").trim(),
+        vlessRealityPublicKey: String(form.vlessRealityPublicKey || "").trim(),
+        vlessRealityShortId: String(form.vlessRealityShortId || "").trim(),
+        hysteriaVersion: String(form.hysteriaVersion || "v2").toLowerCase(),
+        hysteriaObfs: Boolean(form.hysteriaObfs),
+        hysteriaObfsType: String(form.hysteriaObfsType || "salamander"),
+        hysteriaObfsPassword: String(form.hysteriaObfsPassword || "").trim(),
+        hysteriaUpMbps: normalizeOptionalNumber(form.hysteriaUpMbps),
+        hysteriaDownMbps: normalizeOptionalNumber(form.hysteriaDownMbps),
+        hysteriaHopInterval: normalizeOptionalNumber(form.hysteriaHopInterval),
+        tuicVersion: String(form.tuicVersion || "v5").toLowerCase(),
+        tuicCongestionControl: String(
+            form.tuicCongestionControl || "bbr",
+        ).toLowerCase(),
+        tuicAlpn: Array.isArray(form.tuicAlpn) ? [...form.tuicAlpn] : [],
+        tuicUdpRelayMode: String(form.tuicUdpRelayMode || "native").toLowerCase(),
+        mieruBandwidth: String(form.mieruBandwidth || "low").toLowerCase(),
         tls: form.tls,
         transportProtocol: form.transportProtocol,
         transportConfig: form.transportConfig,
@@ -492,22 +758,15 @@ function handleSubmit() {
             </el-form-item>
 
             <el-form-item label="节点标签" class="node-config-form__item">
-                <el-input
-                    v-model="tagInput"
+                <el-select
+                    v-model="form.tags"
+                    multiple
+                    filterable
+                    allow-create
+                    default-first-option
                     placeholder="输入后回车添加标签"
-                    @keyup.enter="addTag"
+                    @change="handleTagsChange"
                 />
-                <div v-if="form.tags.length" class="node-config-form__tags">
-                    <el-tag
-                        v-for="tag in form.tags"
-                        :key="tag"
-                        closable
-                        size="small"
-                        @close="removeTag(tag)"
-                    >
-                        {{ tag }}
-                    </el-tag>
-                </div>
             </el-form-item>
 
             <el-form-item class="node-config-form__item">
@@ -581,7 +840,7 @@ function handleSubmit() {
             </div>
 
             <el-form-item
-                v-if="!isVmessProtocol && !isTrojanProtocol"
+                v-if="!isVmessProtocol && !isTrojanProtocol && !isHysteriaProtocol && !isVlessProtocol && !isTuicProtocol && !isMieruProtocol"
                 label="加密算法"
                 class="node-config-form__item"
             >
@@ -608,7 +867,7 @@ function handleSubmit() {
             </el-form-item>
 
             <el-form-item
-                v-if="!isVmessProtocol && !isTrojanProtocol"
+                v-if="!isVmessProtocol && !isTrojanProtocol && !isHysteriaProtocol && !isVlessProtocol && !isTuicProtocol && !isMieruProtocol"
                 label="插件"
                 class="node-config-form__item"
             >
@@ -622,7 +881,7 @@ function handleSubmit() {
                 </el-select>
             </el-form-item>
             <el-form-item
-                v-if="!isVmessProtocol && !isTrojanProtocol"
+                v-if="!isVmessProtocol && !isTrojanProtocol && !isHysteriaProtocol && !isVlessProtocol && !isTuicProtocol && !isMieruProtocol"
                 label="插件选项"
                 class="node-config-form__item"
             >
@@ -644,9 +903,87 @@ function handleSubmit() {
                 </el-select>
             </el-form-item>
 
+            <el-form-item v-if="isVlessProtocol" label="安全性" class="node-config-form__item">
+                <el-select v-model="form.vlessSecurity" placeholder="选择安全性">
+                    <el-option
+                        v-for="option in vlessSecurityOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <el-form-item v-if="isHysteriaProtocol" label="协议版本" class="node-config-form__item">
+                <el-select v-model="form.hysteriaVersion" placeholder="请选择协议版本">
+                    <el-option
+                        v-for="option in hysteriaVersionOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <el-form-item v-if="isTuicProtocol" label="协议版本" class="node-config-form__item">
+                <el-select v-model="form.tuicVersion" placeholder="请选择协议版本">
+                    <el-option
+                        v-for="option in tuicVersionOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <el-form-item v-if="isTuicProtocol" label="拥塞控制" class="node-config-form__item">
+                <el-select v-model="form.tuicCongestionControl" placeholder="选择拥塞控制">
+                    <el-option
+                        v-for="option in tuicCongestionControlOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <el-form-item
+                v-if="isHysteriaProtocol"
+                label=""
+                class="node-config-form__item node-config-form__item--no-label"
+            >
+                <div class="node-config-form__inline-field-group">
+                    <div class="node-config-form__inline-field-labels">
+                        <span>混淆</span>
+                        <span>混淆实现</span>
+                        <span>混淆密码</span>
+                    </div>
+                    <div class="node-config-form__inline-fields node-config-form__inline-fields--three">
+                    <el-switch v-model="form.hysteriaObfs" />
+                    <el-select
+                        v-model="form.hysteriaObfsType"
+                        :disabled="!form.hysteriaObfs"
+                        placeholder="混淆实现"
+                    >
+                        <el-option
+                            v-for="option in hysteriaObfsTypeOptions"
+                            :key="option.value"
+                            :label="option.label"
+                            :value="option.value"
+                        />
+                    </el-select>
+                    <el-input
+                        v-model="form.hysteriaObfsPassword"
+                        :disabled="!form.hysteriaObfs"
+                        placeholder="请输入混淆密码"
+                    />
+                    </div>
+                </div>
+            </el-form-item>
+
             <div
-                v-if="isTrojanProtocol || (isVmessProtocol && form.tls === 'tls')"
-                class="node-config-form__row node-config-form__row--split"
+                v-if="isTuicProtocol || isTrojanProtocol || (isVmessProtocol && form.tls === 'tls') || isHysteriaProtocol || (isVlessProtocol && form.vlessSecurity === 'tls')"
+                class="node-config-form__row node-config-form__row--narrow"
             >
                 <el-form-item
                     label="服务器名称指示(SNI)"
@@ -665,8 +1002,261 @@ function handleSubmit() {
                 </el-form-item>
             </div>
 
+            <el-form-item v-if="isTuicProtocol" label="ALPN" class="node-config-form__item">
+                <el-select
+                    v-model="form.tuicAlpn"
+                    multiple
+                    filterable
+                    allow-create
+                    default-first-option
+                    placeholder="选择ALPN协议"
+                    @change="handleTuicAlpnChange"
+                >
+                    <el-option
+                        v-for="option in tuicAlpnOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <el-form-item v-if="isTuicProtocol" label="UDP中继模式" class="node-config-form__item">
+                <el-select v-model="form.tuicUdpRelayMode" placeholder="选择UDP中继模式">
+                    <el-option
+                        v-for="option in tuicUdpRelayModeOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <el-form-item v-if="isMieruProtocol" label="多路复用" class="node-config-form__item">
+                <el-select v-model="form.mieruBandwidth" placeholder="选择多路复用">
+                    <el-option
+                        v-for="option in mieruBandwidthOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <div
+                v-if="isVlessProtocol && form.vlessSecurity === 'reality'"
+                class="node-config-form__row node-config-form__row--reality"
+            >
+                <el-form-item label="伪装站点(dest)" class="node-config-form__item">
+                    <el-input
+                        v-model="form.vlessRealityDest"
+                        placeholder="例如：example.com"
+                    />
+                </el-form-item>
+                <el-form-item label="端口(port)" class="node-config-form__item">
+                    <el-input-number
+                        v-model="form.vlessRealityPort"
+                        :min="0"
+                        :max="65535"
+                        :step="1"
+                        :precision="0"
+                        step-strictly
+                        :controls="false"
+                        placeholder="443"
+                    />
+                </el-form-item>
+                <el-form-item
+                    label="允许不安全?"
+                    class="node-config-form__item node-config-form__item--switch"
+                >
+                    <el-switch v-model="form.allowInsecure" />
+                </el-form-item>
+            </div>
+
             <el-form-item
-                v-if="isVmessProtocol || isTrojanProtocol"
+                v-if="isVlessProtocol && form.vlessSecurity === 'reality'"
+                label="私钥(Private key)"
+                class="node-config-form__item"
+            >
+                <el-input
+                    v-model="form.vlessRealityPrivateKey"
+                    placeholder="请输入私钥"
+                />
+            </el-form-item>
+
+            <el-form-item
+                v-if="isVlessProtocol && form.vlessSecurity === 'reality'"
+                label="公钥(Public key)"
+                class="node-config-form__item"
+            >
+                <el-input
+                    v-model="form.vlessRealityPublicKey"
+                    placeholder="请输入公钥"
+                />
+            </el-form-item>
+
+            <el-form-item
+                v-if="isVlessProtocol && form.vlessSecurity === 'reality'"
+                label="Short ID"
+                class="node-config-form__item"
+            >
+                <el-input
+                    v-model="form.vlessRealityShortId"
+                    placeholder="可留空，长度为 2 的倍数，最长 16 位"
+                />
+                <p class="node-config-form__hint">
+                    客户端可用 shortId 列表，可用于区分不同的客户端，使用 0-f 作为十六进制字符
+                </p>
+            </el-form-item>
+
+            <el-form-item v-if="isVlessProtocol" label="流控" class="node-config-form__item">
+                <el-select v-model="form.vlessFlow" placeholder="选择流控">
+                    <el-option
+                        v-for="option in vlessFlowOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <el-form-item v-if="isVlessProtocol" label="加密" class="node-config-form__item">
+                <el-select v-model="form.vlessEncryption" placeholder="选择加密">
+                    <el-option
+                        v-for="option in vlessEncryptionOptions"
+                        :key="String(option.value)"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <div
+                v-if="isVlessProtocol && form.vlessEncryption"
+                class="node-config-form__row node-config-form__row--half"
+            >
+                <el-form-item label="mode" class="node-config-form__item">
+                    <el-select v-model="form.vlessEncMode" placeholder="选择 mode">
+                        <el-option
+                            v-for="option in vlessEncryptionModeOptions"
+                            :key="option.value"
+                            :label="option.label"
+                            :value="option.value"
+                        />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="rtt" class="node-config-form__item">
+                    <el-select v-model="form.vlessEncRtt" placeholder="选择 rtt">
+                        <el-option
+                            v-for="option in vlessEncryptionRttOptions"
+                            :key="option.value"
+                            :label="option.label"
+                            :value="option.value"
+                        />
+                    </el-select>
+                </el-form-item>
+            </div>
+
+            <el-form-item
+                v-if="isVlessProtocol && form.vlessEncryption"
+                label="ticket"
+                class="node-config-form__item"
+            >
+                <el-input
+                    v-model="form.vlessEncTicket"
+                    placeholder="请输入 ticket"
+                />
+            </el-form-item>
+
+            <div
+                v-if="isVlessProtocol && form.vlessEncryption"
+                class="node-config-form__row node-config-form__row--half"
+            >
+                <el-form-item label="server padding" class="node-config-form__item">
+                    <el-input
+                        v-model="form.vlessEncServerPadding"
+                        placeholder="请输入 server_padding"
+                    />
+                </el-form-item>
+                <el-form-item label="client padding" class="node-config-form__item">
+                    <el-input
+                        v-model="form.vlessEncClientPadding"
+                        placeholder="请输入 client_padding"
+                    />
+                </el-form-item>
+            </div>
+
+            <el-form-item
+                v-if="isVlessProtocol && form.vlessEncryption"
+                label="private key"
+                class="node-config-form__item"
+            >
+                <el-input
+                    v-model="form.vlessEncPrivateKey"
+                    placeholder="请输入 private_key"
+                />
+            </el-form-item>
+
+            <el-form-item
+                v-if="isVlessProtocol && form.vlessEncryption"
+                label="password"
+                class="node-config-form__item"
+            >
+                <el-input
+                    v-model="form.vlessEncPassword"
+                    placeholder="请输入 password"
+                />
+            </el-form-item>
+
+
+            <div
+                v-if="isHysteriaProtocol"
+                class="node-config-form__row node-config-form__row--half"
+            >
+                <el-form-item label="上行宽带" class="node-config-form__item">
+                    <el-input-number
+                        v-model="form.hysteriaUpMbps"
+                        :min="0"
+                        :step="1"
+                        :precision="0"
+                        controls-position="right"
+                        placeholder="请输入上行宽带，留空则使用 BBR"
+                    >
+                        <template #suffix>
+                            <span>Mbps</span>
+                        </template>
+                    </el-input-number>
+                </el-form-item>
+                <el-form-item label="下行宽带" class="node-config-form__item">
+                    <el-input-number
+                        v-model="form.hysteriaDownMbps"
+                        :min="0"
+                        :step="1"
+                        :precision="0"
+                        controls-position="right"
+                        placeholder="请输入下行宽带，留空则使用 BBR"
+                    >
+                        <template #suffix>
+                            <span>Mbps</span>
+                        </template>
+                    </el-input-number>
+                </el-form-item>
+            </div>
+
+            <el-form-item v-if="isHysteriaProtocol" label="Hop 间隔 (秒)" class="node-config-form__item">
+                <el-input-number
+                    v-model="form.hysteriaHopInterval"
+                    :min="0"
+                    :step="1"
+                    :precision="0"
+                    controls-position="right"
+                    placeholder="例如 30"
+                />
+                <p class="node-config-form__hint">Hop 间隔，单位秒</p>
+            </el-form-item>
+
+            <el-form-item
+                v-if="isVmessProtocol || isTrojanProtocol || isVlessProtocol"
                 class="node-config-form__item"
             >
                 <template #label>
@@ -686,7 +1276,7 @@ function handleSubmit() {
                 </template>
                 <el-select v-model="form.transportProtocol" placeholder="传输协议">
                     <el-option
-                        v-for="option in vmessTransportOptions"
+                        v-for="option in transportOptions"
                         :key="option.value"
                         :label="option.label"
                         :value="option.value"
@@ -770,6 +1360,27 @@ function handleSubmit() {
                 >
                     {{ vmessTransportTemplates.grpc.label }}
                 </el-button>
+                <el-button
+                    v-if="form.transportProtocol === 'mkcp'"
+                    size="small"
+                    @click="applyTransportTemplate('mkcp')"
+                >
+                    {{ vmessTransportTemplates.mkcp.label }}
+                </el-button>
+                <el-button
+                    v-if="form.transportProtocol === 'httpupgrade'"
+                    size="small"
+                    @click="applyTransportTemplate('httpupgrade')"
+                >
+                    {{ vmessTransportTemplates.httpupgrade.label }}
+                </el-button>
+                <el-button
+                    v-if="form.transportProtocol === 'xhttp'"
+                    size="small"
+                    @click="applyTransportTemplate('xhttp')"
+                >
+                    {{ vmessTransportTemplates.xhttp.label }}
+                </el-button>
             </div>
             <el-input
                 v-model="form.transportConfig"
@@ -811,8 +1422,28 @@ function handleSubmit() {
     gap: 14px;
 }
 
+.node-config-form__row--half {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+}
+
+.node-config-form__row--narrow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 140px);
+    gap: 12px;
+}
+
+.node-config-form__row--reality {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 120px) minmax(0, 140px);
+    gap: 12px;
+    align-items: end;
+}
+
 .node-config-form__item--switch {
     align-self: center;
+}
+
+.node-config-form__item--no-label :deep(.el-form-item__label) {
+    display: none;
 }
 
 .node-config-form__item {
@@ -855,6 +1486,40 @@ function handleSubmit() {
 
 .node-config-form__inline-btn {
     padding: 0;
+}
+
+.node-config-form__inline-fields {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+}
+
+.node-config-form__inline-fields--three {
+    grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.node-config-form__inline-field-group {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+}
+
+.node-config-form__inline-field-labels {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    color: var(--el-text-color-regular, #606266);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    width: 100%;
+}
+
+
+.node-config-form__inline-fields :deep(.el-select) {
+    width: 100%;
 }
 
 .node-rate-rules {

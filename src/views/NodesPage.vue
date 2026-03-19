@@ -631,6 +631,13 @@ async function handleNodeDialogSubmit(payload) {
                   transport_config: String(
                       payload.transportConfig || "",
                   ).trim(),
+                  tls_settings:
+                      payload.tls === "tls"
+                          ? {
+                                server_name: String(payload.sni || "").trim(),
+                                allow_insecure: payload.allowInsecure ? 1 : 0,
+                            }
+                          : null,
               }
             : protocolType === "trojan"
               ? {
@@ -641,12 +648,122 @@ async function handleNodeDialogSubmit(payload) {
                         payload.transportConfig || "",
                     ).trim(),
                 }
-              : {
-                    cipher: payload.encryption,
-                    plugin: payload.plugin === "None" ? "" : payload.plugin,
-                    plugin_opts: payload.pluginOpts,
-                    client_fingerprint: "chrome",
-                };
+              : protocolType === "hysteria"
+                ? {
+                      version:
+                          String(payload.hysteriaVersion || "v2") === "v1" ? 1 : 2,
+                      bandwidth: {
+                          up: payload.hysteriaUpMbps ?? 0,
+                          down: payload.hysteriaDownMbps ?? 0,
+                      },
+                      obfs: {
+                          open: Boolean(payload.hysteriaObfs),
+                          type: String(payload.hysteriaObfsType || "salamander"),
+                          password: String(payload.hysteriaObfsPassword || "").trim(),
+                      },
+                      tls: {
+                          server_name: String(payload.sni || "").trim(),
+                          allow_insecure: payload.allowInsecure ? 1 : 0,
+                      },
+                      hop_interval: payload.hysteriaHopInterval ?? null,
+                  }
+                : protocolType === "vless"
+                  ? {
+                        security: String(payload.vlessSecurity || "none"),
+                        flow: String(payload.vlessFlow || "none"),
+                        encryption:
+                            payload.vlessEncryption === null
+                                ? null
+                                : payload.vlessEncryption,
+                        encryption_settings:
+                            payload.vlessEncryption === null
+                                ? null
+                                : {
+                                      mode: String(payload.vlessEncMode || ""),
+                                      rtt: String(payload.vlessEncRtt || ""),
+                                      ticket: String(payload.vlessEncTicket || ""),
+                                      server_padding: String(
+                                          payload.vlessEncServerPadding || "",
+                                      ),
+                                      client_padding: String(
+                                          payload.vlessEncClientPadding || "",
+                                      ),
+                                      private_key: String(
+                                          payload.vlessEncPrivateKey || "",
+                                      ),
+                                      password: String(payload.vlessEncPassword || ""),
+                                  },
+                        network: String(payload.transportProtocol || "tcp"),
+                        transport_config: String(
+                            payload.transportConfig || "",
+                        ).trim(),
+                        tls:
+                            payload.vlessSecurity === "reality"
+                                ? 2
+                                : payload.vlessSecurity === "tls"
+                                  ? 1
+                                  : 0,
+                        tls_settings:
+                            payload.vlessSecurity === "tls"
+                                ? {
+                                      server_name: String(payload.sni || "").trim(),
+                                      allow_insecure: payload.allowInsecure ? 1 : 0,
+                                  }
+                                : null,
+                        reality_settings:
+                            payload.vlessSecurity === "reality"
+                                ? {
+                                      server_name: String(
+                                          payload.vlessRealityDest || "",
+                                      ).trim(),
+                                      server_port: String(
+                                          payload.vlessRealityPort || "",
+                                      ).trim(),
+                                      public_key: String(
+                                          payload.vlessRealityPublicKey || "",
+                                      ).trim(),
+                                      private_key: String(
+                                          payload.vlessRealityPrivateKey || "",
+                                      ).trim(),
+                                      short_id: String(
+                                          payload.vlessRealityShortId || "",
+                                      ).trim(),
+                                      allow_insecure: payload.allowInsecure ? 1 : 0,
+                                  }
+                                : null,
+                    }
+                  : protocolType === "tuic"
+                    ? {
+                          version:
+                              String(payload.tuicVersion || "v5") === "v5"
+                                  ? 5
+                                  : 5,
+                          congestion_control: String(
+                              payload.tuicCongestionControl || "bbr",
+                          ).toLowerCase(),
+                          alpn: Array.isArray(payload.tuicAlpn)
+                              ? payload.tuicAlpn
+                              : [],
+                          udp_relay_mode: String(
+                              payload.tuicUdpRelayMode || "native",
+                          ).toLowerCase(),
+                          tls: {
+                              server_name: String(payload.sni || "").trim(),
+                              allow_insecure: payload.allowInsecure ? 1 : 0,
+                          },
+                      }
+                    : protocolType === "mieru"
+                      ? {
+                            multiplex_cost: String(
+                                payload.mieruBandwidth || "low",
+                            ).toLowerCase(),
+                        }
+                    : {
+                          cipher: payload.encryption,
+                          plugin: payload.plugin === "None" ? "" : payload.plugin,
+                        plugin_opts: payload.pluginOpts,
+                        client_fingerprint: "chrome",
+                    };
 
     try {
         await adminStore.saveManagedNodeItem({
@@ -957,7 +1074,7 @@ onUnmounted(function clearDebounceOnUnmount() {
                         </div>
                     </template>
                 </el-table-column>
-                <el-table-column :label="t('nodes.table.visible')" width="90">
+                <el-table-column :label="t('nodes.table.visible')" width="60">
                     <template #default="{ row }">
                         <el-switch
                             :model-value="Boolean(row.show)"
@@ -1051,7 +1168,7 @@ onUnmounted(function clearDebounceOnUnmount() {
 
                 <el-table-column
                     :label="t('nodes.table.actions')"
-                    width="90"
+                    width="60"
                     fixed="right"
                 >
                     <template #default="{ row }">

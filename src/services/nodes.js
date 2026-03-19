@@ -194,11 +194,29 @@ function normalizeManagedNode(node, index) {
     protocolSettings && typeof protocolSettings.tls_settings === "object"
       ? protocolSettings.tls_settings
       : {};
+  const realitySettings =
+    protocolSettings && typeof protocolSettings.reality_settings === "object"
+      ? protocolSettings.reality_settings
+      : {};
+  const hysteriaTls =
+    protocolSettings && typeof protocolSettings.tls === "object"
+      ? protocolSettings.tls
+      : {};
+  const hysteriaBandwidth =
+    protocolSettings && typeof protocolSettings.bandwidth === "object"
+      ? protocolSettings.bandwidth
+      : {};
+  const tuicAlpn =
+    protocolSettings && Array.isArray(protocolSettings.alpn)
+      ? protocolSettings.alpn
+      : [];
+  const tlsValue = protocolSettings?.tls;
   const tlsEnabled =
-    protocolSettings?.tls === 1 ||
-    protocolSettings?.tls === "1" ||
-    protocolSettings?.tls === true ||
-    protocolSettings?.tls === "true";
+    tlsValue === 1 ||
+    tlsValue === "1" ||
+    tlsValue === true ||
+    tlsValue === "true";
+  const realityEnabled = tlsValue === 2 || tlsValue === "2";
   const cipher = String(protocolSettings?.cipher || "").trim();
   const rawPlugin = String(protocolSettings?.plugin || "").trim();
   const plugin = rawPlugin === "obfs" ? "simple-obfs" : rawPlugin;
@@ -219,11 +237,89 @@ function normalizeManagedNode(node, index) {
     pluginOpts,
     tls: tlsEnabled ? "tls" : "none",
     transportProtocol: protocolSettings?.network || "",
-    transportConfig: protocolSettings?.network_settings || "",
-    sni: tlsSettings?.server_name || protocolSettings?.server_name || "",
+    transportConfig:
+      protocolSettings?.network_settings ||
+      protocolSettings?.transport_config ||
+      "",
+    sni:
+      tlsSettings?.server_name ||
+      realitySettings?.server_name ||
+      hysteriaTls?.server_name ||
+      protocolSettings?.server_name ||
+      "",
     allowInsecure: Boolean(
-      tlsSettings?.allow_insecure ?? protocolSettings?.allow_insecure,
+      tlsSettings?.allow_insecure ??
+        realitySettings?.allow_insecure ??
+        hysteriaTls?.allow_insecure ??
+        protocolSettings?.allow_insecure,
     ),
+    hysteriaVersion:
+      protocolSettings?.version !== undefined
+        ? `v${Number(protocolSettings.version) || 2}`
+        : "v2",
+    hysteriaObfs: Boolean(protocolSettings?.obfs?.open),
+    hysteriaUpMbps:
+      hysteriaBandwidth?.up === undefined || hysteriaBandwidth?.up === null
+        ? null
+        : Number(hysteriaBandwidth.up),
+    hysteriaDownMbps:
+      hysteriaBandwidth?.down === undefined || hysteriaBandwidth?.down === null
+        ? null
+        : Number(hysteriaBandwidth.down),
+    hysteriaHopInterval:
+      protocolSettings?.hop_interval === undefined ||
+      protocolSettings?.hop_interval === null
+        ? null
+        : Number(protocolSettings.hop_interval),
+    tuicVersion:
+      protocolSettings?.version !== undefined
+        ? `v${Number(protocolSettings.version) || 5}`
+        : "v5",
+    tuicCongestionControl: String(
+      protocolSettings?.congestion_control || "bbr",
+    ).toLowerCase(),
+    tuicAlpn: tuicAlpn
+      .map(function mapTuicAlpn(alpn) {
+        return String(alpn || "").trim();
+      })
+      .filter(Boolean),
+    tuicUdpRelayMode: String(
+      protocolSettings?.udp_relay_mode || "native",
+    ).toLowerCase(),
+    mieruBandwidth: String(protocolSettings?.multiplex_cost || "low").toLowerCase(),
+    vlessSecurity: String(
+      protocolSettings?.security ||
+        (realityEnabled ? "reality" : tlsEnabled ? "tls" : "none"),
+    ),
+    vlessFlow: String(protocolSettings?.flow || "none"),
+    vlessEncryption:
+      protocolSettings?.encryption === undefined
+        ? null
+        : protocolSettings.encryption,
+    vlessEncMode: String(protocolSettings?.encryption_settings?.mode || ""),
+    vlessEncRtt: String(protocolSettings?.encryption_settings?.rtt || ""),
+    vlessEncTicket: String(protocolSettings?.encryption_settings?.ticket || ""),
+    vlessEncServerPadding: String(
+      protocolSettings?.encryption_settings?.server_padding || "",
+    ),
+    vlessEncClientPadding: String(
+      protocolSettings?.encryption_settings?.client_padding || "",
+    ),
+    vlessEncPrivateKey: String(
+      protocolSettings?.encryption_settings?.private_key || "",
+    ),
+    vlessEncPassword: String(
+      protocolSettings?.encryption_settings?.password || "",
+    ),
+    vlessRealityDest: String(realitySettings?.server_name || ""),
+    vlessRealityPort:
+      realitySettings?.server_port === undefined ||
+      realitySettings?.server_port === null
+        ? ""
+        : String(realitySettings.server_port),
+    vlessRealityPrivateKey: String(realitySettings?.private_key || ""),
+    vlessRealityPublicKey: String(realitySettings?.public_key || ""),
+    vlessRealityShortId: String(realitySettings?.short_id || ""),
     rate: formatNodeRate(node.rate),
     status,
     onlineUsers,
