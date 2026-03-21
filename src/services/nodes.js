@@ -236,7 +236,7 @@ function normalizeManagedNode(node, index) {
     plugin: plugin || "None",
     pluginOpts,
     tls: tlsEnabled ? "tls" : "none",
-    transportProtocol: protocolSettings?.network || "",
+    transportProtocol: protocolSettings?.transport || protocolSettings?.network || "",
     transportConfig:
       protocolSettings?.network_settings ||
       protocolSettings?.transport_config ||
@@ -286,7 +286,7 @@ function normalizeManagedNode(node, index) {
     tuicUdpRelayMode: String(
       protocolSettings?.udp_relay_mode || "native",
     ).toLowerCase(),
-    mieruBandwidth: String(protocolSettings?.multiplex_cost || "low").toLowerCase(),
+    mieruBandwidth: String(protocolSettings?.multiplexing || "low").toLowerCase(),
     vlessSecurity: String(
       protocolSettings?.security ||
         (realityEnabled ? "reality" : tlsEnabled ? "tls" : "none"),
@@ -343,6 +343,14 @@ function normalizeManagedNode(node, index) {
     lastPushAt: formatRelativeTime(node.last_push_at),
     cacheKey: node.cache_key || "--",
     routeId: node.route_id ? String(node.route_id) : "",
+    children: Array.isArray(node.children)
+      ? node.children.map(function mapChild(child) {
+          return {
+            id: String(child?.id || "").trim(),
+            name: String(child?.name || child?.remarks || child?.id || "").trim(),
+          };
+        })
+      : [],
   };
 }
 
@@ -528,6 +536,11 @@ export async function saveManagedNode(payload = {}) {
         })
       : [],
     protocol_settings: protocolSettings,
+    children: Array.isArray(payload.children)
+      ? payload.children.map(function mapChildId(childId) {
+          return Number(childId);
+        }).filter(Boolean)
+      : [],
     type: String(payload.type || "shadowsocks"),
   };
 

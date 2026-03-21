@@ -71,6 +71,14 @@ function cloneManagedNode(node) {
             : Array.isArray(node.tags)
               ? [...node.tags]
               : [],
+        children: Array.isArray(node.children)
+            ? node.children.map(function mapChild(child) {
+                  return {
+                      id: String(child?.id || "").trim(),
+                      name: String(child?.name || child?.id || "").trim(),
+                  };
+              })
+            : [],
     };
 }
 
@@ -265,6 +273,7 @@ const protocolOptions = ref([
     "vmess",
     "hysteria",
     "vless",
+    "fbnode",
     "anytls",
     "mieru",
     "tuic",
@@ -461,6 +470,10 @@ function resolveNodeTypeTagClass(type) {
 
     if (normalizedType === "vless") {
         return "node-type-tag--vless";
+    }
+
+    if (normalizedType === "fbnode") {
+        return "node-type-tag--fbnode";
     }
 
     if (normalizedType === "socks" || normalizedType === "socks5") {
@@ -754,45 +767,77 @@ async function handleNodeDialogSubmit(payload) {
                       }
                     : protocolType === "mieru"
                       ? {
-                            multiplex_cost: String(
+                            transport: String(
+                                payload.transportProtocol || "tcp",
+                            ).toLowerCase(),
+                            multiplexing: String(
                                 payload.mieruBandwidth || "low",
                             ).toLowerCase(),
                         }
-                    : {
-                          cipher: payload.encryption,
-                          plugin: payload.plugin === "None" ? "" : payload.plugin,
-                        plugin_opts: payload.pluginOpts,
+                      : protocolType === "fbnode"
+                        ? {}
+                      : {
+                            cipher: payload.encryption,
+                            plugin: payload.plugin === "None" ? "" : payload.plugin,
+                            plugin_opts: payload.pluginOpts,
                         client_fingerprint: "chrome",
                     };
 
     try {
-        await adminStore.saveManagedNodeItem({
-            id: isEditing
-                ? Number(
-                      activeNode.value?.rawId || activeNode.value?.id || 0,
-                  ) || null
-                : null,
-            specificKey: null,
-            code: "",
-            show: false,
-            name: payload.name,
-            rate: String(payload.baseRate || 1),
-            rateTimeEnable: Boolean(payload.dynamicRate),
-            rateTimeRanges: Array.isArray(payload.dynamicRules)
-                ? payload.dynamicRules
-                : [],
-            tags: Array.isArray(payload.tags) ? payload.tags : [],
-            excludes: [],
-            ips: [],
-            groupIds: Array.isArray(payload.groupIds) ? payload.groupIds : [],
-            host: payload.host,
-            port: payload.port,
-            serverPort: payload.serverPort,
-            parentId: payload.parentId || "0",
-            routeIds: selectedRouteId ? [selectedRouteId] : [],
-            protocolSettings,
-            type: protocolType,
-        });
+        await adminStore.saveManagedNodeItem(
+            protocolType === "fbnode"
+                ? {
+                      id: isEditing
+                          ? Number(
+                                activeNode.value?.rawId || activeNode.value?.id || 0,
+                            ) || null
+                          : null,
+                      type: protocolType,
+                      name: payload.name,
+                      children: Array.isArray(payload.fbnodeChildren)
+                          ? payload.fbnodeChildren
+                                .map(function mapChild(child) {
+                                    return Number(child?.id || 0);
+                                })
+                                .filter(Boolean)
+                          : [],
+                  }
+                : {
+                      id: isEditing
+                          ? Number(
+                                activeNode.value?.rawId || activeNode.value?.id || 0,
+                            ) || null
+                          : null,
+                      specificKey: null,
+                      code: "",
+                      show: false,
+                      name: payload.name,
+                      rate: String(payload.baseRate || 1),
+                      rateTimeEnable: Boolean(payload.dynamicRate),
+                      rateTimeRanges: Array.isArray(payload.dynamicRules)
+                          ? payload.dynamicRules
+                          : [],
+                      tags: Array.isArray(payload.tags) ? payload.tags : [],
+                      excludes: [],
+                      ips: [],
+                      groupIds: Array.isArray(payload.groupIds) ? payload.groupIds : [],
+                      host: payload.host,
+                      port: payload.port,
+                      serverPort: payload.serverPort,
+                      parentId: payload.parentId || "0",
+                      routeIds: selectedRouteId ? [selectedRouteId] : [],
+                      protocolSettings,
+                      children:
+                          protocolType === "fbnode" && Array.isArray(payload.fbnodeChildren)
+                              ? payload.fbnodeChildren
+                                    .map(function mapChild(child) {
+                                        return Number(child?.id || 0);
+                                    })
+                                    .filter(Boolean)
+                              : [],
+                      type: protocolType,
+                  },
+        );
 
         await adminStore.loadManagedNodes({
             page: pagination.value.page,
@@ -1512,6 +1557,12 @@ onUnmounted(function clearDebounceOnUnmount() {
 .node-type-tag.node-type-tag--vless {
     background: #111827;
     border-color: #0f172a;
+    color: #ffffff;
+}
+
+.node-type-tag.node-type-tag--fbnode {
+    background: #2563eb;
+    border-color: #1d4ed8;
     color: #ffffff;
 }
 

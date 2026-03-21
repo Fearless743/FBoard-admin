@@ -78,7 +78,6 @@ const tuicUdpRelayModeOptions = [
     { label: "QUIC", value: "quic" },
 ];
 const mieruBandwidthOptions = [
-    { label: "Off", value: "off" },
     { label: "Low", value: "low" },
     { label: "Middle", value: "middle" },
     { label: "High", value: "high" },
@@ -118,6 +117,10 @@ const vmessTransportOptions = [
     { label: "mKCP", value: "mkcp" },
     { label: "HttpUpgrade", value: "httpupgrade" },
     { label: "XHTTP", value: "xhttp" },
+];
+const mieruTransportOptions = [
+    { label: "TCP", value: "tcp" },
+    { label: "UDP", value: "udp" },
 ];
 
 const vmessTransportTemplates = {
@@ -255,6 +258,10 @@ const isMieruProtocol = computed(function isMieruProtocol() {
     return currentProtocol.value === "mieru";
 });
 
+const isFbnodeProtocol = computed(function isFbnodeProtocol() {
+    return currentProtocol.value === "fbnode";
+});
+
 const pluginOptionsHint = computed(function pluginOptionsHint() {
     const plugin = String(form.plugin || "").trim();
 
@@ -282,9 +289,7 @@ const transportOptions = computed(function transportOptions() {
     }
 
     if (isMieruProtocol.value) {
-        return vmessTransportOptions.filter(function filterOption(option) {
-            return option.value === "tcp";
-        });
+        return mieruTransportOptions;
     }
 
     return vmessTransportOptions.filter(function filterOption(option) {
@@ -315,6 +320,10 @@ const protocolDisplayName = computed(function protocolDisplayName() {
 
     if (isMieruProtocol.value) {
         return "Mieru";
+    }
+
+    if (isFbnodeProtocol.value) {
+        return "Fbnode";
     }
 
     return "Shadowsocks";
@@ -359,6 +368,7 @@ function createDefaultForm() {
         tuicAlpn: [],
         tuicUdpRelayMode: "native",
         mieruBandwidth: "low",
+        fbnodeChildren: [],
         encryption: "aes-128-gcm",
         plugin: "None",
         pluginOpts: "",
@@ -474,6 +484,14 @@ function createFormFromNode(node) {
         tuicAlpn: Array.isArray(node.tuicAlpn) ? [...node.tuicAlpn] : [],
         tuicUdpRelayMode: node.tuicUdpRelayMode || "native",
         mieruBandwidth: node.mieruBandwidth || "low",
+        fbnodeChildren: Array.isArray(node.children)
+            ? node.children.map(function mapChild(child) {
+                  return {
+                      id: String(child?.id || "").trim(),
+                      name: String(child?.name || child?.id || "").trim(),
+                  };
+              })
+            : [],
         encryption: node.encryption || "aes-128-gcm",
         plugin: node.plugin || "None",
         pluginOpts: node.pluginOpts || "",
@@ -553,6 +571,17 @@ function handleTuicAlpnChange(values) {
     form.tuicAlpn = Array.from(new Set(normalized));
 }
 
+function addFbnodeChild() {
+    form.fbnodeChildren.push({
+        id: "",
+        name: "",
+    });
+}
+
+function removeFbnodeChild(index) {
+    form.fbnodeChildren.splice(index, 1);
+}
+
 function syncPortToServerPort() {
     form.serverPort = normalizePortValue(form.port);
 }
@@ -577,6 +606,26 @@ function removeDynamicRule(index) {
 function handleSubmit() {
     if (!String(form.name || "").trim()) {
         ElMessage.warning("请填写节点名称");
+        return;
+    }
+
+    if (isFbnodeProtocol.value) {
+        emit("submit", {
+            protocol: currentProtocol.value,
+            name: String(form.name || "").trim(),
+            fbnodeChildren: Array.isArray(form.fbnodeChildren)
+                ? form.fbnodeChildren
+                      .map(function mapChild(child) {
+                          return {
+                              id: String(child?.id || "").trim(),
+                              name: String(child?.name || "").trim(),
+                          };
+                      })
+                      .filter(function filterChild(child) {
+                          return child.id;
+                      })
+                : [],
+        });
         return;
     }
 
@@ -650,6 +699,18 @@ function handleSubmit() {
         tuicAlpn: Array.isArray(form.tuicAlpn) ? [...form.tuicAlpn] : [],
         tuicUdpRelayMode: String(form.tuicUdpRelayMode || "native").toLowerCase(),
         mieruBandwidth: String(form.mieruBandwidth || "low").toLowerCase(),
+        fbnodeChildren: Array.isArray(form.fbnodeChildren)
+            ? form.fbnodeChildren
+                  .map(function mapChild(child) {
+                      return {
+                          id: String(child?.id || "").trim(),
+                          name: String(child?.name || "").trim(),
+                      };
+                  })
+                  .filter(function filterChild(child) {
+                      return child.id;
+                  })
+            : [],
         tls: form.tls,
         transportProtocol: form.transportProtocol,
         transportConfig: form.transportConfig,
@@ -840,7 +901,7 @@ function handleSubmit() {
             </div>
 
             <el-form-item
-                v-if="!isVmessProtocol && !isTrojanProtocol && !isHysteriaProtocol && !isVlessProtocol && !isTuicProtocol && !isMieruProtocol"
+                v-if="!isVmessProtocol && !isTrojanProtocol && !isHysteriaProtocol && !isVlessProtocol && !isTuicProtocol && !isMieruProtocol && !isFbnodeProtocol"
                 label="加密算法"
                 class="node-config-form__item"
             >
@@ -867,7 +928,7 @@ function handleSubmit() {
             </el-form-item>
 
             <el-form-item
-                v-if="!isVmessProtocol && !isTrojanProtocol && !isHysteriaProtocol && !isVlessProtocol && !isTuicProtocol && !isMieruProtocol"
+                v-if="!isVmessProtocol && !isTrojanProtocol && !isHysteriaProtocol && !isVlessProtocol && !isTuicProtocol && !isMieruProtocol && !isFbnodeProtocol"
                 label="插件"
                 class="node-config-form__item"
             >
@@ -881,7 +942,7 @@ function handleSubmit() {
                 </el-select>
             </el-form-item>
             <el-form-item
-                v-if="!isVmessProtocol && !isTrojanProtocol && !isHysteriaProtocol && !isVlessProtocol && !isTuicProtocol && !isMieruProtocol"
+                v-if="!isVmessProtocol && !isTrojanProtocol && !isHysteriaProtocol && !isVlessProtocol && !isTuicProtocol && !isMieruProtocol && !isFbnodeProtocol"
                 label="插件选项"
                 class="node-config-form__item"
             >
@@ -1025,17 +1086,6 @@ function handleSubmit() {
                 <el-select v-model="form.tuicUdpRelayMode" placeholder="选择UDP中继模式">
                     <el-option
                         v-for="option in tuicUdpRelayModeOptions"
-                        :key="option.value"
-                        :label="option.label"
-                        :value="option.value"
-                    />
-                </el-select>
-            </el-form-item>
-
-            <el-form-item v-if="isMieruProtocol" label="多路复用" class="node-config-form__item">
-                <el-select v-model="form.mieruBandwidth" placeholder="选择多路复用">
-                    <el-option
-                        v-for="option in mieruBandwidthOptions"
                         :key="option.value"
                         :label="option.label"
                         :value="option.value"
@@ -1256,7 +1306,7 @@ function handleSubmit() {
             </el-form-item>
 
             <el-form-item
-                v-if="isVmessProtocol || isTrojanProtocol || isVlessProtocol"
+                v-if="isVmessProtocol || isTrojanProtocol || isVlessProtocol || isMieruProtocol"
                 class="node-config-form__item"
             >
                 <template #label>
@@ -1283,6 +1333,61 @@ function handleSubmit() {
                     />
                 </el-select>
             </el-form-item>
+
+            <el-form-item v-if="isMieruProtocol" label="多路复用" class="node-config-form__item">
+                <el-select v-model="form.mieruBandwidth" placeholder="选择多路复用">
+                    <el-option
+                        v-for="option in mieruBandwidthOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                    />
+                </el-select>
+            </el-form-item>
+
+            <div v-if="isFbnodeProtocol" class="node-rate-rules">
+                <div class="node-rate-rules__head">
+                    <span>子节点</span>
+                    <el-button link type="primary" @click="addFbnodeChild">
+                        + 添加子节点
+                    </el-button>
+                </div>
+
+                <div
+                    v-for="(child, index) in form.fbnodeChildren"
+                    :key="`fbnode-child-${index}`"
+                    class="node-rate-rule-card"
+                >
+                    <div class="node-rate-rule-card__head">
+                        <strong>子节点 {{ index + 1 }}</strong>
+                        <el-button
+                            type="danger"
+                            link
+                            :icon="Delete"
+                            @click="removeFbnodeChild(index)"
+                        />
+                    </div>
+
+                    <div class="node-config-form__row node-config-form__row--half">
+                        <el-form-item label="子节点 ID" class="node-config-form__item">
+                            <el-input
+                                v-model="child.id"
+                                placeholder="请输入子节点 ID"
+                            />
+                        </el-form-item>
+                        <el-form-item label="节点名称" class="node-config-form__item">
+                            <el-input
+                                v-model="child.name"
+                                placeholder="选填，用于前端识别"
+                            />
+                        </el-form-item>
+                    </div>
+                </div>
+
+                <p v-if="!form.fbnodeChildren.length" class="node-config-form__hint">
+                    可添加多个子节点 ID，保存时会写入 `children`
+                </p>
+            </div>
 
             <el-form-item label="父级节点" class="node-config-form__item">
                 <el-select v-model="form.parentId" clearable placeholder="无">
