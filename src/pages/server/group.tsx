@@ -1,0 +1,203 @@
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { PageHeader } from "@/components/common/page-header";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { EmptyState } from "@/components/common/empty-state";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { dropGroup, fetchGroups, saveGroup, type ServerGroup } from "@/api/server";
+
+export function GroupListPage() {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<ServerGroup | null>(null);
+  const [deleting, setDeleting] = useState<ServerGroup | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["server", "groups"],
+    queryFn: fetchGroups,
+  });
+  const groups = data || [];
+
+  return (
+    <>
+      <PageHeader
+        title={t("group.title")}
+        description={t("group.description")}
+        actions={
+          <Button onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus className="h-4 w-4" />
+            {t("group.form.add")}
+          </Button>
+        }
+      />
+
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">{t("group.columns.id")}</TableHead>
+              <TableHead>{t("group.columns.name")}</TableHead>
+              <TableHead className="w-32 text-right">{t("group.columns.actions")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                </TableRow>
+              ))
+            ) : groups.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3}><EmptyState /></TableCell>
+              </TableRow>
+            ) : (
+              groups.map((g) => (
+                <TableRow key={g.id}>
+                  <TableCell className="font-mono text-xs">#{g.id}</TableCell>
+                  <TableCell className="font-medium">{g.name}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => { setEditing(g); setOpen(true); }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => setDeleting(g)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <GroupFormDialog
+        open={open}
+        onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}
+        group={editing}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["server", "groups"] })}
+      />
+
+      <ConfirmDialog
+        open={!!deleting}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        title={t("group.messages.deleteConfirm")}
+        description={t("group.messages.deleteDescription")}
+        onConfirm={async () => {
+          if (!deleting) return;
+          try {
+            await dropGroup(deleting.id);
+            toast.success(t("common.delete.success"));
+            qc.invalidateQueries({ queryKey: ["server", "groups"] });
+            setDeleting(null);
+          } catch (e) {}
+        }}
+      />
+    </>
+  );
+}
+
+function GroupFormDialog({
+  open,
+  onOpenChange,
+  group,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  group: ServerGroup | null;
+  onSaved: () => void;
+}) {
+  const { t } = useTranslation();
+  const [name, setName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useState(() => {
+    if (open) setName(group?.name || "");
+  });
+
+  if (open && name === "" && group?.name) setName(group.name);
+
+  const submit = async () => {
+    if (!name.trim()) {
+      toast.error(t("group.form.namePlaceholder"));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await saveGroup({ id: group?.id, name });
+      toast.success(group ? t("group.messages.updateSuccess") : t("group.messages.createSuccess"));
+      onSaved();
+      onOpenChange(false);
+      setName("");
+    } catch (e) {
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {group ? t("group.form.edit") : t("group.form.add")}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-1.5">
+          <Label>{t("group.form.name")}</Label>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t("group.form.namePlaceholder")}
+          />
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("group.form.cancel")}
+          </Button>
+          <Button onClick={submit} disabled={submitting}>
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {group ? t("group.form.update") : t("group.form.create")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
