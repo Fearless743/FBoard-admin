@@ -51,18 +51,18 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "description": "禁用后，此模板将无法生成或兑换新的礼品卡。"
         },
         "display": {
-          "title": "显示效果"
-        },
-        "theme_color": {
-          "label": "主题颜色"
-        },
-        "icon": {
-          "label": "图标",
-          "placeholder": "请输入图标的URL"
-        },
-        "background_image": {
-          "label": "背景图片",
-          "placeholder": "请输入背景图片的URL"
+          "title": "显示效果",
+          "theme_color": {
+            "label": "主题颜色"
+          },
+          "icon": {
+            "label": "图标",
+            "placeholder": "请输入图标的URL"
+          },
+          "background_image": {
+            "label": "背景图片",
+            "placeholder": "请输入背景图片的URL"
+          }
         },
         "conditions": {
           "title": "使用条件",
@@ -71,7 +71,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
             "placeholder": "例如: 7 (仅限注册7天内的用户)"
           },
           "new_user_only": {
-            "label": "仅限新用户"
+            "label": "仅限新用户",
+            "hint": "需注册天数 ≤ {{days}}"
           },
           "paid_user_only": {
             "label": "仅限付费用户"
@@ -97,15 +98,15 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "cooldown_hours": {
             "label": "同类卡冷却时间(小时)",
             "placeholder": "留空则不限制"
-          },
-          "invite_reward_rate": {
-            "label": "邀请人奖励比例",
-            "placeholder": "例如: 0.2 (代表20%)",
-            "description": "使用者有邀请人时，给邀请人的奖励 = 余额奖励 * 此比例"
           }
         },
         "rewards": {
           "title": "奖励内容",
+          "invite_reward_rate": {
+            "label": "邀请人奖励比例",
+            "placeholder": "例如: 0.2 (代表20%)",
+            "description": "使用者有邀请人时，给邀请人的奖励 = 余额奖励 * 此比例"
+          },
           "balance": {
             "label": "奖励余额 (元)",
             "short_label": "余额",
@@ -513,6 +514,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "subscription": "订阅计划",
         "subscription_none": "无",
         "account_status": "账户状态",
+        "banned_hint": "用户无法登录、无法使用订阅服务",
+        "normal_hint": "用户可以正常使用所有服务",
         "commission_type": "佣金类型",
         "commission_type_system": "跟随系统设置",
         "commission_type_cycle": "循环返利",
@@ -2653,7 +2656,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "placeholder": "优惠券类型"
       },
       "value": {
-        "placeholder": "请输入值"
+        "placeholder": "请输入金额（元）"
       },
       "validity": {
         "label": "优惠券有效期",
@@ -3051,6 +3054,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     }
   },
   "common": {
+    "all": "全部",
     "loading": "加载中...",
     "error": "错误",
     "success": "成功",

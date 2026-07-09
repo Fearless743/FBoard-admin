@@ -51,18 +51,18 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "description": "禁用后，此模板将无法生成或兑换新的礼品卡。"
         },
         "display": {
-          "title": "显示效果"
-        },
-        "theme_color": {
-          "label": "主题颜色"
-        },
-        "icon": {
-          "label": "图标",
-          "placeholder": "请输入图标的URL"
-        },
-        "background_image": {
-          "label": "背景图片",
-          "placeholder": "请输入背景图片的URL"
+          "title": "显示效果",
+          "theme_color": {
+            "label": "主题颜色"
+          },
+          "icon": {
+            "label": "图标",
+            "placeholder": "请输入图标的URL"
+          },
+          "background_image": {
+            "label": "背景图片",
+            "placeholder": "请输入背景图片的URL"
+          }
         },
         "conditions": {
           "title": "使用条件",
@@ -71,7 +71,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
             "placeholder": "例如: 7 (仅限注册7天内的用户)"
           },
           "new_user_only": {
-            "label": "仅限新用户"
+            "label": "仅限新用户",
+            "hint": "需注册天数 ≤ {{days}}"
           },
           "paid_user_only": {
             "label": "仅限付费用户"
@@ -97,15 +98,15 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "cooldown_hours": {
             "label": "同类卡冷却时间(小时)",
             "placeholder": "留空则不限制"
-          },
-          "invite_reward_rate": {
-            "label": "邀请人奖励比例",
-            "placeholder": "例如: 0.2 (代表20%)",
-            "description": "使用者有邀请人时，给邀请人的奖励 = 余额奖励 * 此比例"
           }
         },
         "rewards": {
           "title": "奖励内容",
+          "invite_reward_rate": {
+            "label": "邀请人奖励比例",
+            "placeholder": "例如: 0.2 (代表20%)",
+            "description": "使用者有邀请人时，给邀请人的奖励 = 余额奖励 * 此比例"
+          },
           "balance": {
             "label": "奖励余额 (元)",
             "short_label": "余额",
@@ -513,6 +514,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "subscription": "订阅计划",
         "subscription_none": "无",
         "account_status": "账户状态",
+        "banned_hint": "用户无法登录、无法使用订阅服务",
+        "normal_hint": "用户可以正常使用所有服务",
         "commission_type": "佣金类型",
         "commission_type_system": "跟随系统设置",
         "commission_type_cycle": "循环返利",
@@ -922,6 +925,11 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "placeholder": "请输入站点名称",
           "description": "用于显示需要站点名称的地方。"
         },
+        "logo": {
+          "label": "站点 LOGO",
+          "placeholder": "请输入LOGO URL，末尾不要/",
+          "description": "用于显示需要LOGO的地方。"
+        },
         "siteDescription": {
           "label": "站点描述",
           "placeholder": "请输入站点描述",
@@ -935,11 +943,6 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "forceHttps": {
           "label": "强制HTTPS",
           "description": "当站点没有使用HTTPS，CDN或反代开启强制HTTPS时需要开启。"
-        },
-        "logo": {
-          "label": "LOGO",
-          "placeholder": "请输入LOGO URL，末尾不要/",
-          "description": "用于显示需要LOGO的地方。"
         },
         "subscribeUrl": {
           "label": "订阅URL",
@@ -1161,6 +1164,14 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "title": "在订阅中线路名称中显示协议名称",
         "description": "开启后订阅线路会附带协议名称（例如: [Hy2]香港）"
       },
+      "default_remind_expire": {
+        "title": "新用户默认开启到期提醒",
+        "description": "开启后新注册用户默认启用订阅到期提醒，可在用户管理单独调整。"
+      },
+      "default_remind_traffic": {
+        "title": "新用户默认开启流量提醒",
+        "description": "开启后新注册用户默认启用流量不足提醒，可在用户管理单独调整。"
+      },
       "saving": "保存中...",
       "plan": {
         "title": "订阅套餐",
@@ -1171,7 +1182,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "save": "保存排序"
         },
         "columns": {
-          "id": "ID",
+          "id": "编号",
           "show": "显示",
           "sell": "新购",
           "renew": "续费",
@@ -1301,30 +1312,36 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "tab_templates": "模板管理",
       "email_host": {
         "title": "SMTP主机",
-        "description": "SMTP服务器地址，例如：smtp.gmail.com"
+        "description": "SMTP服务器地址，例如：smtp.gmail.com",
+        "placeholder": "smtp.example.com"
       },
       "email_port": {
         "title": "SMTP端口",
-        "description": "SMTP服务器端口，常用端口：25, 465, 587"
+        "description": "SMTP服务器端口，常用端口：25, 465, 587",
+        "placeholder": "465"
       },
       "email_username": {
         "title": "SMTP用户名",
-        "description": "SMTP认证用户名"
+        "description": "SMTP认证用户名",
+        "placeholder": "user@example.com"
       },
       "email_password": {
         "title": "SMTP密码",
-        "description": "SMTP认证密码或应用专用密码"
+        "description": "SMTP认证密码或应用专用密码",
+        "placeholder": "请输入密码或应用专用密码"
       },
       "email_encryption": {
         "title": "加密方式",
         "description": "邮件加密方式",
+        "placeholder": "选择加密方式",
         "none": "无",
         "ssl": "SSL/TLS",
         "tls": "STARTTLS"
       },
-      "email_from": {
+      "email_from_address": {
         "title": "发件人地址",
-        "description": "发件人邮箱地址"
+        "description": "发件人邮箱地址",
+        "placeholder": "noreply@example.com"
       },
       "email_from_name": {
         "title": "发件人名称",
@@ -1335,7 +1352,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "description": "自定义邮件模板方式请查看文档",
         "placeholder": "选择邮件模板"
       },
-      "remind_mail": {
+      "remind_mail_enable": {
         "title": "邮件提醒",
         "description": "开启后用户订阅即将到期或流量不足时会收到邮件通知。"
       },
@@ -1344,7 +1361,11 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "sending": "发送中...",
         "description": "发送测试邮件以验证配置",
         "success": "测试邮件发送成功",
-        "error": "测试邮件发送失败"
+        "error": "测试邮件发送失败",
+        "label_to": "收件人",
+        "label_subject": "主题",
+        "placeholder_to": "user@example.com",
+        "placeholder_subject": "测试邮件主题"
       }
     },
     "telegram": {
@@ -1356,7 +1377,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "placeholder": "0000000000:xxxxxxxxx_xxxxxxxxxxxxxxx"
       },
       "webhook_url": {
-        "title": "Webhook Base URL",
+        "title": "Webhook 基础地址",
         "description": "这里只填写基础地址，系统会自动拼接 Telegram 的完整 Webhook 回调路径。留空时默认使用站点网址。",
         "docs": "查看 Telegram Webhook 文档",
         "placeholder": "https://example.com"
@@ -1367,6 +1388,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "button": "一键设置",
         "setting": "设置中...",
         "success": "Webhook 设置成功",
+        "error": "Webhook 设置失败",
         "target_default": "当前将使用站点网址作为 Webhook Base URL。",
         "target_custom": "当前将使用自定义 Webhook Base URL：{{url}}",
         "debug": {
@@ -1425,9 +1447,14 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     },
     "common": {
       "saving": "保存中...",
-      "save_success": "已自动保存",
+      "save": "保存",
+      "save_success": "保存成功",
+      "save_error": "保存失败",
+      "reset": "重置",
       "placeholder": "请输入",
-      "autoSaved": "已自动保存"
+      "autoSaved": "已自动保存",
+      "saved_at": "{{seconds}} 秒前已保存",
+      "invalidJson": "JSON 格式错误"
     },
     "invite": {
       "title": "邀请&佣金设置",
@@ -1480,6 +1507,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "l3": "三级邀请人比例",
         "placeholder": "请输入比例，如：50"
       },
+      "distribution_total": "当前分销比例合计：{{total}}%（不应超过 100%）",
       "saving": "保存中..."
     },
     "server": {
@@ -2653,7 +2681,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "placeholder": "优惠券类型"
       },
       "value": {
-        "placeholder": "请输入值"
+        "placeholder": "请输入金额（元）"
       },
       "validity": {
         "label": "优惠券有效期",
@@ -3051,6 +3079,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     }
   },
   "common": {
+    "all": "全部",
     "loading": "加载中...",
     "error": "错误",
     "success": "成功",

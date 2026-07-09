@@ -51,18 +51,18 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "description": "When disabled, this template cannot generate or redeem new gift cards."
         },
         "display": {
-          "title": "Display Effect"
-        },
-        "theme_color": {
-          "label": "Theme Color"
-        },
-        "icon": {
-          "label": "Icon",
-          "placeholder": "Please enter icon URL"
-        },
-        "background_image": {
-          "label": "Background Image",
-          "placeholder": "Please enter background image URL"
+          "title": "Display Effect",
+          "theme_color": {
+            "label": "Theme Color"
+          },
+          "icon": {
+            "label": "Icon",
+            "placeholder": "Please enter icon URL"
+          },
+          "background_image": {
+            "label": "Background Image",
+            "placeholder": "Please enter background image URL"
+          }
         },
         "conditions": {
           "title": "Usage Conditions",
@@ -71,7 +71,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "placeholder": "Example: 7 (Only for users registered within 7 days)"
           },
           "new_user_only": {
-            "label": "New Users Only"
+            "label": "New Users Only",
+            "hint": "Registration days ≤ {{days}}"
           },
           "paid_user_only": {
             "label": "Paid Users Only"
@@ -97,15 +98,15 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "cooldown_hours": {
             "label": "Cooldown Hours for Same Type",
             "placeholder": "Leave empty for no limit"
-          },
-          "invite_reward_rate": {
-            "label": "Inviter Reward Rate",
-            "placeholder": "Example: 0.2 (represents 20%)",
-            "description": "When user has an inviter, inviter reward = balance reward × this rate"
           }
         },
         "rewards": {
           "title": "Rewards",
+          "invite_reward_rate": {
+            "label": "Inviter Reward Rate",
+            "placeholder": "Example: 0.2 (represents 20%)",
+            "description": "When user has an inviter, inviter reward = balance reward × this rate"
+          },
           "balance": {
             "label": "Reward Balance (Yuan)",
             "short_label": "Balance",
@@ -513,6 +514,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "subscription": "Subscription Plan",
         "subscription_none": "None",
         "account_status": "Account Status",
+        "banned_hint": "User cannot log in or use subscription services",
+        "normal_hint": "User can use all services normally",
         "commission_type": "Commission Type",
         "commission_type_system": "Follow System Settings",
         "commission_type_cycle": "Cycle Commission",
@@ -1001,6 +1004,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "l3": "Level 3 Inviter Ratio",
         "placeholder": "Enter ratio e.g. 50"
       },
+      "distribution_total": "Current distribution total: {{total}}% (should not exceed 100%)",
       "saving": "Saving..."
     },
     "site": {
@@ -1027,7 +1031,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "description": "Need to enable when the site is not using HTTPS but CDN or reverse proxy has forced HTTPS."
         },
         "logo": {
-          "label": "LOGO",
+          "label": "Site LOGO",
           "placeholder": "Please enter LOGO URL, without trailing /",
           "description": "Used where LOGO needs to be displayed."
         },
@@ -1251,6 +1255,14 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "title": "Show Protocol in Node Names",
         "description": "When enabled, subscription lines will include protocol names (e.g., [Hy2]Hong Kong)"
       },
+      "default_remind_expire": {
+        "title": "Enable Expiry Reminder by Default",
+        "description": "When enabled, newly registered users will have subscription expiry reminders turned on by default. Adjustable per user."
+      },
+      "default_remind_traffic": {
+        "title": "Enable Traffic Reminder by Default",
+        "description": "When enabled, newly registered users will have low-traffic reminders turned on by default. Adjustable per user."
+      },
       "saving": "Saving...",
       "plan": {
         "title": "Subscription Plans",
@@ -1391,30 +1403,36 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "tab_templates": "Templates",
       "email_host": {
         "title": "SMTP Host",
-        "description": "SMTP server address, e.g., smtp.gmail.com"
+        "description": "SMTP server address, e.g., smtp.gmail.com",
+        "placeholder": "smtp.example.com"
       },
       "email_port": {
         "title": "SMTP Port",
-        "description": "SMTP server port, common ports: 25, 465, 587"
+        "description": "SMTP server port, common ports: 25, 465, 587",
+        "placeholder": "465"
       },
       "email_username": {
         "title": "SMTP Username",
-        "description": "SMTP authentication username"
+        "description": "SMTP authentication username",
+        "placeholder": "user@example.com"
       },
       "email_password": {
         "title": "SMTP Password",
-        "description": "SMTP authentication password or application-specific password"
+        "description": "SMTP authentication password or application-specific password",
+        "placeholder": "Enter password or app-specific password"
       },
       "email_encryption": {
         "title": "Encryption Method",
         "description": "Email encryption method",
+        "placeholder": "Select encryption method",
         "none": "None",
         "ssl": "SSL/TLS",
         "tls": "STARTTLS"
       },
-      "email_from": {
+      "email_from_address": {
         "title": "From Address",
-        "description": "Sender's email address"
+        "description": "Sender's email address",
+        "placeholder": "noreply@example.com"
       },
       "email_from_name": {
         "title": "From Name",
@@ -1425,7 +1443,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "description": "You can check the documentation for how to customize email templates",
         "placeholder": "Select email template"
       },
-      "remind_mail": {
+      "remind_mail_enable": {
         "title": "Email Reminders",
         "description": "When enabled, users will receive email notifications when their subscription is about to expire or when traffic is running low."
       },
@@ -1434,7 +1452,11 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "sending": "Sending...",
         "description": "Send a test email to verify the configuration",
         "success": "Test email sent successfully",
-        "error": "Failed to send test email"
+        "error": "Failed to send test email",
+        "label_to": "To",
+        "label_subject": "Subject",
+        "placeholder_to": "user@example.com",
+        "placeholder_subject": "Test email subject"
       }
     },
     "telegram": {
@@ -1457,6 +1479,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "button": "One-Click Setup",
         "setting": "Setting Webhook...",
         "success": "Webhook set successfully",
+        "error": "Failed to set Webhook",
         "target_default": "The site URL will be used as the Webhook Base URL.",
         "target_custom": "The custom Webhook Base URL currently in use is: {{url}}",
         "debug": {
@@ -1515,9 +1538,14 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     },
     "common": {
       "saving": "Saving...",
-      "save_success": "Saved automatically",
+      "save": "Save",
+      "save_success": "Saved successfully",
+      "save_error": "Save failed",
+      "reset": "Reset",
       "placeholder": "Please input",
-      "autoSaved": "Saved automatically"
+      "autoSaved": "Auto-saved",
+      "saved_at": "Saved {{seconds}}s ago",
+      "invalidJson": "Invalid JSON"
     },
     "subscribe_template": {
       "title": "Subscribe Templates",
@@ -2624,7 +2652,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "placeholder": "Select coupon type"
       },
       "value": {
-        "placeholder": "Enter value"
+        "placeholder": "Enter value (yuan)"
       },
       "validity": {
         "label": "Validity Period",
@@ -3023,6 +3051,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     }
   },
   "common": {
+    "all": "All",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",

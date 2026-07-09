@@ -63,6 +63,14 @@ export async function dropNotice(id: number) {
   return adminPost<any>("/notice/drop", { id });
 }
 
+export async function toggleNoticeShow(id: number, show: 0 | 1) {
+  return adminPost<any>("/notice/show", { id, show });
+}
+
+export async function sortNotices(ids: number[]) {
+  return adminPost<any>("/notice/sort", { ids });
+}
+
 /* ============ 优惠券 ============ */
 export interface CouponItem {
   id: number;
@@ -129,6 +137,10 @@ export async function deleteGiftCardTemplate(id: number) {
   return adminPost<any>("/gift-card/delete-template", { id });
 }
 
+export async function sortGiftCardTemplates(ids: number[]) {
+  return adminPost<any>("/gift-card/sort-templates", { ids });
+}
+
 export async function generateGiftCardCodes(payload: any) {
   return adminPost<any>("/gift-card/generate-codes", payload);
 }
@@ -141,8 +153,20 @@ export async function fetchGiftCardUsages() {
   return adminGet<{ data: any[] }>("/gift-card/usages");
 }
 
-export async function toggleGiftCardCode(payload: { id: number; status: 0 | 1 }) {
+export async function toggleGiftCardCode(payload: { id: number; action: "enable" | "disable" }) {
   return adminPost<any>("/gift-card/toggle-code", payload);
+}
+
+export async function updateGiftCardCode(payload: { id: number; [k: string]: any }) {
+  return adminPost<any>("/gift-card/update-code", payload);
+}
+
+export async function deleteGiftCardCode(id: number) {
+  return adminPost<any>("/gift-card/delete-code", { id });
+}
+
+export async function exportGiftCardCodes() {
+  return adminGet<any>("/gift-card/export-codes");
 }
 
 export async function fetchGiftCardStatistics() {
@@ -181,6 +205,14 @@ export async function dropPayment(id: number) {
   return adminPost<any>("/payment/drop", { id });
 }
 
+export async function togglePaymentShow(id: number, enable: 0 | 1) {
+  return adminPost<any>("/payment/show", { id, enable });
+}
+
+export async function sortPayments(ids: number[]) {
+  return adminPost<any>("/payment/sort", { ids });
+}
+
 export async function getPaymentMethods() {
   return adminGet<{ data: Array<{ name: string; label: string; fields: any[] }> }>("/payment/getPaymentMethods");
 }
@@ -198,6 +230,10 @@ export interface KnowledgeItem {
   content: string;
   show: 0 | 1;
   [k: string]: any;
+}
+
+export async function fetchKnowledgeCategories(): Promise<string[]> {
+  return adminGet<string[]>("/knowledge/getCategory");
 }
 
 export async function fetchKnowledges(): Promise<KnowledgeItem[]> {
@@ -226,7 +262,7 @@ export async function getThemes(): Promise<any[]> {
 }
 
 export async function getThemeConfig(name: string) {
-  return adminGet<any>("/theme/getThemeConfig", { name });
+  return adminPost<any>("/theme/getThemeConfig", { name });
 }
 
 export async function saveThemeConfig(payload: { name: string; config: any }) {
@@ -242,12 +278,20 @@ export async function deleteTheme(name: string) {
 }
 
 /* ============ 插件 ============ */
+export async function fetchPluginTypes(): Promise<any[]> {
+  return adminGet<any[]>("/plugin/types");
+}
+
 export async function fetchPlugins(): Promise<any[]> {
   return adminGet<any[]>("/plugin/getPlugins");
 }
 
 export async function installPlugin(name: string) {
   return adminPost<any>("/plugin/install", { name });
+}
+
+export async function upgradePlugin(name: string) {
+  return adminPost<any>("/plugin/upgrade", { name });
 }
 
 export async function uninstallPlugin(name: string) {

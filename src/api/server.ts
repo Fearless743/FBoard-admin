@@ -73,8 +73,28 @@ export interface Server {
   [k: string]: any;
 }
 
-export async function getNodes(): Promise<Server[]> {
+export async function getNodes(params?: { current?: number; pageSize?: number; search?: string; type?: string; show_virtual?: boolean }): Promise<Server[]> {
+  if (params) {
+    const searchParams = new URLSearchParams();
+    if (params.current) searchParams.set('current', String(params.current));
+    if (params.pageSize) searchParams.set('pageSize', String(params.pageSize));
+    if (params.search) searchParams.set('search', params.search);
+    if (params.type) searchParams.set('type', params.type);
+    if (params.show_virtual) searchParams.set('show_virtual', '1');
+    return adminGet<Server[]>("/server/manage/getNodes?" + searchParams.toString());
+  }
   return adminGet<Server[]>("/server/manage/getNodes");
+}
+
+export interface SortNode {
+  id: number;
+  name: string;
+  sort: number;
+  type: string;
+}
+
+export async function getSortNodes(): Promise<SortNode[]> {
+  return adminGet<SortNode[]>("/server/manage/get-sort-nodes");
 }
 
 export async function saveServer(payload: Partial<Server>) {
@@ -109,6 +129,38 @@ export async function batchUpdateServer(payload: { ids: number[]; show?: number;
   return adminPost<any>("/server/manage/batchUpdate", payload);
 }
 
+export async function createChildNode(payload: { parent_id: number; name: string; host: string; port: number; group_ids?: number[]; tags?: string[]; show?: boolean }) {
+  return adminPost<any>("/server/manage/create-child-node", payload);
+}
+
+export async function getChildNodes(parentId: number) {
+  return adminGet<Server[]>("/server/manage/get-children/" + parentId);
+}
+
+export async function generateRealityKey() {
+  return adminGet<{ public_key: string; private_key: string }>("/server/manage/generate-reality-key");
+}
+
+export interface VirtualNode {
+  host: string;
+  port: number;
+  group_ids?: number[];
+  tags?: string[];
+}
+
+export async function saveVirtualNodes(serverId: number, virtualNodes: VirtualNode[]) {
+  return adminPost<any>("/server/manage/save-virtual-nodes/" + serverId, { virtual_nodes: virtualNodes });
+}
+
+export async function getVirtualNodes(serverId: number): Promise<VirtualNode[]> {
+  const res = await adminGet<any>(`/server/manage/get-virtual-nodes/${serverId}`);
+  return res?.data || res || [];
+}
+
+export async function sortServers(ids: number[]) {
+  return adminPost<any>("/server/manage/sort", { ids });
+}
+
 export async function generateEchKey() {
   return adminGet<any>("/server/manage/generateEchKey");
 }
@@ -140,7 +192,8 @@ export interface ProtocolType {
 }
 
 export async function fetchProtocolDefinitions(): Promise<ProtocolDefinition[]> {
-  return adminGet<ProtocolDefinition[]>("/server/protocols/definitions");
+  const res = await adminGet<any>("/server/protocols/definitions");
+  return Object.values(res || {});
 }
 
 export async function fetchProtocolTypes(): Promise<ProtocolType[]> {

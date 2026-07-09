@@ -51,6 +51,7 @@ export const router = createHashRouter([
       { path: "machine", element: <MachineListPage /> },
 
       { path: "config", element: <ConfigPage /> },
+      { path: "config/:tab", element: <ConfigPage /> },
       { path: "theme", element: <ThemePage /> },
       { path: "plugin", element: <PluginPage /> },
       { path: "notice", element: <NoticeListPage /> },

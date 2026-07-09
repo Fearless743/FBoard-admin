@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { savePlan, updatePlan, type Plan } from "@/api/plan";
+import { savePlan, type Plan } from "@/api/plan";
 
 interface FormValues {
   id?: number;
@@ -97,18 +97,18 @@ export function PlanFormDialog({
         device_limit: plan?.device_limit ?? 0,
         capacity_limit: plan?.capacity_limit ?? 0,
         group_id: plan?.group_id ?? null,
-        month_price: pr.monthly ?? null,
-        quarter_price: pr.quarterly ?? null,
-        half_year_price: pr.half_yearly ?? null,
-        year_price: pr.yearly ?? null,
-        two_year_price: pr.two_yearly ?? null,
-        three_year_price: pr.three_yearly ?? null,
-        onetime_price: pr.onetime ?? null,
-        reset_price: pr.reset_traffic ?? null,
+        month_price: pr.monthly != null ? Number(pr.monthly) : null,
+        quarter_price: pr.quarterly != null ? Number(pr.quarterly) : null,
+        half_year_price: pr.half_yearly != null ? Number(pr.half_yearly) : null,
+        year_price: pr.yearly != null ? Number(pr.yearly) : null,
+        two_year_price: pr.two_yearly != null ? Number(pr.two_yearly) : null,
+        three_year_price: pr.three_yearly != null ? Number(pr.three_yearly) : null,
+        onetime_price: pr.onetime != null ? Number(pr.onetime) : null,
+        reset_price: pr.reset_traffic != null ? Number(pr.reset_traffic) : null,
         reset_traffic_method: plan?.reset_traffic_method ?? 0,
-        show: plan?.show !== 0,
-        sell: plan?.sell !== 0,
-        renew: plan?.renew !== 0,
+        show: Number(plan?.show) === 1,
+        sell: Number(plan?.sell) === 1,
+        renew: Number(plan?.renew) === 1,
         content: plan?.content || "",
       });
     }
@@ -128,28 +128,25 @@ export function PlanFormDialog({
         renew: values.renew ? 1 : 0,
         content: values.content || "",
         prices: {
-          monthly: values.month_price || null,
-          quarterly: values.quarter_price || null,
-          half_yearly: values.half_year_price || null,
-          yearly: values.year_price || null,
-          two_yearly: values.two_year_price || null,
-          three_yearly: values.three_year_price || null,
-          onetime: values.onetime_price || null,
-          reset_traffic: values.reset_price || null,
+          monthly: values.month_price !== null && values.month_price !== undefined && !isNaN(values.month_price) ? Number(values.month_price) : null,
+          quarterly: values.quarter_price !== null && values.quarter_price !== undefined && !isNaN(values.quarter_price) ? Number(values.quarter_price) : null,
+          half_yearly: values.half_year_price !== null && values.half_year_price !== undefined && !isNaN(values.half_year_price) ? Number(values.half_year_price) : null,
+          yearly: values.year_price !== null && values.year_price !== undefined && !isNaN(values.year_price) ? Number(values.year_price) : null,
+          two_yearly: values.two_year_price !== null && values.two_year_price !== undefined && !isNaN(values.two_year_price) ? Number(values.two_year_price) : null,
+          three_yearly: values.three_year_price !== null && values.three_year_price !== undefined && !isNaN(values.three_year_price) ? Number(values.three_year_price) : null,
+          onetime: values.onetime_price !== null && values.onetime_price !== undefined && !isNaN(values.onetime_price) ? Number(values.onetime_price) : null,
+          reset_traffic: values.reset_price !== null && values.reset_price !== undefined && !isNaN(values.reset_price) ? Number(values.reset_price) : null,
         },
       };
       if (plan?.id) payload.id = plan.id;
-
-      if (plan) {
-        await updatePlan({ ...payload, id: plan.id });
-        toast.success(t("subscribe.plan.form.submit.success.update"));
-      } else {
-        await savePlan(payload);
-        toast.success(t("subscribe.plan.form.submit.success.add"));
-      }
+      await savePlan(payload);
+      toast.success(plan ? t("subscribe.plan.form.submit.success.update") : t("subscribe.plan.form.submit.success.add"));
       onSaved();
       onOpenChange(false);
-    } catch (e) {}
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || "";
+      if (msg) toast.error(msg);
+    }
   };
 
   const priceField = (key: keyof FormValues, period: "monthly" | "quarterly" | "half_yearly" | "yearly" | "two_yearly" | "three_yearly" | "onetime" | "reset_traffic", placeholder: string) => {
@@ -161,11 +158,12 @@ export function PlanFormDialog({
         <div className="relative">
           <Input
             type="number"
+            step="0.01"
             placeholder={placeholder}
             className="pr-12"
             {...register(key as any, { valueAsNumber: true })}
           />
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">分</span>
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">元</span>
         </div>
       </div>
     );

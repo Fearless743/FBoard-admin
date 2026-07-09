@@ -10,6 +10,7 @@ import { SimpleAreaChart } from "@/components/charts/area-chart";
 import { useNavigate } from "react-router-dom";
 import {
   getStats, getTrafficRank, getOrder, getQueueStats,
+  getSystemStatus, getQueueWorkload,
   type OrderStatItem,
 } from "@/api/stat";
 import { StatCard } from "@/components/common/stat-card";
@@ -106,6 +107,18 @@ export function Dashboard() {
     queryKey: ["dashboard", "queue-stats"],
     queryFn: getQueueStats,
     refetchInterval: 30_000,
+  });
+
+  const { data: systemStatus } = useQuery({
+    queryKey: ["system", "status"],
+    queryFn: getSystemStatus,
+    enabled: true,
+  });
+
+  const { data: queueWorkload } = useQuery({
+    queryKey: ["system", "queue-workload"],
+    queryFn: getQueueWorkload,
+    enabled: true,
   });
 
   const isLoading = statsLoading || orderLoading;
@@ -369,6 +382,54 @@ export function Dashboard() {
                   </div>
                 ))}
               </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 系统状态 */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">系统状态</CardTitle>
+            <Badge variant={systemStatus?.status === 'healthy' ? 'success' : 'destructive'}>
+              {systemStatus?.status === 'healthy' ? '正常' : '异常'}
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <span className="text-muted-foreground">PHP 版本</span>
+              <span className="text-right font-mono">{systemStatus?.php_version || '—'}</span>
+              <span className="text-muted-foreground">Laravel 版本</span>
+              <span className="text-right font-mono">{systemStatus?.laravel_version || '—'}</span>
+              <span className="text-muted-foreground">数据库</span>
+              <span className="text-right font-mono">{systemStatus?.database || '—'}</span>
+              <span className="text-muted-foreground">缓存驱动</span>
+              <span className="text-right font-mono">{systemStatus?.cache_driver || '—'}</span>
+              <span className="text-muted-foreground">队列驱动</span>
+              <span className="text-right font-mono">{systemStatus?.queue_driver || '—'}</span>
+              <span className="text-muted-foreground">内存使用</span>
+              <span className="text-right font-mono">{systemStatus?.memory_usage || '—'}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">队列负载</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {queueWorkload ? (
+              <div className="space-y-2">
+                {(Array.isArray(queueWorkload) ? queueWorkload : []).slice(0, 5).map((w: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{w.name || w.queue || `队列 ${i + 1}`}</span>
+                    <span className="font-mono">{w.length ?? w.jobs ?? 0} 个任务</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">暂无数据</p>
             )}
           </CardContent>
         </Card>

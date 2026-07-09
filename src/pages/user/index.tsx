@@ -8,6 +8,7 @@ import {
   UserPlus,
   Mail,
   Ban,
+  Pencil,
   RotateCcw,
   Trash2,
   Copy,
@@ -390,6 +391,7 @@ export function UserListPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem onClick={() => setEditing(u)}>
+                            <Pencil className="h-4 w-4" />
                             {t("user.columns.actions_menu.edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem

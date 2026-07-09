@@ -24,11 +24,14 @@ import {
   disablePlugin,
   enablePlugin,
   fetchPlugins,
+  fetchPluginTypes,
   installPlugin,
   savePluginConfig,
   uninstallPlugin,
+  upgradePlugin,
   uploadPlugin,
 } from "@/api/misc";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function PluginPage() {
   const { t } = useTranslation();
@@ -42,6 +45,9 @@ export function PluginPage() {
     queryFn: fetchPlugins,
   });
   const list: any[] = data || [];
+  const [typeFilter, setTypeFilter] = useState("all");
+  const { data: pluginTypes } = useQuery({ queryKey: ["plugin", "types"], queryFn: fetchPluginTypes });
+  const filtered = typeFilter === "all" ? list : list.filter(p => p.type === typeFilter);
 
   const onUpload = async (file: File) => {
     setUploading(true);
@@ -79,6 +85,20 @@ export function PluginPage() {
         }
       />
 
+      <div className="mb-4 flex items-center gap-2">
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="全部分类" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部分类</SelectItem>
+            {pluginTypes?.map((t: string) => (
+              <SelectItem key={t} value={t}>{t}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -94,7 +114,7 @@ export function PluginPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {list.map((p) => (
+          {filtered.map((p) => (
             <Card key={p.name}>
               <CardContent className="p-5 space-y-3">
                 <div className="flex items-start justify-between">
@@ -134,6 +154,19 @@ export function PluginPage() {
                         onClick={() => setConfiguring(p.name)}
                       >
                         {t("plugin.button.config")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            await upgradePlugin(p.name);
+                            toast.success(t("plugin.messages.upgradeSuccess"));
+                            qc.invalidateQueries({ queryKey: ["plugins"] });
+                          } catch (e) {}
+                        }}
+                      >
+                        {t("plugin.button.upgrade")}
                       </Button>
                       {p.status === "enabled" ? (
                         <Button

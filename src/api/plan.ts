@@ -31,8 +31,16 @@ export interface Plan {
   [k: string]: any;
 }
 
-export async function fetchPlans(): Promise<Plan[]> {
-  return adminGet<Plan[]>("/plan/fetch");
+export interface PlanListResponse {
+  data: Plan[];
+  total: number;
+  current_page: number;
+  per_page: number;
+  last_page: number;
+}
+
+export async function fetchPlans(current = 1, pageSize = 20): Promise<PlanListResponse> {
+  return adminGet<PlanListResponse>("/plan/fetch", { current, pageSize });
 }
 
 export async function savePlan(payload: Partial<Plan>) {

@@ -1,14 +1,13 @@
 import { adminGet, adminPost } from "@/api/client";
 
-export interface ConfigPayload {
-  [key: string]: any;
+export type ConfigSection = Record<string, unknown>;
+
+export async function fetchConfigSection(key: string): Promise<ConfigSection> {
+  const res = await adminGet<any>("/config/fetch", { key });
+  return res?.data?.[key] ?? res?.[key] ?? {};
 }
 
-export async function fetchConfig(): Promise<ConfigPayload> {
-  return adminGet<ConfigPayload>("/config/fetch");
-}
-
-export async function saveConfig(payload: ConfigPayload) {
+export async function saveConfig(payload: ConfigSection) {
   return adminPost<any>("/config/save", payload);
 }
 

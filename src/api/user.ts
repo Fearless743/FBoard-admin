@@ -75,10 +75,6 @@ export async function resetUserSecret(id: number) {
   return adminPost<any>("/user/resetSecret", { id });
 }
 
-export async function resetUserTraffic(id: number) {
-  return adminPost<any>("/user/resetTraffic", { id });
-}
-
 export async function destroyUser(id: number) {
   return adminPost<any>("/user/destroy", { id });
 }

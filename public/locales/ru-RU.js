@@ -51,18 +51,18 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
           "description": "Если отключено, этот шаблон нельзя использовать для создания или активации новых карт."
         },
         "display": {
-          "title": "Визуальные эффекты"
-        },
-        "theme_color": {
-          "label": "Цвет темы"
-        },
-        "icon": {
-          "label": "Иконка",
-          "placeholder": "Введите URL иконки"
-        },
-        "background_image": {
-          "label": "Фоновое изображение",
-          "placeholder": "Введите URL фонового изображения"
+          "title": "Визуальные эффекты",
+          "theme_color": {
+            "label": "Цвет темы"
+          },
+          "icon": {
+            "label": "Иконка",
+            "placeholder": "Введите URL иконки"
+          },
+          "background_image": {
+            "label": "Фоновое изображение",
+            "placeholder": "Введите URL фонового изображения"
+          }
         },
         "conditions": {
           "title": "Условия использования",
@@ -71,7 +71,8 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
             "placeholder": "Пример: 7 (Только для пользователей, зарегистрированных в течение 7 дней)"
           },
           "new_user_only": {
-            "label": "Только для новых пользователей"
+            "label": "Только для новых пользователей",
+            "hint": "Дней с регистрации ≤ {{days}}"
           },
           "paid_user_only": {
             "label": "Только для платных пользователей"
@@ -97,15 +98,15 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
           "cooldown_hours": {
             "label": "Кулдаун (часы) для однотипных карт",
             "placeholder": "Оставьте пустым для безлимита"
-          },
-          "invite_reward_rate": {
-            "label": "Доля вознаграждения пригласителя",
-            "placeholder": "Пример: 0.2 (означает 20%)",
-            "description": "Если у пользователя есть пригласитель, его бонус = бонус пользователя × эта доля"
           }
         },
         "rewards": {
           "title": "Награды",
+          "invite_reward_rate": {
+            "label": "Доля вознаграждения пригласителя",
+            "placeholder": "Пример: 0.2 (означает 20%)",
+            "description": "Если у пользователя есть пригласитель, его бонус = бонус пользователя × эта доля"
+          },
           "balance": {
             "label": "Бонусный баланс (Валюта)",
             "short_label": "Баланс",
@@ -455,6 +456,8 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "subscription": "Тарифный план",
         "subscription_none": "Нет",
         "account_status": "Статус аккаунта",
+        "banned_hint": "Пользователь не может войти или использовать подписку",
+        "normal_hint": "Пользователь может использовать все сервисы",
         "commission_type": "Тип комиссии",
         "commission_type_system": "По системным настройкам",
         "commission_type_cycle": "Циклическая комиссия",
@@ -2539,7 +2542,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "placeholder": "Выберите тип купона"
       },
       "value": {
-        "placeholder": "Введите значение"
+        "placeholder": "Введите сумму (юань)"
       },
       "validity": {
         "label": "Срок действия",
@@ -2938,6 +2941,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
     }
   },
   "common": {
+    "all": "Все",
     "loading": "Загрузка...",
     "error": "Ошибка",
     "success": "Успех",

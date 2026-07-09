@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { SortableContainer, SortableRow, DragCell } from "@/components/common/sortable-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -41,6 +42,8 @@ import {
   getPaymentMethods,
   savePayment,
   updatePayment,
+  togglePaymentShow,
+  sortPayments,
   type PaymentMethod,
 } from "@/api/misc";
 
@@ -50,6 +53,7 @@ export function PaymentListPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PaymentMethod | null>(null);
   const [deleting, setDeleting] = useState<PaymentMethod | null>(null);
+  const [dragEnabled, setDragEnabled] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["payments"],
@@ -57,16 +61,32 @@ export function PaymentListPage() {
   });
   const list: PaymentMethod[] = data?.data || data || [];
 
+  const handleReorder = useCallback(async (ids: number[]) => {
+    try {
+      await sortPayments(ids);
+      qc.invalidateQueries({ queryKey: ["payments"] });
+    } catch (e) {}
+  }, [qc]);
+
   return (
     <>
       <PageHeader
         title={t("payment.title")}
         description={t("payment.description")}
         actions={
-          <Button onClick={() => { setEditing(null); setOpen(true); }}>
-            <Plus className="h-4 w-4" />
-            {t("payment.form.add.button")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={dragEnabled ? "default" : "outline"}
+              onClick={() => setDragEnabled(!dragEnabled)}
+            >
+              <GripVertical className="h-4 w-4" />
+              {dragEnabled ? "完成排序" : "编辑排序"}
+            </Button>
+            <Button onClick={() => { setEditing(null); setOpen(true); }}>
+              <Plus className="h-4 w-4" />
+              {t("payment.form.add.button")}
+            </Button>
+          </div>
         }
       />
 
@@ -74,6 +94,7 @@ export function PaymentListPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              {dragEnabled && <TableHead className="w-10" />}
               <TableHead className="w-16">{t("payment.table.columns.id")}</TableHead>
               <TableHead>{t("payment.table.columns.name")}</TableHead>
               <TableHead>{t("payment.table.columns.payment")}</TableHead>
@@ -85,25 +106,32 @@ export function PaymentListPage() {
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 5 }).map((_, j) => (
+                  {Array.from({ length: dragEnabled ? 6 : 5 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : list.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5}><EmptyState /></TableCell>
+                <TableCell colSpan={dragEnabled ? 6 : 5}><EmptyState /></TableCell>
               </TableRow>
             ) : (
-              list.map((p) => (
-                <TableRow key={p.id}>
+              <SortableContainer items={list} onReorder={handleReorder} enabled={dragEnabled}>
+                {list.map((p) => (
+                <SortableRow key={p.id} id={p.id}>
+                  <DragCell />
                   <TableCell className="font-mono text-xs">#{p.id}</TableCell>
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{p.payment}</Badge>
                   </TableCell>
                   <TableCell className="text-center">
-                    {p.enable ? <Badge variant="success">ON</Badge> : <Badge variant="secondary">OFF</Badge>}
+                    <Switch checked={!!p.enable} onCheckedChange={async (checked) => {
+                      try {
+                        await togglePaymentShow(p.id, checked ? 1 : 0);
+                        qc.invalidateQueries({ queryKey: ["payments"] });
+                      } catch (e) {}
+                    }} />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -125,8 +153,9 @@ export function PaymentListPage() {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))
+                </SortableRow>
+              ))}
+              </SortableContainer>
             )}
           </TableBody>
         </Table>

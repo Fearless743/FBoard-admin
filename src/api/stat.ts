@@ -46,7 +46,7 @@ export async function getStats(): Promise<DashboardStats> {
 }
 
 export async function getOverview(): Promise<DashboardOverview> {
-  return adminGet<DashboardOverview>("/stat/getOverview");
+  return adminGet<DashboardOverview>("/stat/getOverride");
 }
 
 export interface TrafficRankItem {
@@ -56,6 +56,14 @@ export interface TrafficRankItem {
   previousValue: string;
   change: number;
   timestamp: string;
+}
+
+export async function getRanking(params?: any) {
+  return adminGet<any>("/stat/getRanking", params);
+}
+
+export async function getStatRecord(type?: string) {
+  return adminGet<any>("/stat/getStatRecord", { type });
 }
 
 export async function getTrafficRank(type: "node" | "user", start_time: number, end_time: number) {
@@ -110,6 +118,22 @@ export interface QueueStats {
   recentJobs: number;
   status: boolean;
   wait: Record<string, number>;
+}
+
+export async function getSystemStatus() {
+  return adminGet<any>("/system/getSystemStatus");
+}
+
+export async function getQueueWorkload() {
+  return adminGet<any>("/system/getQueueWorkload");
+}
+
+export async function getQueueMasters() {
+  return adminGet<any>("/system/getQueueMasters");
+}
+
+export async function getAuditLog(params?: any) {
+  return adminGet<any>("/system/getAuditLog", params);
 }
 
 export async function getQueueStats() {

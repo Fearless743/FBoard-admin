@@ -259,7 +259,7 @@ function CouponFormDialog({
     if (open) {
       setName(coupon?.name || "");
       setType(coupon?.type || 1);
-      setValue(coupon?.value || 0);
+      setValue(coupon?.type === 1 ? Math.round((coupon?.value || 0) / 100) : (coupon?.value || 0));
       setCode(coupon?.code || "");
       setLimitUse(coupon?.limit_use?.toString() || "");
       setLimitUseWithUser(coupon?.limit_use_with_user?.toString() || "");
@@ -279,7 +279,7 @@ function CouponFormDialog({
       const payload: any = {
         name,
         type,
-        value: Number(value),
+        value: type === 1 ? Math.round(Number(value) * 100) : Number(value),
         code: code || undefined,
         limit_use: limitUse ? Number(limitUse) : undefined,
         limit_use_with_user: limitUseWithUser ? Number(limitUseWithUser) : undefined,
@@ -331,7 +331,7 @@ function CouponFormDialog({
                 type="number"
                 value={value}
                 onChange={(e) => setValue(Number(e.target.value))}
-                placeholder={type === 1 ? "分" : "%"}
+                placeholder={type === 1 ? "元" : "%"}
               />
             </div>
           </div>

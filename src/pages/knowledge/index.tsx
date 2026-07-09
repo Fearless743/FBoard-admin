@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, BookOpen, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { SortableContainer, SortableRow, DragCell } from "@/components/common/sortable-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,8 +39,10 @@ import {
 import {
   dropKnowledge,
   fetchKnowledges,
+  fetchKnowledgeCategories,
   saveKnowledge,
   showKnowledge,
+  sortKnowledge,
   type KnowledgeItem,
 } from "@/api/misc";
 
@@ -51,12 +54,23 @@ export function KnowledgeListPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<KnowledgeItem | null>(null);
   const [deleting, setDeleting] = useState<KnowledgeItem | null>(null);
+  const [dragEnabled, setDragEnabled] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["knowledge"],
     queryFn: fetchKnowledges,
   });
   const list: KnowledgeItem[] = data || [];
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const { data: categories } = useQuery({ queryKey: ["knowledge", "categories"], queryFn: fetchKnowledgeCategories });
+  const filtered = categoryFilter === "all" ? list : list.filter(k => k.category === categoryFilter);
+
+  const handleReorder = useCallback(async (ids: number[]) => {
+    try {
+      await sortKnowledge({ ids });
+      qc.invalidateQueries({ queryKey: ["knowledge"] });
+    } catch (e) {}
+  }, [qc]);
 
   return (
     <>
@@ -64,17 +78,41 @@ export function KnowledgeListPage() {
         title={t("knowledge.title")}
         description={t("knowledge.description")}
         actions={
-          <Button onClick={() => { setEditing(null); setOpen(true); }}>
-            <Plus className="h-4 w-4" />
-            {t("knowledge.form.add")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={dragEnabled ? "default" : "outline"}
+              onClick={() => setDragEnabled(!dragEnabled)}
+            >
+              <GripVertical className="h-4 w-4" />
+              {dragEnabled ? "完成排序" : "编辑排序"}
+            </Button>
+            <Button onClick={() => { setEditing(null); setOpen(true); }}>
+              <Plus className="h-4 w-4" />
+              {t("knowledge.form.add")}
+            </Button>
+          </div>
         }
       />
+
+      <div className="mb-4 flex items-center gap-2">
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="全部分类" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部分类</SelectItem>
+            {categories?.map((cat) => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              {dragEnabled && <TableHead className="w-10" />}
               <TableHead className="w-16">{t("knowledge.columns.id")}</TableHead>
               <TableHead>{t("knowledge.columns.title")}</TableHead>
               <TableHead>{t("knowledge.columns.category")}</TableHead>
@@ -87,20 +125,22 @@ export function KnowledgeListPage() {
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 6 }).map((_, j) => (
+                  {Array.from({ length: dragEnabled ? 7 : 6 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : list.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={dragEnabled ? 7 : 6}>
                   <EmptyState icon={<BookOpen className="h-10 w-10" />} />
                 </TableCell>
               </TableRow>
             ) : (
-              list.map((k) => (
-                <TableRow key={k.id}>
+              <SortableContainer items={filtered} onReorder={handleReorder} enabled={dragEnabled}>
+                {filtered.map((k) => (
+                <SortableRow key={k.id} id={k.id}>
+                  <DragCell />
                   <TableCell className="font-mono text-xs">#{k.id}</TableCell>
                   <TableCell className="font-medium">{k.title}</TableCell>
                   <TableCell>
@@ -145,8 +185,9 @@ export function KnowledgeListPage() {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))
+                </SortableRow>
+              ))}
+              </SortableContainer>
             )}
           </TableBody>
         </Table>

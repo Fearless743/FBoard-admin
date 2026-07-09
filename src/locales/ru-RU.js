@@ -51,18 +51,18 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
           "description": "Если отключено, этот шаблон нельзя использовать для создания или активации новых карт."
         },
         "display": {
-          "title": "Визуальные эффекты"
-        },
-        "theme_color": {
-          "label": "Цвет темы"
-        },
-        "icon": {
-          "label": "Иконка",
-          "placeholder": "Введите URL иконки"
-        },
-        "background_image": {
-          "label": "Фоновое изображение",
-          "placeholder": "Введите URL фонового изображения"
+          "title": "Визуальные эффекты",
+          "theme_color": {
+            "label": "Цвет темы"
+          },
+          "icon": {
+            "label": "Иконка",
+            "placeholder": "Введите URL иконки"
+          },
+          "background_image": {
+            "label": "Фоновое изображение",
+            "placeholder": "Введите URL фонового изображения"
+          }
         },
         "conditions": {
           "title": "Условия использования",
@@ -71,7 +71,8 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
             "placeholder": "Пример: 7 (Только для пользователей, зарегистрированных в течение 7 дней)"
           },
           "new_user_only": {
-            "label": "Только для новых пользователей"
+            "label": "Только для новых пользователей",
+            "hint": "Дней с регистрации ≤ {{days}}"
           },
           "paid_user_only": {
             "label": "Только для платных пользователей"
@@ -97,15 +98,15 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
           "cooldown_hours": {
             "label": "Кулдаун (часы) для однотипных карт",
             "placeholder": "Оставьте пустым для безлимита"
-          },
-          "invite_reward_rate": {
-            "label": "Доля вознаграждения пригласителя",
-            "placeholder": "Пример: 0.2 (означает 20%)",
-            "description": "Если у пользователя есть пригласитель, его бонус = бонус пользователя × эта доля"
           }
         },
         "rewards": {
           "title": "Награды",
+          "invite_reward_rate": {
+            "label": "Доля вознаграждения пригласителя",
+            "placeholder": "Пример: 0.2 (означает 20%)",
+            "description": "Если у пользователя есть пригласитель, его бонус = бонус пользователя × эта доля"
+          },
           "balance": {
             "label": "Бонусный баланс (Валюта)",
             "short_label": "Баланс",
@@ -455,6 +456,8 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "subscription": "Тарифный план",
         "subscription_none": "Нет",
         "account_status": "Статус аккаунта",
+        "banned_hint": "Пользователь не может войти или использовать подписку",
+        "normal_hint": "Пользователь может использовать все сервисы",
         "commission_type": "Тип комиссии",
         "commission_type_system": "По системным настройкам",
         "commission_type_cycle": "Циклическая комиссия",
@@ -943,6 +946,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "l3": "Уровень 3 (%)",
         "placeholder": "Введите процент"
       },
+      "distribution_total": "Текущая сумма распределения: {{total}}% (не должна превышать 100%)",
       "saving": "Сохранение..."
     },
     "site": {
@@ -1193,6 +1197,14 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "title": "Протокол в имени узла",
         "description": "Добавлять название протокола к узлам (напр. [Hy2] Hong Kong)."
       },
+      "default_remind_expire": {
+        "title": "Уведомление об истечении по умолчанию",
+        "description": "Новые пользователи по умолчанию получают уведомления об истечении подписки. Можно изменить в карточке пользователя."
+      },
+      "default_remind_traffic": {
+        "title": "Уведомление о трафике по умолчанию",
+        "description": "Новые пользователи по умолчанию получают уведомления о низком остатке трафика. Можно изменить в карточке пользователя."
+      },
       "saving": "Сохранение...",
       "plan": {
         "title": "Тарифные планы",
@@ -1333,30 +1345,36 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "tab_templates": "Шаблоны",
       "email_host": {
         "title": "SMTP Сервер",
-        "description": "Адрес сервера, напр. smtp.gmail.com"
+        "description": "Адрес сервера, напр. smtp.gmail.com",
+        "placeholder": "smtp.example.com"
       },
       "email_port": {
         "title": "SMTP Порт",
-        "description": "Обычно: 465 (SSL) или 587 (TLS)"
+        "description": "Обычно: 465 (SSL) или 587 (TLS)",
+        "placeholder": "465"
       },
       "email_username": {
         "title": "Имя пользователя SMTP",
-        "description": "Ваш Email или логин"
+        "description": "Ваш Email или логин",
+        "placeholder": "user@example.com"
       },
       "email_password": {
         "title": "Пароль SMTP",
-        "description": "Пароль приложения или основной пароль"
+        "description": "Пароль приложения или основной пароль",
+        "placeholder": "Введите пароль"
       },
       "email_encryption": {
         "title": "Шифрование",
         "description": "Способ защиты соединения",
+        "placeholder": "Выберите шифрование",
         "none": "Нет",
         "ssl": "SSL/TLS",
         "tls": "STARTTLS"
       },
-      "email_from": {
+      "email_from_address": {
         "title": "Email отправителя",
-        "description": "Будет отображаться в заголовке письма"
+        "description": "Будет отображаться в заголовке письма",
+        "placeholder": "noreply@example.com"
       },
       "email_from_name": {
         "title": "Имя отправителя",
@@ -1367,7 +1385,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "description": "Выберите стиль оформления уведомлений",
         "placeholder": "Выберите шаблон"
       },
-      "remind_mail": {
+      "remind_mail_enable": {
         "title": "Email напоминания",
         "description": "Уведомлять пользователей об окончании трафика или срока действия."
       },
@@ -1376,7 +1394,11 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "sending": "Отправка...",
         "description": "Проверить настройки, отправив письмо себе",
         "success": "Письмо успешно отправлено",
-        "error": "Ошибка при отправке теста"
+        "error": "Ошибка при отправке теста",
+        "label_to": "Кому",
+        "label_subject": "Тема",
+        "placeholder_to": "user@example.com",
+        "placeholder_subject": "Тема тестового письма"
       }
     },
     "telegram": {
@@ -1399,6 +1421,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "button": "Настройка в 1 клик",
         "setting": "Настройка...",
         "success": "Webhook установлен успешно",
+        "error": "Не удалось установить Webhook",
         "target_default": "Используется основной URL сайта.",
         "target_custom": "Используется кастомный URL: {{url}}",
         "debug": {
@@ -1457,9 +1480,14 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
     },
     "common": {
       "saving": "Сохранение...",
-      "save_success": "Автоматически сохранено",
+      "save": "Сохранить",
+      "save_success": "Сохранено",
+      "save_error": "Ошибка сохранения",
+      "reset": "Сбросить",
       "placeholder": "Текст...",
-      "autoSaved": "Сохранено"
+      "autoSaved": "Автосохранено",
+      "saved_at": "Сохранено {{seconds}} сек. назад",
+      "invalidJson": "Некорректный JSON"
     },
     "subscribe_template": {
       "title": "Шаблоны подписки",
@@ -2539,7 +2567,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "placeholder": "Выберите тип купона"
       },
       "value": {
-        "placeholder": "Введите значение"
+        "placeholder": "Введите сумму (юань)"
       },
       "validity": {
         "label": "Срок действия",
@@ -2938,6 +2966,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
     }
   },
   "common": {
+    "all": "Все",
     "loading": "Загрузка...",
     "error": "Ошибка",
     "success": "Успех",

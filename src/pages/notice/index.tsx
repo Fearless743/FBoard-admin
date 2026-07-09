@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { SortableContainer, SortableRow, DragCell } from "@/components/common/sortable-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,7 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { dropNotice, fetchNotices, saveNotice, updateNotice, type NoticeItem } from "@/api/misc";
+import { dropNotice, fetchNotices, saveNotice, updateNotice, toggleNoticeShow, sortNotices, type NoticeItem } from "@/api/misc";
 
 export function NoticeListPage() {
   const { t } = useTranslation();
@@ -36,6 +37,7 @@ export function NoticeListPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<NoticeItem | null>(null);
   const [deleting, setDeleting] = useState<NoticeItem | null>(null);
+  const [dragEnabled, setDragEnabled] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["notices"],
@@ -43,16 +45,32 @@ export function NoticeListPage() {
   });
   const list = data || [];
 
+  const handleReorder = useCallback(async (ids: number[]) => {
+    try {
+      await sortNotices(ids);
+      qc.invalidateQueries({ queryKey: ["notices"] });
+    } catch (e) {}
+  }, [qc]);
+
   return (
     <>
       <PageHeader
         title={t("notice.title")}
         description={t("notice.description")}
         actions={
-          <Button onClick={() => { setEditing(null); setOpen(true); }}>
-            <Plus className="h-4 w-4" />
-            {t("notice.form.add.button")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={dragEnabled ? "default" : "outline"}
+              onClick={() => setDragEnabled(!dragEnabled)}
+            >
+              <GripVertical className="h-4 w-4" />
+              {dragEnabled ? "完成排序" : "编辑排序"}
+            </Button>
+            <Button onClick={() => { setEditing(null); setOpen(true); }}>
+              <Plus className="h-4 w-4" />
+              {t("notice.form.add.button")}
+            </Button>
+          </div>
         }
       />
 
@@ -60,6 +78,7 @@ export function NoticeListPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              {dragEnabled && <TableHead className="w-10" />}
               <TableHead className="w-16">{t("notice.table.columns.id")}</TableHead>
               <TableHead>{t("notice.table.columns.title")}</TableHead>
               <TableHead className="w-24 text-center">{t("notice.table.columns.show")}</TableHead>
@@ -70,22 +89,29 @@ export function NoticeListPage() {
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 4 }).map((_, j) => (
+                  {Array.from({ length: dragEnabled ? 5 : 4 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : list.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4}><EmptyState /></TableCell>
+                <TableCell colSpan={dragEnabled ? 5 : 4}><EmptyState /></TableCell>
               </TableRow>
             ) : (
-              list.map((n) => (
-                <TableRow key={n.id}>
+              <SortableContainer items={list} onReorder={handleReorder} enabled={dragEnabled}>
+                {list.map((n) => (
+                <SortableRow key={n.id} id={n.id}>
+                  <DragCell />
                   <TableCell className="font-mono text-xs">#{n.id}</TableCell>
                   <TableCell className="font-medium">{n.title}</TableCell>
                   <TableCell className="text-center">
-                    {n.show ? <Badge variant="success">ON</Badge> : <Badge variant="secondary">OFF</Badge>}
+                    <Switch checked={!!n.show} onCheckedChange={async (checked) => {
+                      try {
+                        await toggleNoticeShow(n.id, checked ? 1 : 0);
+                        qc.invalidateQueries({ queryKey: ["notices"] });
+                      } catch (e) {}
+                    }} />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -107,8 +133,9 @@ export function NoticeListPage() {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))
+                </SortableRow>
+              ))}
+              </SortableContainer>
             )}
           </TableBody>
         </Table>

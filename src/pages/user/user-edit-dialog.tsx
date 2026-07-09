@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Ban, ShieldCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { usePlanOptions } from "@/hooks/use-plans";
 import { updateUser, type UserListItem } from "@/api/user";
 
@@ -249,12 +250,13 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <BoolField
-              control={control}
-              name="banned"
-              label={t("user.edit.form.account_status") + (user?.banned ? " · 已封禁" : " · 正常")}
-            />
+          <BanField
+            control={control}
+            name="banned"
+            label={t("user.edit.form.account_status")}
+          />
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <BoolField control={control} name="is_admin" label={t("user.edit.form.is_admin")} />
             <BoolField control={control} name="is_staff" label={t("user.edit.form.is_staff")} />
           </div>
@@ -289,6 +291,69 @@ function Field({
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
+  );
+}
+
+function BanField({
+  control,
+  name,
+  label,
+}: {
+  control: any;
+  name: keyof FormValues;
+  label: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field }) => {
+        const banned = !!field.value;
+        return (
+          <div
+            className={cn(
+              "rounded-lg border-2 p-4 transition-colors",
+              banned
+                ? "border-destructive/40 bg-destructive/5"
+                : "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20",
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {banned ? (
+                  <Ban className="h-5 w-5 text-destructive" />
+                ) : (
+                  <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                )}
+                <div>
+                  <Label
+                    className={cn(
+                      "text-sm font-semibold",
+                      banned ? "text-destructive" : "text-emerald-700 dark:text-emerald-300",
+                    )}
+                  >
+                    {label}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {banned
+                      ? t("user.edit.form.banned_hint")
+                      : t("user.edit.form.normal_hint")}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={banned}
+                onCheckedChange={field.onChange}
+                className={cn(
+                  banned && "bg-destructive data-[state=checked]:bg-destructive",
+                )}
+              />
+            </div>
+          </div>
+        );
+      }}
+    />
   );
 }
 

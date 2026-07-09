@@ -51,18 +51,18 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "description": "When disabled, this template cannot generate or redeem new gift cards."
         },
         "display": {
-          "title": "Display Effect"
-        },
-        "theme_color": {
-          "label": "Theme Color"
-        },
-        "icon": {
-          "label": "Icon",
-          "placeholder": "Please enter icon URL"
-        },
-        "background_image": {
-          "label": "Background Image",
-          "placeholder": "Please enter background image URL"
+          "title": "Display Effect",
+          "theme_color": {
+            "label": "Theme Color"
+          },
+          "icon": {
+            "label": "Icon",
+            "placeholder": "Please enter icon URL"
+          },
+          "background_image": {
+            "label": "Background Image",
+            "placeholder": "Please enter background image URL"
+          }
         },
         "conditions": {
           "title": "Usage Conditions",
@@ -71,7 +71,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "placeholder": "Example: 7 (Only for users registered within 7 days)"
           },
           "new_user_only": {
-            "label": "New Users Only"
+            "label": "New Users Only",
+            "hint": "Registration days ≤ {{days}}"
           },
           "paid_user_only": {
             "label": "Paid Users Only"
@@ -97,15 +98,15 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "cooldown_hours": {
             "label": "Cooldown Hours for Same Type",
             "placeholder": "Leave empty for no limit"
-          },
-          "invite_reward_rate": {
-            "label": "Inviter Reward Rate",
-            "placeholder": "Example: 0.2 (represents 20%)",
-            "description": "When user has an inviter, inviter reward = balance reward × this rate"
           }
         },
         "rewards": {
           "title": "Rewards",
+          "invite_reward_rate": {
+            "label": "Inviter Reward Rate",
+            "placeholder": "Example: 0.2 (represents 20%)",
+            "description": "When user has an inviter, inviter reward = balance reward × this rate"
+          },
           "balance": {
             "label": "Reward Balance (Yuan)",
             "short_label": "Balance",
@@ -513,6 +514,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "subscription": "Subscription Plan",
         "subscription_none": "None",
         "account_status": "Account Status",
+        "banned_hint": "User cannot log in or use subscription services",
+        "normal_hint": "User can use all services normally",
         "commission_type": "Commission Type",
         "commission_type_system": "Follow System Settings",
         "commission_type_cycle": "Cycle Commission",
@@ -2624,7 +2627,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "placeholder": "Select coupon type"
       },
       "value": {
-        "placeholder": "Enter value"
+        "placeholder": "Enter value (yuan)"
       },
       "validity": {
         "label": "Validity Period",
@@ -3023,6 +3026,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     }
   },
   "common": {
+    "all": "All",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",

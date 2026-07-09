@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -6,20 +6,30 @@ import {
   Trash2,
   Copy,
   RotateCcw,
-  Server as ServerIcon,
   Search,
   Loader2,
-  Eye,
   MoreHorizontal,
   GripVertical,
+  Wifi,
+  WifiOff,
+  Pencil,
+  Server as ServerIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -29,7 +39,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
+import { Pagination } from "@/components/common/pagination";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { SortableContainer, SortableRow, DragCell } from "@/components/common/sortable-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,15 +56,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  batchDeleteServer,
   copyServer,
   dropServer,
   getNodes,
+  getSortNodes,
   resetServerTraffic,
   fetchProtocolTypes,
   fetchMachines,
+  fetchGroups,
+  sortServers,
   type Server,
   type ProtocolType,
+  type ServerGroup,
 } from "@/api/server";
 import { ServerFormDialog } from "./server-form-dialog";
 import { formatBytes, bytesToGb } from "@/lib/utils";
@@ -70,14 +85,22 @@ export function ServerListPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [deleting, setDeleting] = useState<Server | null>(null);
   const [resetting, setResetting] = useState<Server | null>(null);
-  const [batchDelete, setBatchDelete] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [selected, setSelected] = useState<number[]>([]);
+  const [dragEnabled, setDragEnabled] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [showVirtual, setShowVirtual] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["servers", "nodes"],
-    queryFn: getNodes,
+  const { data, isLoading } = useQuery<any>({
+    queryKey: ["servers", "nodes", page, pageSize, search, typeFilter, showVirtual],
+    queryFn: () => getNodes({ current: page, pageSize, search: search || undefined, type: typeFilter === "all" ? undefined : typeFilter, show_virtual: showVirtual || undefined }),
+  });
+
+  const { data: sortNodes } = useQuery({
+    queryKey: ["servers", "sort-nodes"],
+    queryFn: getSortNodes,
+    enabled: dragEnabled,
   });
 
   const { data: protocolTypesData = [] } = useQuery({
@@ -92,33 +115,37 @@ export function ServerListPage() {
     staleTime: 300000,
   });
 
+  const { data: serverGroups = [] } = useQuery({
+    queryKey: ["server-groups"],
+    queryFn: fetchGroups,
+    staleTime: 300000,
+  });
+
   const machinesMap = useMemo(() => {
     const m: Record<number, string> = {};
     (machines as any[]).forEach((x: any) => { m[x.id] = x.name; });
     return m;
   }, [machines]);
 
+  const groupsMap = useMemo(() => {
+    const m: Record<number, string> = {};
+    (serverGroups as ServerGroup[]).forEach((g) => { m[g.id] = g.name; });
+    return m;
+  }, [serverGroups]);
+
   const PROTOCOL_TYPES: ProtocolType[] = protocolTypesData;
 
-  const nodes: Server[] = data || [];
-  const filtered = useMemo(() => {
-    return nodes.filter((n) => {
-      if (typeFilter !== "all" && String(n.type) !== typeFilter) return false;
-      if (search) {
-        const s = search.toLowerCase();
-        if (
-          !(
-            (n.name || "").toLowerCase().includes(s) ||
-            (n.host || "").toLowerCase().includes(s) ||
-            String(n.id).includes(s)
-          )
-        ) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }, [nodes, search, typeFilter]);
+  const nodes: Server[] = data?.data || [];
+  const total = data?.total || 0;
+
+  const handleReorder = useCallback(async (ids: number[]) => {
+    try {
+      await sortServers(ids);
+      qc.invalidateQueries({ queryKey: ["servers"] });
+    } catch (e) {}
+  }, [qc]);
+
+  const sortList: any[] = sortNodes || [];
 
   const getConfigUrl = (n: Server) => {
     const base = window.location.origin;
@@ -132,14 +159,13 @@ export function ServerListPage() {
         description={t("server.manage.description")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {selected.length > 0 && (
-              <>
-                <Button variant="outline" onClick={() => setBatchDelete(true)}>
-                  <Trash2 className="h-4 w-4" />
-                  {t("server.toolbar.batch_delete.button", { count: selected.length })}
-                </Button>
-              </>
-            )}
+            <Button
+              variant={dragEnabled ? "default" : "outline"}
+              onClick={() => setDragEnabled(!dragEnabled)}
+            >
+              <GripVertical className="h-4 w-4" />
+              {dragEnabled ? "完成排序" : "编辑排序"}
+            </Button>
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" />
               {t("server.form.add_node")}
@@ -171,75 +197,95 @@ export function ServerListPage() {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Switch checked={showVirtual} onCheckedChange={setShowVirtual} className="scale-75" />
+          <span>虚拟节点</span>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10">
-                <Checkbox
-                  checked={filtered.length > 0 && selected.length === filtered.length}
-                  onCheckedChange={(c) => setSelected(c === true ? filtered.map((n) => n.id) : [])}
-                />
-              </TableHead>
-              <TableHead className="w-14">{t("server.columns.nodeId")}</TableHead>
-              <TableHead className="w-12 text-center">{t("server.columns.show")}</TableHead>
-              <TableHead>{t("server.columns.node")}</TableHead>
-              <TableHead>{t("server.columns.deployment.title")}</TableHead>
-              <TableHead>{t("server.columns.address")}</TableHead>
-              <TableHead className="text-right">{t("server.columns.sort")}</TableHead>
-              <TableHead className="text-right">{t("server.columns.rate.title")}</TableHead>
-              <TableHead>{t("server.columns.groups.title")}</TableHead>
-              <TableHead className="text-right">{t("server.columns.traffic.title")}</TableHead>
-              <TableHead className="w-32 text-right">{t("server.columns.actions")}</TableHead>
+              {dragEnabled ? (
+                <>
+                  <TableHead className="w-10" />
+                  <TableHead className="w-16">ID</TableHead>
+                  <TableHead>{t("server.columns.node")}</TableHead>
+                </>
+              ) : (
+                <>
+                  <TableHead className="w-14">{t("server.columns.nodeId")}</TableHead>
+                  <TableHead className="w-16 text-center">{t("server.columns.show")}</TableHead>
+                  <TableHead>{t("server.columns.node")}</TableHead>
+                  <TableHead>{t("server.columns.deployment.title")}</TableHead>
+                  <TableHead className="w-[200px]">{t("server.columns.address")}</TableHead>
+                  <TableHead className="text-right">{t("server.columns.rate.title")}</TableHead>
+                  <TableHead>{t("server.columns.groups.title")}</TableHead>
+                  <TableHead className="text-right">{t("server.columns.traffic.title")}</TableHead>
+                  <TableHead className="w-20 text-center">在线</TableHead>
+                  <TableHead className="w-32 text-right">{t("server.columns.actions")}</TableHead>
+                </>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 11 }).map((_, j) => (
+                  {Array.from({ length: dragEnabled ? 5 : 10 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
                   ))}
                 </TableRow>
               ))
-            ) : filtered.length === 0 ? (
+            ) : (dragEnabled ? sortList : nodes).length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11}>
+                <TableCell colSpan={dragEnabled ? 5 : 10}>
                   <EmptyState icon={<ServerIcon className="h-10 w-10" />} />
                 </TableCell>
               </TableRow>
+            ) : dragEnabled ? (
+              <SortableContainer items={sortList} onReorder={handleReorder} enabled={dragEnabled}>
+                {sortList.map((n) => {
+                  const proto = PROTOCOL_TYPES.find((p) => p.type === n.type);
+                  return (
+                    <SortableRow key={n.id} id={n.id}>
+                      <DragCell />
+                      <TableCell className="font-mono text-xs"><Badge variant="outline">{n.id}</Badge></TableCell>
+                      <TableCell className="font-medium"><div className="space-y-0.5">
+                        <p className="font-medium">{n.name}</p>
+                        <Badge variant="outline">{proto?.name || `#${n.type}`}</Badge>
+                      </div></TableCell>
+                    </SortableRow>
+                  );
+                })}
+              </SortableContainer>
             ) : (
-              filtered.map((n) => {
+              <SortableContainer items={nodes} onReorder={handleReorder} enabled={false}>
+                {nodes.map((n: any) => {
                 const proto = PROTOCOL_TYPES.find((p) => p.type === n.type);
                 const status = STATUS_MAP[n.status ?? 0];
-                const trafficLimit = n.traffic_limit || 0;
-                const trafficUsed = n.traffic_used ?? 0;
+                const trafficLimit = (n as any).transfer_enable || 0;
+                const trafficUsed = ((n as any).u || 0) + ((n as any).d || 0);
                 const trafficPct = trafficLimit > 0 ? ((trafficUsed / trafficLimit) * 100).toFixed(1) : null;
                 return (
-                  <TableRow key={n.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selected.includes(n.id)}
-                        onCheckedChange={(c) =>
-                          setSelected((s) =>
-                            c === true ? [...new Set([...s, n.id])] : s.filter((x) => x !== n.id)
-                          )
-                        }
-                      />
-                    </TableCell>
+                  <SortableRow key={n.id} id={n.id}>
                     <TableCell className="font-mono text-xs">
-                      {n.code || n.id}
+                      <Badge variant="outline">{n.code || n.id}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      {n.show ? (
-                        <Badge variant="success">ON</Badge>
-                      ) : (
-                        <Badge variant="secondary">OFF</Badge>
-                      )}
+                      <Switch
+                        checked={!!n.show}
+                        onCheckedChange={async (v) => {
+                          try {
+                            const { updateServer } = await import("@/api/server");
+                            await updateServer({ id: n.id, show: v ? 1 : 0 });
+                            qc.invalidateQueries({ queryKey: ["servers", "nodes"] });
+                          } catch (e) {}
+                        }}
+                      />
                     </TableCell>
                     <TableCell>
                       <div className="space-y-0.5">
@@ -247,18 +293,36 @@ export function ServerListPage() {
                         <Badge variant="outline">{proto?.name || `#${n.type}`}</Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {n.machine_id ? machinesMap[n.machine_id] || `#${n.machine_id}` : "—"}
+                    <TableCell className="text-xs">
+                      {n.machine_id ? (
+                        <div className="flex items-center gap-1.5">
+                          <span>{machinesMap[n.machine_id] || `#${n.machine_id}`}</span>
+                          {(() => {
+                            const machine = (machines as any[]).find((m: any) => m.id === n.machine_id);
+                            return machine?.is_active ? (
+                              <Badge variant="success" className="gap-1 text-[10px] px-1.5 py-0">
+                                <Wifi className="h-3 w-3" /> 在线
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="gap-1 text-[10px] px-1.5 py-0">
+                                <WifiOff className="h-3 w-3" /> 离线
+                              </Badge>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <Badge variant="secondary">独立部署</Badge>
+                      )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-[200px]">
                       <div className="flex items-center gap-1">
-                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+                        <code className="truncate rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
                           {n.host}:{n.port}
                         </code>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="icon"
-                          className="h-5 w-5"
+                          className="h-5 w-5 shrink-0"
                           onClick={async () => {
                             try {
                               await navigator.clipboard.writeText(`${n.host}:${n.port}`);
@@ -270,12 +334,13 @@ export function ServerListPage() {
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right text-xs tabular-nums">
-                      {n.sort ?? 0}
-                    </TableCell>
                     <TableCell className="text-right tabular-nums">{n.rate}×</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {(n.group_ids || []).length ? `#${(n.group_ids || []).join(", #")}` : t("server.columns.groups.empty")}
+                      {(n.group_ids || []).length ? (n.group_ids || []).map((id: number) => (
+                        <Badge key={id} variant="outline" className="mr-1 text-[10px]">
+                          {groupsMap[id] || `#${id}`}
+                        </Badge>
+                      )) : t("server.columns.groups.empty")}
                     </TableCell>
                     <TableCell className="text-right text-xs text-muted-foreground">
                       <div className="flex flex-col items-end gap-0.5">
@@ -291,6 +356,13 @@ export function ServerListPage() {
                         )}
                       </div>
                     </TableCell>
+                    <TableCell className="text-center tabular-nums text-xs">
+                      {n.online != null ? (
+                        <Badge variant={n.online > 0 ? "success" : "secondary"} className="text-[10px] px-1.5">
+                          {n.online}
+                        </Badge>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -299,19 +371,15 @@ export function ServerListPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem onClick={() => {
-                            const url = getConfigUrl(n);
-                            window.open(url, "_blank");
-                          }}>
-                            <Eye className="h-4 w-4" />
-                            查看配置
+                          <DropdownMenuItem onClick={() => setEditing(n)}>
+                            <Pencil className="h-4 w-4" />
+                            {t("server.columns.actions_dropdown.edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={async () => {
                               try {
                                 await copyServer(n.id);
                                 toast.success(t("server.columns.actions_dropdown.copy_success"));
-                                qc.invalidateQueries({ queryKey: ["servers", "nodes"] });
                               } catch (e) {}
                             }}
                           >
@@ -321,9 +389,6 @@ export function ServerListPage() {
                           <DropdownMenuItem onClick={() => setResetting(n)}>
                             <RotateCcw className="h-4 w-4" />
                             {t("server.columns.actions_dropdown.reset_traffic.title")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setEditing(n)}>
-                            {t("server.columns.actions_dropdown.edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
@@ -335,12 +400,22 @@ export function ServerListPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                  </TableRow>
+                  </SortableRow>
                 );
-              })
+              })}
+              </SortableContainer>
             )}
           </TableBody>
         </Table>
+        {!dragEnabled && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+          />
+        )}
       </div>
 
       <ServerFormDialog
@@ -389,22 +464,6 @@ export function ServerListPage() {
         }}
       />
 
-      <ConfirmDialog
-        open={batchDelete}
-        onOpenChange={setBatchDelete}
-        title={t("server.toolbar.batch_delete.title", { count: selected.length })}
-        description={t("server.toolbar.batch_delete.description", { count: selected.length })}
-        confirmText={t("server.toolbar.batch_delete.confirm")}
-        onConfirm={async () => {
-          try {
-            await batchDeleteServer(selected);
-            toast.success(t("server.toolbar.batch_delete_success", { count: selected.length }));
-            setSelected([]);
-            qc.invalidateQueries({ queryKey: ["servers", "nodes"] });
-            setBatchDelete(false);
-          } catch (e) {}
-        }}
-      />
     </>
   );
 }
