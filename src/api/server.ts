@@ -170,18 +170,6 @@ export async function generateEchKey() {
   return adminGet<any>("/server/manage/generateEchKey");
 }
 
-export async function upgradeNode(id: number) {
-  return adminPost<any>("/server/manage/upgrade", { id });
-}
-
-export async function restartNodeService(id: number) {
-  return adminPost<any>("/server/manage/restart", { id });
-}
-
-export async function batchUpgradeNodes() {
-  return adminPost<any>("/server/manage/batchUpgrade", {});
-}
-
 /* ============ 协议定义 ============ */
 export interface ProtocolConfigField {
   type: "string" | "integer" | "number" | "boolean" | "array" | "object";

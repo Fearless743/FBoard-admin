@@ -1979,26 +1979,6 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "confirm": "Delete"
         },
         "copy_success": "Copied successfully",
-        "upgrade": {
-          "title": "Confirm Standalone Service Upgrade",
-          "description": "This will upgrade the entire Fboard-Node process for this standalone node. The service will be briefly interrupted during the upgrade.",
-          "standalone": "Upgrade Standalone Fboard-Node",
-          "standalone_title": "Confirm Standalone Fboard-Node Upgrade",
-          "standalone_description": "This upgrades the entire Fboard-Node process for the standalone node, not an individual protocol node. The service will be briefly interrupted.",
-          "confirm": "Upgrade"
-        },
-        "upgrade_success": "Upgrade task submitted",
-        "restart": {
-          "menu": "Restart Service",
-          "standalone_menu": "Restart Standalone Fboard-Node Service",
-          "title": "Confirm Service Restart",
-          "standalone_description": "This will restart the entire Fboard-Node process for this standalone node, briefly interrupting its service.",
-          "machine_description": "Machine-level restart is available in Server Management and affects all nodes hosted on the machine.",
-          "confirm": "Restart Service",
-          "submitted": "Restart task submitted",
-          "error": "Failed to submit restart task"
-        },
-        "machine_manage": "Open Server Management",
         "delete_success": "Deleted successfully"
       }
     },
@@ -2054,10 +2034,6 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "batch_reset_traffic_success": "Successfully reset traffic for {{count}} nodes",
       "batch_reset_traffic_error": "Batch reset traffic failed",
-      "batch_upgrade": "Upgrade All",
-      "batch_upgrade_confirm_title": "Confirm Batch Upgrade",
-      "batch_upgrade_confirm_description": "This will upgrade Fboard-Node on all deployed nodes to the latest version. Are you sure you want to continue?",
-      "batch_upgrade_success": "Batch upgrade task submitted",
       "virtualNode": "Virtual Node"
     },
     "form": {
