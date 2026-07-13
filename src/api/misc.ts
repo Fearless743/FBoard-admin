@@ -342,3 +342,7 @@ export async function fetchPluginReadme(code: string) {
 export async function fetchPluginStaticFiles(code: string) {
   return adminGet<any[]>("/plugin/staticFiles", { code });
 }
+
+export async function executePluginAction(code: string, action: string, params?: any) {
+  return adminPost<any>("/plugin/action", { code, action, params });
+}

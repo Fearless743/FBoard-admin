@@ -368,11 +368,20 @@ export function TicketListPage() {
                     >
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
-                          msg.is_from_admin
-                            ? "bg-primary text-primary-foreground rounded-tr-sm"
-                            : "bg-muted rounded-tl-sm"
+                          msg.is_from_bot
+                            ? "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-tr-sm"
+                            : msg.is_from_admin
+                              ? "bg-primary text-primary-foreground rounded-tr-sm"
+                              : "bg-muted rounded-tl-sm"
                         }`}
                       >
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          {msg.is_from_bot && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400">
+                              Bot
+                            </Badge>
+                          )}
+                        </div>
                         <p className="whitespace-pre-wrap break-words">
                           {msg.message}
                         </p>

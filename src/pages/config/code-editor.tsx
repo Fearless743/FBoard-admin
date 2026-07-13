@@ -32,9 +32,10 @@ interface CodeEditorProps {
   value: string;
   onChange: (v: string) => void;
   language: "json" | "yaml" | "conf" | "text";
+  minHeight?: string;
 }
 
-export function CodeEditor({ value, onChange, language }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, language, minHeight = "480px" }: CodeEditorProps) {
   const theme = useSettingsStore((s) => s.theme);
   const isDark = useMemo(() => {
     if (theme === "dark") return true;
@@ -72,7 +73,7 @@ export function CodeEditor({ value, onChange, language }: CodeEditorProps) {
           bracketMatching: language === "json",
           closeBrackets: language === "json",
         }}
-        minHeight="480px"
+        minHeight={minHeight}
       />
     </div>
   );
