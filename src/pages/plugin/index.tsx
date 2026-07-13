@@ -1,7 +1,19 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Upload, Trash2, Puzzle, Loader2, Wrench, Power, PowerOff, BookOpen, FileIcon, ExternalLink, ArrowLeft } from "lucide-react";
+import {
+  Upload,
+  Trash2,
+  Puzzle,
+  Loader2,
+  Wrench,
+  Power,
+  PowerOff,
+  BookOpen,
+  FileIcon,
+  ExternalLink,
+  ArrowLeft,
+} from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -28,6 +40,7 @@ import {
   deletePlugin,
   disablePlugin,
   enablePlugin,
+  executePluginAction,
   fetchPluginReadme,
   fetchPlugins,
   fetchPluginTypes,
@@ -38,14 +51,28 @@ import {
   upgradePlugin,
   uploadPlugin,
 } from "@/api/misc";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { usePlanOptions } from "@/hooks/use-plans";
+import { CodeEditor } from "@/pages/config/code-editor";
 
 export function PluginPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [uploading, setUploading] = useState(false);
-  const [action, setAction] = useState<{ name: string; type: "uninstall" | "delete" } | null>(null);
-  const [configuring, setConfiguring] = useState<string | null>(null);
+  const [action, setAction] = useState<{
+    name: string;
+    type: "uninstall" | "delete";
+  } | null>(null);
+  const [configuring, setConfiguring] = useState<{
+    code: string;
+    actions: any[];
+  } | null>(null);
   const [reading, setReading] = useState<string | null>(null);
   const [browsing, setBrowsing] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState("feature");
@@ -59,7 +86,10 @@ export function PluginPage() {
   const list: any[] = (data as any)?.data || [];
   const total = (data as any)?.total || 0;
 
-  const { data: pluginTypes } = useQuery({ queryKey: ["plugin", "types"], queryFn: fetchPluginTypes });
+  const { data: pluginTypes } = useQuery({
+    queryKey: ["plugin", "types"],
+    queryFn: fetchPluginTypes,
+  });
   const typeRaw = (pluginTypes as any)?.data || pluginTypes || [];
   const typeOptions: { value: string; label: string }[] = Array.isArray(typeRaw)
     ? typeRaw.map((t: any) => ({ value: t.value ?? t, label: t.label ?? t }))
@@ -96,9 +126,13 @@ export function PluginPage() {
               accept=".zip"
               className="hidden"
               id="plugin-upload"
-              onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+              onChange={(e) =>
+                e.target.files?.[0] && onUpload(e.target.files[0])
+              }
             />
-            <Button onClick={() => document.getElementById("plugin-upload")?.click()}>
+            <Button
+              onClick={() => document.getElementById("plugin-upload")?.click()}
+            >
               <Upload className="h-4 w-4" />
               {t("plugin.upload.button")}
             </Button>
@@ -109,14 +143,19 @@ export function PluginPage() {
       <div className="mb-4 flex items-center gap-2">
         <Select
           value={typeFilter}
-          onValueChange={(v) => { setTypeFilter(v); setPage(1); }}
+          onValueChange={(v) => {
+            setTypeFilter(v);
+            setPage(1);
+          }}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder={t("plugin.type.placeholder")} />
           </SelectTrigger>
           <SelectContent>
             {typeOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -138,7 +177,11 @@ export function PluginPage() {
       ) : (
         <div className="space-y-2">
           {list.map((p) => {
-            const status = !p.is_installed ? "not_installed" : p.is_enabled ? "enabled" : "disabled";
+            const status = !p.is_installed
+              ? "not_installed"
+              : p.is_enabled
+                ? "enabled"
+                : "disabled";
             return (
               <Card key={p.code || p.name}>
                 <CardContent className="flex items-center justify-between gap-4 p-4">
@@ -146,17 +189,32 @@ export function PluginPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold truncate">{p.name}</h3>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1.5 py-0"
+                        >
                           {getTypeLabel(p.type)}
                         </Badge>
-                        <span className="text-xs text-muted-foreground shrink-0">v{p.version || "—"}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          v{p.version || "—"}
+                        </span>
                         {p.has_readme && (
-                          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setReading(p.code)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-5 w-5"
+                            onClick={() => setReading(p.code)}
+                          >
                             <BookOpen className="h-3.5 w-3.5" />
                           </Button>
                         )}
                         {p.has_static_files && status === "enabled" && (
-                          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setBrowsing(p.code)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-5 w-5"
+                            onClick={() => setBrowsing(p.code)}
+                          >
                             <FileIcon className="h-3.5 w-3.5" />
                           </Button>
                         )}
@@ -166,23 +224,34 @@ export function PluginPage() {
                       </p>
                     </div>
                     {status === "enabled" ? (
-                      <Badge variant="success" className="shrink-0">{t("plugin.status.enabled")}</Badge>
+                      <Badge variant="success" className="shrink-0">
+                        {t("plugin.status.enabled")}
+                      </Badge>
                     ) : status === "disabled" ? (
-                      <Badge variant="secondary" className="shrink-0">{t("plugin.status.disabled")}</Badge>
+                      <Badge variant="secondary" className="shrink-0">
+                        {t("plugin.status.disabled")}
+                      </Badge>
                     ) : (
-                      <Badge variant="outline" className="shrink-0">{t("plugin.status.not_installed")}</Badge>
+                      <Badge variant="outline" className="shrink-0">
+                        {t("plugin.status.not_installed")}
+                      </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {status === "not_installed" ? (
                       <>
-                        <Button size="sm" onClick={async () => {
-                          try {
-                            await installPlugin(p.code);
-                            toast.success(t("plugin.messages.installSuccess"));
-                            qc.invalidateQueries({ queryKey: ["plugins"] });
-                          } catch (e) {}
-                        }}>
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await installPlugin(p.code);
+                              toast.success(
+                                t("plugin.messages.installSuccess"),
+                              );
+                              qc.invalidateQueries({ queryKey: ["plugins"] });
+                            } catch (e) {}
+                          }}
+                        >
                           {t("plugin.button.install")}
                         </Button>
                         {p.can_be_deleted && (
@@ -190,7 +259,9 @@ export function PluginPage() {
                             size="sm"
                             variant="ghost"
                             className="text-destructive"
-                            onClick={() => setAction({ name: p.code, type: "delete" })}
+                            onClick={() =>
+                              setAction({ name: p.code, type: "delete" })
+                            }
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -199,47 +270,80 @@ export function PluginPage() {
                     ) : (
                       <>
                         {p.has_config ? (
-                            <Button size="sm" variant="outline" disabled={status !== "enabled"} onClick={() => setConfiguring(p.code)}>
-                              <Wrench className="h-3.5 w-3.5" />
-                              {t("plugin.button.config")}
-                            </Button>
-                          ) : null}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={status !== "enabled"}
+                            onClick={() =>
+                              setConfiguring({
+                                code: p.code,
+                                actions: p.actions || [],
+                              })
+                            }
+                          >
+                            <Wrench className="h-3.5 w-3.5" />
+                            {t("plugin.button.config")}
+                          </Button>
+                        ) : null}
                         {p.need_upgrade && (
-                          <Button size="sm" variant="outline" onClick={async () => {
-                            try {
-                              await upgradePlugin(p.code);
-                              toast.success(t("plugin.messages.upgradeSuccess"));
-                              qc.invalidateQueries({ queryKey: ["plugins"] });
-                            } catch (e) {}
-                          }}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              try {
+                                await upgradePlugin(p.code);
+                                toast.success(
+                                  t("plugin.messages.upgradeSuccess"),
+                                );
+                                qc.invalidateQueries({ queryKey: ["plugins"] });
+                              } catch (e) {}
+                            }}
+                          >
                             {t("plugin.button.upgrade")}
                           </Button>
                         )}
                         {status === "enabled" ? (
-                          <Button size="sm" variant="ghost" onClick={async () => {
-                            try {
-                              await disablePlugin(p.code);
-                              toast.success(t("plugin.messages.disableSuccess"));
-                              qc.invalidateQueries({ queryKey: ["plugins"] });
-                            } catch (e) {}
-                          }}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={async () => {
+                              try {
+                                await disablePlugin(p.code);
+                                toast.success(
+                                  t("plugin.messages.disableSuccess"),
+                                );
+                                qc.invalidateQueries({ queryKey: ["plugins"] });
+                              } catch (e) {}
+                            }}
+                          >
                             <PowerOff className="h-3.5 w-3.5" />
                             {t("plugin.button.disable")}
                           </Button>
                         ) : (
-                          <Button size="sm" onClick={async () => {
-                            try {
-                              await enablePlugin(p.code);
-                              toast.success(t("plugin.messages.enableSuccess"));
-                              qc.invalidateQueries({ queryKey: ["plugins"] });
-                            } catch (e) {}
-                          }}>
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await enablePlugin(p.code);
+                                toast.success(
+                                  t("plugin.messages.enableSuccess"),
+                                );
+                                qc.invalidateQueries({ queryKey: ["plugins"] });
+                              } catch (e) {}
+                            }}
+                          >
                             <Power className="h-3.5 w-3.5" />
                             {t("plugin.button.enable")}
                           </Button>
                         )}
                         {status === "disabled" && (
-                          <Button size="sm" variant="ghost" onClick={() => setAction({ name: p.code, type: "uninstall" })}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setAction({ name: p.code, type: "uninstall" })
+                            }
+                          >
                             {t("plugin.button.uninstall")}
                           </Button>
                         )}
@@ -272,7 +376,11 @@ export function PluginPage() {
             ? t("plugin.uninstall.description")
             : t("plugin.delete.description")
         }
-        confirmText={action?.type === "uninstall" ? t("plugin.uninstall.button") : t("plugin.delete.button")}
+        confirmText={
+          action?.type === "uninstall"
+            ? t("plugin.uninstall.button")
+            : t("plugin.delete.button")
+        }
         onConfirm={async () => {
           if (!action) return;
           try {
@@ -290,7 +398,8 @@ export function PluginPage() {
       />
 
       <PluginConfigDialog
-        name={configuring}
+        code={configuring?.code ?? null}
+        actions={configuring?.actions ?? []}
         onOpenChange={(v) => !v && setConfiguring(null)}
       />
 
@@ -357,10 +466,22 @@ function PluginStaticFilesDialog({
   // If a file is selected, show it in full-screen dialog
   if (selectedFile) {
     return (
-      <Dialog open={!!code} onOpenChange={(v) => { if (!v) { setSelectedFile(null); onOpenChange(false); } }}>
+      <Dialog
+        open={!!code}
+        onOpenChange={(v) => {
+          if (!v) {
+            setSelectedFile(null);
+            onOpenChange(false);
+          }
+        }}
+      >
         <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0">
           <div className="flex items-center justify-between px-4 py-2 border-b bg-card">
-            <Button size="sm" variant="ghost" onClick={() => setSelectedFile(null)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedFile(null)}
+            >
               <ArrowLeft className="h-4 w-4 mr-1" />
               返回列表
             </Button>
@@ -398,7 +519,9 @@ function PluginStaticFilesDialog({
             <Skeleton className="h-10 w-full" />
           </div>
         ) : files.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">暂无静态文件</p>
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            暂无静态文件
+          </p>
         ) : (
           <div className="space-y-1">
             {files.map((file, idx) => (
@@ -416,7 +539,15 @@ function PluginStaticFilesDialog({
                     </p>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" className="shrink-0" onClick={(e) => { e.stopPropagation(); window.open(file.url, "_blank"); }}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(file.url, "_blank");
+                  }}
+                >
                   <ExternalLink className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -434,33 +565,71 @@ function PluginStaticFilesDialog({
 }
 
 function PluginConfigDialog({
-  name,
+  code,
+  actions,
   onOpenChange,
 }: {
-  name: string | null;
+  code: string | null;
+  actions: any[];
   onOpenChange: (v: boolean) => void;
 }) {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const [values, setValues] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionConfirm, setActionConfirm] = useState<any | null>(null);
+  const { data: planOptions = [], isLoading: plansLoading } = usePlanOptions();
 
   const { data: schema, isLoading } = useQuery({
-    queryKey: ["plugin", "config", name],
-    queryFn: () => configPlugin(name!),
-    enabled: !!name,
+    queryKey: ["plugin", "config", code],
+    queryFn: () => configPlugin(code!),
+    enabled: !!code,
   });
 
   // schema is the config object: { field_name: { type, label, description, value, options } }
-  const fields = schema && typeof schema === "object" && !Array.isArray(schema)
-    ? Object.entries(schema as Record<string, any>).map(([key, cfg]) => ({ key, ...cfg }))
-    : [];
+  const fields =
+    schema && typeof schema === "object" && !Array.isArray(schema)
+      ? Object.entries(schema as Record<string, any>).map(([key, cfg]) => ({
+          key,
+          ...cfg,
+        }))
+      : [];
+
+  useEffect(() => {
+    setValues({});
+    setActionConfirm(null);
+  }, [code]);
 
   // Load values from schema on first load
   useEffect(() => {
     if (fields.length > 0 && Object.keys(values).length === 0) {
       const initial: Record<string, any> = {};
       for (const f of fields) {
-        initial[f.key] = f.value !== undefined && f.value !== null ? f.value : "";
+        const value =
+          f.value !== undefined && f.value !== null ? f.value : "";
+
+        if (f.type === "json") {
+          if (typeof value === "string") {
+            try {
+              initial[f.key] = value.trim()
+                ? JSON.stringify(JSON.parse(value), null, 2)
+                : "";
+            } catch {
+              initial[f.key] = value;
+            }
+          } else {
+            initial[f.key] = JSON.stringify(value, null, 2);
+          }
+          continue;
+        }
+
+        if (f.type === "yaml") {
+          initial[f.key] = typeof value === "string" ? value : String(value);
+          continue;
+        }
+
+        initial[f.key] = value;
       }
       setValues(initial);
     }
@@ -471,10 +640,33 @@ function PluginConfigDialog({
   };
 
   const submit = async () => {
-    if (!name) return;
+    if (!code) return;
+
+    const payload = { ...values };
+    for (const field of fields) {
+      if (field.type !== "json") continue;
+
+      const source = String(values[field.key] ?? "").trim();
+      if (!source) {
+        payload[field.key] = null;
+        continue;
+      }
+
+      try {
+        payload[field.key] = JSON.parse(source);
+      } catch {
+        toast.error(
+          t("plugin.messages.invalidJson", {
+            field: field.label || field.key,
+          }),
+        );
+        return;
+      }
+    }
+
     setSaving(true);
     try {
-      await savePluginConfig(name, values);
+      await savePluginConfig(code, payload);
       toast.success(t("plugin.messages.configSaveSuccess"));
       onOpenChange(false);
     } catch (e) {
@@ -484,11 +676,30 @@ function PluginConfigDialog({
     }
   };
 
+  const runAction = async (act: any) => {
+    if (!code) return;
+    const key = `${code}:${act.name}`;
+    setActionLoading(key);
+    try {
+      const res = await executePluginAction(code, act.name);
+      const data = (res as any)?.data;
+      const message = data?.message || act.label + " 执行成功";
+      toast.success(message);
+      qc.invalidateQueries({ queryKey: ["plugins"] });
+    } catch (e) {
+      toast.error(act.label + " 执行失败");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
-    <Dialog open={!!name} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={!!code} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{name} · {t("plugin.config.title")}</DialogTitle>
+          <DialogTitle>
+            {code} · {t("plugin.config.title")}
+          </DialogTitle>
         </DialogHeader>
         {isLoading ? (
           <div className="space-y-4">
@@ -497,13 +708,75 @@ function PluginConfigDialog({
             <Skeleton className="h-20 w-full" />
           </div>
         ) : fields.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("plugin.config.noConfigs")}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("plugin.config.noConfigs")}
+          </p>
         ) : (
           <div className="space-y-5">
             {fields.map((f) => {
               const label = f.label || f.key;
               const description = f.description || "";
               const placeholder = f.placeholder || "";
+
+              if (f.type === "json" || f.type === "yaml") {
+                return (
+                  <div key={f.key} className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="text-sm font-medium">{label}</Label>
+                      <Badge variant="outline" className="font-mono text-[10px] uppercase">
+                        {f.type}
+                      </Badge>
+                    </div>
+                    <CodeEditor
+                      value={String(values[f.key] ?? "")}
+                      onChange={(value) => setValue(f.key, value)}
+                      language={f.type}
+                      minHeight="220px"
+                    />
+                    {description && (
+                      <p className="text-xs text-muted-foreground">
+                        {description}
+                      </p>
+                    )}
+                  </div>
+                );
+              }
+
+              if (f.type === "plan") {
+                return (
+                  <div key={f.key} className="space-y-1.5">
+                    <Label className="text-sm font-medium">{label}</Label>
+                    <Select
+                      value={String(values[f.key] ?? 0)}
+                      onValueChange={(v) => setValue(f.key, Number(v))}
+                      disabled={plansLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            placeholder || t("plugin.config.selectPlan")
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">
+                          {t("plugin.config.noPlan")}
+                        </SelectItem>
+                        {planOptions.map((plan) => (
+                          <SelectItem key={plan.id} value={String(plan.id)}>
+                            {plan.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {description && (
+                      <p className="text-xs text-muted-foreground">
+                        {description}
+                      </p>
+                    )}
+                  </div>
+                );
+              }
 
               if (f.type === "select") {
                 const options = Array.isArray(f.options) ? f.options : [];
@@ -519,10 +792,15 @@ function PluginConfigDialog({
                       </SelectTrigger>
                       <SelectContent>
                         {options.map((opt: any) => {
-                          const optVal = typeof opt === "string" ? opt : opt.value ?? opt;
-                          const optLabel = typeof opt === "string" ? opt : opt.label ?? opt;
+                          const optVal =
+                            typeof opt === "string" ? opt : (opt.value ?? opt);
+                          const optLabel =
+                            typeof opt === "string" ? opt : (opt.label ?? opt);
                           return (
-                            <SelectItem key={String(optVal)} value={String(optVal)}>
+                            <SelectItem
+                              key={String(optVal)}
+                              value={String(optVal)}
+                            >
                               {optLabel}
                             </SelectItem>
                           );
@@ -530,7 +808,9 @@ function PluginConfigDialog({
                       </SelectContent>
                     </Select>
                     {description && (
-                      <p className="text-xs text-muted-foreground">{description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {description}
+                      </p>
                     )}
                   </div>
                 );
@@ -538,11 +818,16 @@ function PluginConfigDialog({
 
               if (f.type === "boolean") {
                 return (
-                  <div key={f.key} className="flex items-center justify-between rounded-md border bg-card px-4 py-3">
+                  <div
+                    key={f.key}
+                    className="flex items-center justify-between rounded-md border bg-card px-4 py-3"
+                  >
                     <div className="space-y-0.5 pr-4">
                       <Label className="text-sm font-medium">{label}</Label>
                       {description && (
-                        <p className="text-xs text-muted-foreground">{description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {description}
+                        </p>
                       )}
                     </div>
                     <Switch
@@ -565,7 +850,9 @@ function PluginConfigDialog({
                       onChange={(e) => setValue(f.key, e.target.value)}
                     />
                     {description && (
-                      <p className="text-xs text-muted-foreground">{description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {description}
+                      </p>
                     )}
                   </div>
                 );
@@ -581,11 +868,50 @@ function PluginConfigDialog({
                     onChange={(e) => setValue(f.key, e.target.value)}
                   />
                   {description && (
-                    <p className="text-xs text-muted-foreground">{description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {description}
+                    </p>
                   )}
                 </div>
               );
             })}
+          </div>
+        )}
+        {actions.length > 0 && (
+          <div className="border-t pt-4 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              {t("plugin.config.actions")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {actions.map((act: any) => (
+                <Button
+                  key={act.name}
+                  size="sm"
+                  variant={
+                    act.color === "destructive"
+                      ? "destructive"
+                      : act.color === "outline"
+                        ? "outline"
+                        : "default"
+                  }
+                  disabled={actionLoading === `${code}:${act.name}`}
+                  onClick={() => {
+                    if (act.confirm) {
+                      setActionConfirm(act);
+                    } else {
+                      runAction(act);
+                    }
+                  }}
+                >
+                  {actionLoading === `${code}:${act.name}` ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : act.icon ? (
+                    <span className="text-sm mr-1">{act.icon}</span>
+                  ) : null}
+                  {act.label}
+                </Button>
+              ))}
+            </div>
           </div>
         )}
         <DialogFooter className="gap-2">
@@ -597,6 +923,18 @@ function PluginConfigDialog({
             {t("plugin.config.save")}
           </Button>
         </DialogFooter>
+
+        <ConfirmDialog
+          open={!!actionConfirm}
+          onOpenChange={(v) => !v && setActionConfirm(null)}
+          title={actionConfirm?.label || ""}
+          description={actionConfirm?.confirm || ""}
+          onConfirm={async () => {
+            if (!actionConfirm) return;
+            await runAction(actionConfirm);
+            setActionConfirm(null);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -621,7 +959,9 @@ function PluginReadmeDialog({
     <Dialog open={!!code} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{code} · {t("plugin.readme.title")}</DialogTitle>
+          <DialogTitle>
+            {code} · {t("plugin.readme.title")}
+          </DialogTitle>
         </DialogHeader>
         {isLoading ? (
           <div className="space-y-2">
@@ -665,7 +1005,9 @@ function PluginReadmeDialog({
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">{t("plugin.readme.empty")}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("plugin.readme.empty")}
+          </p>
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

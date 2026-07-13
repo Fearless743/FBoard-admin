@@ -3240,7 +3240,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "description": "Modify plugin configuration",
       "save": "Save",
       "cancel": "Cancel",
-      "noConfigs": "This plugin has no configurable options"
+      "noConfigs": "This plugin has no configurable options",
+      "actions": "Actions",
+      "selectPlan": "Select a plan",
+      "noPlan": "No plan"
     },
     "readme": {
       "title": "Plugin Documentation",
@@ -3264,7 +3267,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "uploadSuccess": "Plugin uploaded successfully",
       "uploadError": "Failed to upload plugin",
       "deleteSuccess": "Plugin deleted successfully",
-      "deleteError": "Failed to delete plugin"
+      "deleteError": "Failed to delete plugin",
+      "actionSuccess": "Action executed successfully",
+      "actionError": "Failed to execute action",
+      "invalidJson": "{{field}} is not valid JSON"
     },
     "noPlugins": "No plugins"
   },

@@ -3269,7 +3269,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "description": "修改插件配置",
       "save": "保存",
       "cancel": "取消",
-      "noConfigs": "该插件没有可配置的选项"
+      "noConfigs": "该插件没有可配置的选项",
+      "actions": "操作",
+      "selectPlan": "请选择套餐",
+      "noPlan": "不选择套餐"
     },
     "readme": {
       "title": "插件文档",
@@ -3293,7 +3296,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "uploadSuccess": "插件上传成功",
       "uploadError": "插件上传失败",
       "deleteSuccess": "插件删除成功",
-      "deleteError": "插件删除失败"
+      "deleteError": "插件删除失败",
+      "actionSuccess": "执行成功",
+      "actionError": "执行失败",
+      "invalidJson": "{{field}} 不是有效的 JSON"
     },
     "noPlugins": "暂无插件"
   },
