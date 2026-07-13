@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, Loader2, Server, Copy, Check, Eye, EyeOff,
-  Activity, Terminal, Unlink, Link2, ExternalLink, ArrowRight,
+  Activity, Terminal, Unlink, Link2, ExternalLink, ArrowRight, RefreshCw, Power,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -46,6 +46,9 @@ import {
   getMachineToken,
   resetMachineToken,
   saveMachine,
+  upgradeMachine,
+  restartMachine,
+  batchUpgradeMachines,
   type Machine,
 } from "@/api/server";
 import { formatBytes, formatDate } from "@/lib/utils";
@@ -60,6 +63,12 @@ export function MachineListPage() {
   const [editing, setEditing] = useState<Machine | null>(null);
   const [deleting, setDeleting] = useState<Machine | null>(null);
   const [viewing, setViewing] = useState<Machine | null>(null);
+  const [upgrading, setUpgrading] = useState<Machine | null>(null);
+  const [restarting, setRestarting] = useState<Machine | null>(null);
+  const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
+  const [restartSubmitting, setRestartSubmitting] = useState(false);
+  const [batchUpgradeOpen, setBatchUpgradeOpen] = useState(false);
+  const [batchUpgradeSubmitting, setBatchUpgradeSubmitting] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["machines", { page, pageSize }],
@@ -74,10 +83,16 @@ export function MachineListPage() {
         title={t("machine.title")}
         description={t("machine.description")}
         actions={
-          <Button onClick={() => { setEditing(null); setOpen(true); }}>
-            <Plus className="h-4 w-4" />
-            {t("machine.form.add")}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => setBatchUpgradeOpen(true)}>
+              <RefreshCw className="h-4 w-4" />
+              {t("machine.operations.batchUpgrade")}
+            </Button>
+            <Button onClick={() => { setEditing(null); setOpen(true); }}>
+              <Plus className="h-4 w-4" />
+              {t("machine.form.add")}
+            </Button>
+          </div>
         }
       />
 
@@ -90,7 +105,7 @@ export function MachineListPage() {
               <TableHead className="w-24 text-center">{t("machine.columns.status")}</TableHead>
               <TableHead className="w-24 text-right">{t("machine.columns.nodesHosted")}</TableHead>
               <TableHead className="w-40">{t("machine.columns.lastSeen")}</TableHead>
-              <TableHead className="w-24 text-right">{t("machine.columns.actions")}</TableHead>
+              <TableHead className="w-40 text-right">{t("machine.columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -147,6 +162,26 @@ export function MachineListPage() {
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="h-8 w-8"
+                        disabled={!m.is_active || !m.is_online}
+                        title={t("machine.operations.upgrade")}
+                        onClick={() => setUpgrading(m)}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        disabled={!m.is_active || !m.is_online}
+                        title={t("machine.operations.restart")}
+                        onClick={() => setRestarting(m)}
+                      >
+                        <Power className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
                         className="h-8 w-8 text-destructive"
                         onClick={() => setDeleting(m)}
                       >
@@ -194,6 +229,83 @@ export function MachineListPage() {
             qc.invalidateQueries({ queryKey: ["machines"] });
             setDeleting(null);
           } catch (e) {}
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!upgrading}
+        onOpenChange={(v) => {
+          if (!v && !upgradeSubmitting) setUpgrading(null);
+        }}
+        title={t("machine.operations.upgradeTitle")}
+        description={upgrading ? t("machine.operations.upgradeDescription", { name: upgrading.name }) : undefined}
+        confirmText={t("machine.operations.upgrade")}
+        loading={upgradeSubmitting}
+        onConfirm={async () => {
+          if (!upgrading || upgradeSubmitting) return;
+          setUpgradeSubmitting(true);
+          try {
+            await upgradeMachine(upgrading.id);
+            toast.success(t("machine.operations.upgradeSubmitted", { name: upgrading.name }));
+            qc.invalidateQueries({ queryKey: ["machines"] });
+            setUpgrading(null);
+          } catch (e) {
+          } finally {
+            setUpgradeSubmitting(false);
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!restarting}
+        onOpenChange={(v) => {
+          if (!v && !restartSubmitting) setRestarting(null);
+        }}
+        title={t("machine.operations.restartTitle")}
+        description={restarting ? t("machine.operations.restartDescription", { name: restarting.name }) : undefined}
+        confirmText={t("machine.operations.restart")}
+        loading={restartSubmitting}
+        onConfirm={async () => {
+          if (!restarting || restartSubmitting) return;
+          setRestartSubmitting(true);
+          try {
+            await restartMachine(restarting.id);
+            toast.success(t("machine.operations.restartSubmitted", { name: restarting.name }));
+            qc.invalidateQueries({ queryKey: ["machines"] });
+            setRestarting(null);
+          } catch (e) {
+          } finally {
+            setRestartSubmitting(false);
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={batchUpgradeOpen}
+        onOpenChange={(v) => {
+          if (!v && !batchUpgradeSubmitting) setBatchUpgradeOpen(false);
+        }}
+        title={t("machine.operations.batchUpgradeTitle")}
+        description={t("machine.operations.batchUpgradeDescription")}
+        confirmText={t("machine.operations.batchUpgrade")}
+        loading={batchUpgradeSubmitting}
+        onConfirm={async () => {
+          if (batchUpgradeSubmitting) return;
+          setBatchUpgradeSubmitting(true);
+          try {
+            const result = await batchUpgradeMachines();
+            const skipped = result?.skipped || { inactive: 0, offline: 0 };
+            toast.success(t("machine.operations.batchUpgradeSubmitted", {
+              submitted: result?.submitted || 0,
+              inactive: skipped.inactive || 0,
+              offline: skipped.offline || 0,
+            }));
+            qc.invalidateQueries({ queryKey: ["machines"] });
+            setBatchUpgradeOpen(false);
+          } catch (e) {
+          } finally {
+            setBatchUpgradeSubmitting(false);
+          }
         }}
       />
     </>

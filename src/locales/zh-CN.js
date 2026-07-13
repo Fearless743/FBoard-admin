@@ -944,6 +944,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "label": "强制HTTPS",
           "description": "当站点没有使用HTTPS，CDN或反代开启强制HTTPS时需要开启。"
         },
+        "maintenanceMode": {
+          "label": "维护模式",
+          "description": "开启后普通用户的状态变更和代理流量将暂停，管理员仍可进入后台关闭维护模式。"
+        },
         "subscribeUrl": {
           "label": "订阅URL",
           "placeholder": "用于订阅所使用，多个订阅地址用','隔开.留空则为站点URL。",
@@ -1917,6 +1921,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "users": "在线用户"
         }
       },
+      "version": "版本",
       "customId": "自定义ID",
       "originalId": "原始ID",
       "type": "类型",
@@ -1962,6 +1967,26 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "confirm": "删除"
         },
         "copy_success": "复制成功",
+        "upgrade": {
+          "title": "确认升级独立服务",
+          "description": "将升级该独立节点运行的整个 Fboard-Node 进程，升级过程中服务将短暂中断。确定要继续吗？",
+          "standalone": "升级独立 Fboard-Node",
+          "standalone_title": "确认升级独立 Fboard-Node",
+          "standalone_description": "将升级该独立节点运行的整个 Fboard-Node 进程，而不是单个协议节点。升级过程中服务会短暂中断。确定要继续吗？",
+          "confirm": "升级"
+        },
+        "upgrade_success": "升级任务已提交",
+        "restart": {
+          "menu": "重启服务",
+          "standalone_menu": "重启独立 Fboard-Node 服务",
+          "title": "确认重启服务",
+          "standalone_description": "将重启该独立节点运行的整个 Fboard-Node 进程，期间节点服务会短暂中断。确定要继续吗？",
+          "machine_description": "机器级重启请前往服务器管理，同机部署的全部节点都会受到影响。",
+          "confirm": "重启服务",
+          "submitted": "重启任务已提交",
+          "error": "重启任务提交失败"
+        },
+        "machine_manage": "前往服务器管理",
         "delete_success": "删除成功"
       }
     },
@@ -2017,6 +2042,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "batch_reset_traffic_success": "成功重置 {{count}} 个节点的流量",
       "batch_reset_traffic_error": "批量重置流量失败",
+      "batch_upgrade": "一键升级",
+      "batch_upgrade_confirm_title": "确认批量升级",
+      "batch_upgrade_confirm_description": "将升级所有已部署节点的 Fboard-Node 到最新版本。确定要继续吗？",
+      "batch_upgrade_success": "批量升级任务已提交",
       "virtualNode": "虚拟节点"
     },
     "form": {
@@ -2897,7 +2926,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
   },
   "machine": {
     "title": "服务器管理",
-    "description": "用于查看服务器健康、负载与承载节点，并从运维视角快捷发起节点操作。",
+    "description": "用于查看服务器健康、负载与承载节点，并从运维视角管理 Fboard-Node 服务。",
     "columns": {
       "id": "ID",
       "name": "服务器名称",
@@ -2929,6 +2958,20 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "high_load_count": "高负载",
       "tip": "适合集中查看服务器在线情况、承载节点数量与资源压力。",
       "reset": "重置"
+    },
+    "operations": {
+      "upgrade": "升级 Fboard-Node",
+      "restart": "重启 Fboard-Node 服务",
+      "upgradeTitle": "确认升级服务器",
+      "upgradeDescription": "将升级服务器“{{name}}”上的 Fboard-Node 服务。升级过程中该服务器上的服务可能短暂中断。",
+      "restartTitle": "确认重启服务器服务",
+      "restartDescription": "将重启服务器“{{name}}”上的整个 Fboard-Node 服务进程，期间该服务器上的服务会短暂中断。",
+      "upgradeSubmitted": "服务器“{{name}}”的升级任务已提交",
+      "restartSubmitted": "服务器“{{name}}”的重启任务已提交",
+      "batchUpgrade": "一键升级服务器",
+      "batchUpgradeTitle": "确认批量升级服务器",
+      "batchUpgradeDescription": "将对所有在线且启用的服务器各提交一次 Fboard-Node 升级任务，不依赖服务器承载的节点数量。",
+      "batchUpgradeSubmitted": "已提交 {{submitted}} 台服务器；跳过 {{inactive}} 台禁用、{{offline}} 台离线服务器"
     },
     "overview": {
       "total": "服务器总数",

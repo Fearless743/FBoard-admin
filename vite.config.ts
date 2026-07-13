@@ -4,7 +4,10 @@ import path from "path";
 import fs from "node:fs";
 
 const localesSrc = path.resolve(__dirname, "src/locales");
-const localesDest = path.resolve(__dirname, "../Fboard/public/assets/admin/locales");
+const localesDest = path.resolve(
+  __dirname,
+  "../Fboard/public/assets/admin/locales",
+);
 
 function copyLocales() {
   return {
@@ -12,18 +15,20 @@ function copyLocales() {
     closeBundle() {
       fs.mkdirSync(localesDest, { recursive: true });
       for (const f of fs.readdirSync(localesSrc)) {
-        if (f.endsWith(".js")) fs.copyFileSync(path.join(localesSrc, f), path.join(localesDest, f));
+        if (f.endsWith(".js"))
+          fs.copyFileSync(path.join(localesSrc, f), path.join(localesDest, f));
       }
     },
   };
 }
 
 export default defineConfig({
+  base: "/assets/admin/",
   plugins: [react(), copyLocales()],
   build: {
     outDir: path.resolve(__dirname, "../Fboard/public/assets/admin"),
     manifest: true,
-    minify: false,
+    minify: true,
   },
   resolve: {
     alias: {
@@ -35,4 +40,3 @@ export default defineConfig({
     host: true,
   },
 });
-
