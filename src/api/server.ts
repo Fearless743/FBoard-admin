@@ -73,14 +73,13 @@ export interface Server {
   [k: string]: any;
 }
 
-export async function getNodes(params?: { current?: number; pageSize?: number; search?: string; type?: string; show_virtual?: boolean }): Promise<Server[]> {
+export async function getNodes(params?: { current?: number; pageSize?: number; search?: string; type?: string }): Promise<Server[]> {
   if (params) {
     const searchParams = new URLSearchParams();
     if (params.current) searchParams.set('current', String(params.current));
     if (params.pageSize) searchParams.set('pageSize', String(params.pageSize));
     if (params.search) searchParams.set('search', params.search);
     if (params.type) searchParams.set('type', params.type);
-    if (params.show_virtual) searchParams.set('show_virtual', '1');
     return adminGet<Server[]>("/server/manage/getNodes?" + searchParams.toString());
   }
   return adminGet<Server[]>("/server/manage/getNodes");
@@ -91,6 +90,7 @@ export interface SortNode {
   name: string;
   sort: number;
   type: string;
+  parent_id?: number | null;
 }
 
 export async function getSortNodes(): Promise<SortNode[]> {
@@ -133,8 +133,13 @@ export async function createChildNode(payload: { parent_id: number; name: string
   return adminPost<any>("/server/manage/create-child-node", payload);
 }
 
-export async function getChildNodes(parentId: number) {
-  return adminGet<Server[]>("/server/manage/get-children/" + parentId);
+export async function updateChildNode(payload: { id: number; name: string; host: string; port: number; group_ids?: number[]; tags?: string[]; show?: boolean }) {
+  return adminPost<any>("/server/manage/update-child-node", payload);
+}
+
+export async function getChildNodes(parentId: number): Promise<Server[]> {
+  const res = await adminGet<{ data: Server[] } | Server[]>("/server/manage/get-children/" + parentId);
+  return Array.isArray(res) ? res : (res as any)?.data || [];
 }
 
 export async function generateRealityKey() {
@@ -205,14 +210,23 @@ export interface Machine {
   id: number;
   name: string;
   is_active: boolean;
+  is_online?: boolean;
   notes?: string;
   last_seen_at?: number | null;
-  nodes_count?: number;
+  servers_count?: number;
   [k: string]: any;
 }
 
-export async function fetchMachines(): Promise<Machine[]> {
-  return adminGet<Machine[]>("/server/machine/fetch");
+export interface MachineListResponse {
+  data: Machine[];
+  total: number;
+  current_page: number;
+  per_page: number;
+  last_page: number;
+}
+
+export async function fetchMachines(current = 1, pageSize = 10): Promise<MachineListResponse> {
+  return adminGet<MachineListResponse>("/server/machine/fetch", { current, pageSize });
 }
 
 export async function saveMachine(payload: Partial<Machine>) {
@@ -235,10 +249,15 @@ export async function getMachineInstallCommand(id: number) {
   return adminGet<any>("/server/machine/installCommand", { id });
 }
 
-export async function getMachineHistory(id: number) {
-  return adminGet<any>("/server/machine/history", { id });
+export async function getMachineHistory(id: number, rangeHours?: number) {
+  const params: any = { machine_id: id };
+  if (rangeHours) {
+    params.range_hours = rangeHours;
+    params.limit = rangeHours * 60;
+  }
+  return adminGet<any>("/server/machine/history", params);
 }
 
 export async function getMachineNodes(id: number) {
-  return adminGet<any>("/server/machine/nodes", { id });
+  return adminGet<any>("/server/machine/nodes", { machine_id: id });
 }

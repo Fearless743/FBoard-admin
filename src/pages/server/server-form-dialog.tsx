@@ -1,7 +1,16 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
-import { Loader2, Check, ChevronsUpDown, X, ArrowRight, Plus, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  Check,
+  ChevronsUpDown,
+  X,
+  ArrowRight,
+  Plus,
+  RefreshCw,
+  Pencil,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -46,14 +55,15 @@ import {
   fetchProtocolDefinitions,
   fetchMachines,
   getNodes,
-  saveVirtualNodes,
-  getVirtualNodes,
+  createChildNode,
+  updateChildNode,
+  getChildNodes,
+  dropServer,
   type Server,
   type ServerGroup,
   type ProtocolType,
   type ProtocolConfigField,
   type ProtocolDefinition,
-  type VirtualNode,
 } from "@/api/server";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { gbToBytes } from "@/lib/utils";
@@ -83,11 +93,13 @@ export function ServerFormDialog({
   open,
   onOpenChange,
   server,
+  initialMachineId,
   onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   server: Server | null;
+  initialMachineId?: number | null;
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
@@ -114,33 +126,95 @@ export function ServerFormDialog({
     enabled: open,
   });
 
-  const { data: machines = [] } = useQuery({
+  const { data: machinesRes = { data: [] } } = useQuery({
     queryKey: ["machines"],
-    queryFn: fetchMachines,
+    queryFn: () => fetchMachines(1, 1000),
     staleTime: 300000,
     enabled: open,
   });
+  const machines: any[] = (machinesRes as any)?.data || [];
 
   const { data: nodesData } = useQuery({
     queryKey: ["servers", "nodes"],
     queryFn: () => getNodes(),
     enabled: open,
   });
-  const allNodes: any[] = (Array.isArray(nodesData) ? nodesData : (nodesData as any)?.data) ?? [];
+  const allNodes: any[] =
+    (Array.isArray(nodesData) ? nodesData : (nodesData as any)?.data) ?? [];
 
-  const { data: virtualNodesData } = useQuery({
-    queryKey: ["server", "virtual-nodes", server?.id],
-    queryFn: () => getVirtualNodes(server!.id),
+  const { data: childrenData } = useQuery({
+    queryKey: ["server", "child-nodes", server?.id],
+    queryFn: () => getChildNodes(server!.id),
     enabled: open && !!server?.id,
   });
-  const [virtualNodes, setVirtualNodes] = useState<VirtualNode[]>([]);
-  const [showAddVirtual, setShowAddVirtual] = useState(false);
+  const [childNodes, setChildNodes] = useState<Server[]>([]);
+  const [showAddChild, setShowAddChild] = useState(false);
+  const [editChildNode, setEditChildNode] = useState<Server | null>(null);
+  const [deleteChildId, setDeleteChildId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (open && virtualNodesData) {
-      setVirtualNodes(virtualNodesData);
+    if (open && childrenData) {
+      setChildNodes(childrenData);
     }
-  }, [open, virtualNodesData]);
+  }, [open, childrenData]);
+
+  const refreshChildNodes = useCallback(async () => {
+    if (!server?.id) return;
+    try {
+      const data = await getChildNodes(server.id);
+      setChildNodes(data);
+    } catch (e) {}
+  }, [server?.id]);
+
+  const handleAddChildNode = useCallback(
+    async (payload: {
+      name: string;
+      host: string;
+      port: number;
+      group_ids?: number[];
+      tags?: string[];
+      show?: boolean;
+    }) => {
+      if (!server?.id) return;
+      try {
+        await createChildNode({ parent_id: server.id, ...payload });
+        setShowAddChild(false);
+        toast.success(t("server.form.virtualNode.saveSuccess"));
+        await refreshChildNodes();
+      } catch (e) {}
+    },
+    [server?.id, refreshChildNodes, t],
+  );
+
+  const handleEditChildNode = useCallback(
+    async (payload: {
+      id: number;
+      name: string;
+      host: string;
+      port: number;
+      group_ids?: number[];
+      tags?: string[];
+      show?: boolean;
+    }) => {
+      try {
+        await updateChildNode(payload);
+        setEditChildNode(null);
+        toast.success(t("server.form.virtualNode.saveSuccess"));
+        await refreshChildNodes();
+      } catch (e) {}
+    },
+    [refreshChildNodes, t],
+  );
+
+  const handleDeleteChildNode = useCallback(async () => {
+    if (!deleteChildId) return;
+    try {
+      await dropServer(deleteChildId);
+      setDeleteChildId(null);
+      toast.success(t("server.columns.actions_dropdown.delete_success"));
+      await refreshChildNodes();
+    } catch (e) {}
+  }, [deleteChildId, refreshChildNodes, t]);
 
   const {
     register,
@@ -194,6 +268,9 @@ export function ServerFormDialog({
       const initialTags = (server?.tags || []).filter(Boolean);
       setTags(initialTags);
       setInputVal("");
+      const machineId = server
+        ? (server?.machine_id ?? null)
+        : (initialMachineId ?? null);
       reset({
         id: server?.id,
         name: server?.name || "",
@@ -207,14 +284,14 @@ export function ServerFormDialog({
           : 0,
         code: server?.code || "",
         group_ids: (server?.group_ids || []).map(Number),
-        machine_id: server?.machine_id ?? null,
+        machine_id: machineId,
         parent_id: server?.parent_id ?? null,
         show: server?.show !== 0,
         banned: !!server?.banned,
         protocol_settings: protocolSettings,
       });
     }
-  }, [open, server, reset, protocolTypes]);
+  }, [open, server, initialMachineId, reset, protocolTypes]);
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -247,7 +324,9 @@ export function ServerFormDialog({
           <div className="flex items-center justify-between gap-4">
             <div>
               <DialogTitle>
-                {server ? t("server.form.edit_node") : t("server.form.add_node")}
+                {server
+                  ? t("server.form.edit_node")
+                  : t("server.form.add_node")}
               </DialogTitle>
               <DialogDescription>
                 {t("server.manage.description")}
@@ -260,11 +339,15 @@ export function ServerFormDialog({
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger>
-                      <SelectValue placeholder="选择协议类型" />
+                      <SelectValue
+                        placeholder={t("server.form.type.placeholder")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {protocolTypes.map((p) => (
-                        <SelectItem key={p.type} value={p.type}>{p.name}</SelectItem>
+                        <SelectItem key={p.type} value={p.type}>
+                          {p.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -272,7 +355,13 @@ export function ServerFormDialog({
               />
             </div>
             {selectedType && (
-              <Button type="button" variant="link" size="sm" className="h-8 px-2 -ml-2" onClick={() => setNetworkDialogOpen(true)}>
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                className="h-8 px-2 -ml-2"
+                onClick={() => setNetworkDialogOpen(true)}
+              >
                 网络模板
               </Button>
             )}
@@ -327,7 +416,7 @@ export function ServerFormDialog({
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-foreground"
-                    title="同步到服务端口"
+                    title={t("server.form.port.sync")}
                     onClick={() => setValue("server_port", watch("port"))}
                   >
                     <ArrowRight className="h-4 w-4" />
@@ -356,20 +445,39 @@ export function ServerFormDialog({
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>绑定机器</Label>
+                <Label>{t("server.form.machine.label")}</Label>
                 <Controller
                   control={control}
                   name="machine_id"
                   render={({ field }) => (
-                    <Select value={String(field.value ?? "")} onValueChange={(v) => field.onChange(v ? Number(v) : null)}>
+                    <Select
+                      value={String(field.value ?? "")}
+                      onValueChange={(v) =>
+                        field.onChange(v ? Number(v) : null)
+                      }
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择绑定机器" />
+                        <SelectValue
+                          placeholder={t("server.form.machine.placeholder")}
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">独立部署</SelectItem>
+                        <SelectItem value="">
+                          {t("server.form.machine.none")}
+                        </SelectItem>
                         {(machines as any[]).map((m) => (
                           <SelectItem key={m.id} value={String(m.id)}>
-                            {m.name}
+                            <span className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "size-2 rounded-full shrink-0",
+                                  m.is_active
+                                    ? "bg-emerald-500"
+                                    : "bg-muted-foreground",
+                                )}
+                              />
+                              {m.name}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -378,70 +486,156 @@ export function ServerFormDialog({
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>父级节点</Label>
+                <Label>{t("server.form.parent.label")}</Label>
                 <Controller
                   control={control}
                   name="parent_id"
                   render={({ field }) => (
-                    <Select value={String(field.value ?? "")} onValueChange={(v) => field.onChange(v ? Number(v) : null)}>
+                    <Select
+                      value={String(field.value ?? "")}
+                      onValueChange={(v) =>
+                        field.onChange(v ? Number(v) : null)
+                      }
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择父级节点" />
+                        <SelectValue
+                          placeholder={t("server.form.parent.placeholder")}
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">无</SelectItem>
-                        {allNodes.filter((n: any) => n.id !== server?.id && n.type === watch("type") && !n.parent_id).map((n: any) => (
-                          <SelectItem key={n.id} value={String(n.id)}>
-                            {n.name} (#{n.id})
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="">
+                          {t("server.form.parent.none")}
+                        </SelectItem>
+                        {allNodes
+                          .filter(
+                            (n: any) =>
+                              n.id !== server?.id &&
+                              n.type === watch("type") &&
+                              !n.parent_id,
+                          )
+                          .map((n: any) => (
+                            <SelectItem key={n.id} value={String(n.id)}>
+                              {n.name} (#{n.id})
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   )}
                 />
               </div>
+              {/* 虚拟节点列表 */}
               {server?.id && (
                 <div className="space-y-1.5 sm:col-span-2">
                   <div className="flex items-center justify-between">
-                    <Label>虚拟节点</Label>
-                    <Button type="button" size="sm" variant="outline" onClick={() => setShowAddVirtual(true)}>
+                    <Label>{t("server.form.virtualNode.label")}</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditChildNode(null);
+                        setShowAddChild(true);
+                      }}
+                    >
                       <Plus className="h-3 w-3" />
-                      添加虚拟节点
+                      {t("server.form.virtualNode.add")}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    虚拟节点是同一服务的额外接入点，与子父节点是独立功能
+                    {t("server.form.virtualNode.description")}
                   </p>
-                  {virtualNodes.length > 0 ? (
+                  {childNodes.length > 0 ? (
                     <div className="space-y-1">
-                      {virtualNodes.map((v, i) => (
-                        <div key={i} className="flex items-center justify-between rounded-md border px-3 py-2 text-xs">
+                      {childNodes.map((v) => (
+                        <div
+                          key={v.id}
+                          className="flex items-center justify-between rounded-md border px-3 py-2 text-xs"
+                        >
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-medium">{v.host}:{v.port}</span>
-                            {(v.tags || []).map((t) => (
-                              <span key={t} className="rounded bg-secondary px-1.5 py-0.5 text-[10px]">{t}</span>
+                            <Switch
+                              checked={!!v.show}
+                              onCheckedChange={async (checked) => {
+                                try {
+                                  await updateChildNode({ id: v.id, name: v.name, host: v.host, port: v.port, show: checked, group_ids: v.group_ids, tags: v.tags });
+                                  await refreshChildNodes();
+                                } catch (e) {}
+                              }}
+                              className="scale-75"
+                            />
+                            <span className="font-medium">{v.name}</span>
+                            <span className="font-mono text-muted-foreground">
+                              {v.host}:{v.port}
+                            </span>
+                            {(v.tags || []).map((t: string) => (
+                              <span
+                                key={t}
+                                className="rounded bg-secondary px-1.5 py-0.5 text-[10px]"
+                              >
+                                {t}
+                              </span>
                             ))}
                           </div>
-                          <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive"
-                            onClick={() => setVirtualNodes(virtualNodes.filter((_, j) => j !== i))}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => {
+                                setEditChildNode(v);
+                                setShowAddChild(true);
+                              }}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive"
+                              onClick={() => {
+                                setDeleteChildId(v.id);
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground">暂无虚拟节点</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("server.form.virtualNode.empty")}
+                    </p>
                   )}
-                  {virtualNodes.length > 0 && (
-                    <Button type="button" size="sm" variant="secondary" onClick={async () => {
-                      try {
-                        await saveVirtualNodes(server.id, virtualNodes);
-                        toast.success("虚拟节点已保存");
-                      } catch (e) {}
-                    }}>
-                      保存虚拟节点
-                    </Button>
-                  )}
+                  {/* 删除确认弹窗 */}
+                  <Dialog
+                    open={!!deleteChildId}
+                    onOpenChange={(v) => !v && setDeleteChildId(null)}
+                  >
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>确认删除</DialogTitle>
+                      </DialogHeader>
+                      <p className="text-sm text-muted-foreground">
+                        确定要删除这个虚拟节点吗？
+                      </p>
+                      <DialogFooter className="gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setDeleteChildId(null)}
+                        >
+                          取消
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeleteChildNode}
+                        >
+                          删除
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               )}
               <div className="space-y-1.5 sm:col-span-2">
@@ -464,7 +658,7 @@ export function ServerFormDialog({
                   ))}
                   <input
                     className="min-w-[80px] flex-1 border-0 bg-transparent p-0 text-sm outline-none placeholder:text-muted-foreground"
-                    placeholder="输入后按逗号/回车添加"
+                    placeholder={t("server.form.tags.placeholder")}
                     value={inputVal}
                     onChange={(e) => setInputVal(e.target.value)}
                     onKeyDown={(e) => {
@@ -535,7 +729,9 @@ export function ServerFormDialog({
                     setValue={setValue}
                   />
                 ) : (
-                  <p className="text-xs text-muted-foreground">选择协议类型后可配置</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("server.form.type.configHint")}
+                  </p>
                 )}
               </div>
             )}
@@ -557,13 +753,18 @@ export function ServerFormDialog({
         </form>
       </DialogContent>
 
-      <AddVirtualNodeDialog
-        open={showAddVirtual}
-        onOpenChange={setShowAddVirtual}
-        onAdd={(vnode) => {
-          setVirtualNodes([...virtualNodes, vnode]);
-          setShowAddVirtual(false);
+      <ChildNodeDialog
+        open={showAddChild}
+        onOpenChange={(v) => {
+          if (!v) {
+            setShowAddChild(false);
+            setEditChildNode(null);
+          }
         }}
+        editNode={editChildNode}
+        serverId={server?.id}
+        onAdd={handleAddChildNode}
+        onEdit={handleEditChildNode}
       />
 
       <NetworkTemplateDialog
@@ -581,14 +782,35 @@ export function ServerFormDialog({
   );
 }
 
-function AddVirtualNodeDialog({
+function ChildNodeDialog({
   open,
   onOpenChange,
+  editNode,
+  serverId,
   onAdd,
+  onEdit,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onAdd: (vnode: VirtualNode) => void;
+  editNode: Server | null;
+  serverId?: number;
+  onAdd: (payload: {
+    name: string;
+    host: string;
+    port: number;
+    group_ids?: number[];
+    tags?: string[];
+    show?: boolean;
+  }) => Promise<void>;
+  onEdit: (payload: {
+    id: number;
+    name: string;
+    host: string;
+    port: number;
+    group_ids?: number[];
+    tags?: string[];
+    show?: boolean;
+  }) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const { data: groupsData } = useQuery<ServerGroup[]>({
@@ -597,58 +819,161 @@ function AddVirtualNodeDialog({
     enabled: open,
   });
   const groups = groupsData || [];
+
+  const [name, setName] = useState("");
   const [host, setHost] = useState("");
   const [port, setPort] = useState(443);
+  const [show, setShow] = useState(true);
   const [groupIds, setGroupIds] = useState<number[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
+  const isEditing = !!editNode;
+
   useEffect(() => {
-    if (!open) { setHost(""); setPort(443); setGroupIds([]); setTags([]); setTagInput(""); }
-  }, [open]);
+    if (!open) {
+      setName("");
+      setHost("");
+      setPort(443);
+      setShow(true);
+      setGroupIds([]);
+      setTags([]);
+      setTagInput("");
+    } else if (editNode) {
+      setName(editNode.name);
+      setHost(editNode.host);
+      setPort(editNode.port);
+      setShow(!!editNode.show);
+      setGroupIds(editNode.group_ids || []);
+      setTags(editNode.tags || []);
+      setTagInput("");
+    } else {
+      setName("");
+      setHost("");
+      setPort(443);
+      setShow(true);
+      setGroupIds([]);
+      setTags([]);
+      setTagInput("");
+    }
+  }, [open, editNode]);
+
+  const handleConfirm = async () => {
+    if (!host) return;
+    if (isEditing && editNode) {
+      await onEdit({
+        id: editNode.id,
+        name,
+        host,
+        port,
+        group_ids: groupIds.length ? groupIds : undefined,
+        tags: tags.length ? tags : undefined,
+        show,
+      });
+    } else {
+      await onAdd({
+        name,
+        host,
+        port,
+        group_ids: groupIds.length ? groupIds : undefined,
+        tags: tags.length ? tags : undefined,
+        show,
+      });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader><DialogTitle>添加虚拟节点</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>
+            {isEditing ? "编辑虚拟节点" : t("server.form.virtualNode.addDialogTitle")}
+          </DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>名称</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="节点名称"
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>主机地址</Label>
-              <Input value={host} onChange={(e) => setHost(e.target.value)} placeholder="host" />
+              <Label>{t("server.form.virtualNode.host")}</Label>
+              <Input
+                value={host}
+                onChange={(e) => setHost(e.target.value)}
+                placeholder="host"
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>端口</Label>
-              <Input type="number" value={port} onChange={(e) => setPort(Number(e.target.value))} />
+              <Label>{t("server.form.virtualNode.port")}</Label>
+              <Input
+                type="number"
+                value={port}
+                onChange={(e) => setPort(Number(e.target.value))}
+              />
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={show} onCheckedChange={setShow} />
+            <Label className="text-sm">显示</Label>
+          </div>
           <div className="space-y-1.5">
-            <Label>权限组</Label>
+            <Label>{t("server.form.virtualNode.groupIds")}</Label>
             <div className="flex flex-wrap gap-2 rounded-md border p-2">
+              {groups.length === 0 && (
+                <span className="text-xs text-muted-foreground">暂无权限组</span>
+              )}
               {groups.map((g: any) => {
                 const active = groupIds.includes(g.id);
                 return (
-                  <button key={g.id} type="button"
-                    onClick={() => setGroupIds(active ? groupIds.filter((id: number) => id !== g.id) : [...groupIds, g.id])}
-                    className={"rounded-md border px-2.5 py-1 text-xs transition-colors " + (active ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent")}
-                  >{g.name}</button>
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() =>
+                      setGroupIds(
+                        active
+                          ? groupIds.filter((id: number) => id !== g.id)
+                          : [...groupIds, g.id],
+                      )
+                    }
+                    className={
+                      "rounded-md border px-2.5 py-1 text-xs transition-colors " +
+                      (active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "hover:bg-accent")
+                    }
+                  >
+                    {g.name}
+                  </button>
                 );
               })}
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>标签</Label>
+            <Label>{t("server.form.virtualNode.tags")}</Label>
             <div className="flex flex-wrap gap-1.5 rounded-md border px-2 py-1.5">
               {tags.map((t, i) => (
-                <span key={i} className="rounded bg-secondary px-2 py-0.5 text-xs">
+                <span
+                  key={i}
+                  className="rounded bg-secondary px-2 py-0.5 text-xs"
+                >
                   {t}
-                  <button type="button" className="ml-1 text-muted-foreground hover:text-destructive"
+                  <button
+                    type="button"
+                    className="ml-1 text-muted-foreground hover:text-destructive"
                     onClick={() => setTags(tags.filter((_, j) => j !== i))}
-                  >&times;</button>
+                  >
+                    &times;
+                  </button>
                 </span>
               ))}
-              <input className="flex-1 min-w-[80px] border-0 bg-transparent p-0 text-sm outline-none"
-                placeholder="输入后按回车添加"
+              <input
+                className="flex-1 min-w-[80px] border-0 bg-transparent p-0 text-sm outline-none"
+                placeholder={t("server.form.virtualNode.tagsPlaceholder")}
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -664,9 +989,11 @@ function AddVirtualNodeDialog({
           </div>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
-          <Button onClick={() => { if (host) onAdd({ host, port, group_ids: groupIds.length ? groupIds : undefined, tags: tags.length ? tags : undefined }); }} disabled={!host}>
-            添加
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("common.cancel")}
+          </Button>
+          <Button onClick={handleConfirm} disabled={!host || !name}>
+            {isEditing ? "保存" : "添加"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -708,7 +1035,6 @@ function ProtocolConfigFields({
         const fieldName = field.label || key;
         let desc = field.description;
 
-        // Dynamic hint for plugin_opts based on selected plugin
         if (key === "plugin_opts" && !prefix) {
           const selectedPlugin = watch("protocol_settings.plugin");
           desc =
@@ -727,7 +1053,6 @@ function ProtocolConfigFields({
           if (!shouldShow) return null;
         }
 
-        // 当插件为 None 时隐藏插件参数
         if (
           key === "plugin_opts" &&
           !prefix &&
@@ -743,14 +1068,14 @@ function ProtocolConfigFields({
                 <Label className="text-sm font-medium">{fieldName}</Label>
               </div>
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
-                <ProtocolConfigFields
-                  fields={field.fields}
-                  prefix={fieldPath}
-                  register={register}
-                  control={control}
-                  watch={watch}
-                  setValue={setValue}
-                />
+              <ProtocolConfigFields
+                fields={field.fields}
+                prefix={fieldPath}
+                register={register}
+                control={control}
+                watch={watch}
+                setValue={setValue}
+              />
             </div>
           );
         }
@@ -869,10 +1194,17 @@ function ProtocolConfigFields({
                 render={({ field: controllerField }) => (
                   <textarea
                     className="flex w-full min-h-[60px] rounded-md border border-input bg-transparent px-3 py-2 text-xs font-mono"
-                    value={controllerField.value ? JSON.stringify(controllerField.value, null, 2) : ""}
+                    value={
+                      controllerField.value
+                        ? JSON.stringify(controllerField.value, null, 2)
+                        : ""
+                    }
                     onChange={(e) => {
-                      try { controllerField.onChange(JSON.parse(e.target.value)); }
-                      catch { controllerField.onChange(e.target.value); }
+                      try {
+                        controllerField.onChange(JSON.parse(e.target.value));
+                      } catch {
+                        controllerField.onChange(e.target.value);
+                      }
                     }}
                   />
                 )}
@@ -887,24 +1219,36 @@ function ProtocolConfigFields({
               <Label>{fieldName}</Label>
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
               <div className="relative">
-                  <Input
-                    placeholder={field.placeholder || `输入${fieldName}`}
-                    className="pr-10"
-                    {...register(`protocol_settings.${fieldPath}`)}
-                  />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground" title="生成密钥对"
-                    onClick={async () => {
-                      try {
-                        const { generateRealityKey } = await import("@/api/server");
-                        const res = await generateRealityKey();
-                        setValue(`protocol_settings.reality_settings.public_key`, res.public_key);
-                        setValue(`protocol_settings.reality_settings.private_key`, res.private_key);
-                      } catch (e) {}
-                    }}
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Input
+                  placeholder={field.placeholder || `输入${fieldName}`}
+                  className="pr-10"
+                  {...register(`protocol_settings.${fieldPath}`)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
+                  title="生成密钥对"
+                  onClick={async () => {
+                    try {
+                      const { generateRealityKey } =
+                        await import("@/api/server");
+                      const res = await generateRealityKey();
+                      setValue(
+                        `protocol_settings.reality_settings.public_key`,
+                        res.public_key,
+                      );
+                      setValue(
+                        `protocol_settings.reality_settings.private_key`,
+                        res.private_key,
+                      );
+                    } catch (e) {}
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
         }

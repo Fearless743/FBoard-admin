@@ -1,12 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Loader2, BookOpen, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -21,7 +24,6 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { SortableContainer, SortableRow, DragCell } from "@/components/common/sortable-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +42,7 @@ import {
   dropKnowledge,
   fetchKnowledges,
   fetchKnowledgeCategories,
+  fetchKnowledgeDetail,
   saveKnowledge,
   showKnowledge,
   sortKnowledge,
@@ -55,6 +58,7 @@ export function KnowledgeListPage() {
   const [editing, setEditing] = useState<KnowledgeItem | null>(null);
   const [deleting, setDeleting] = useState<KnowledgeItem | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
+  const [pendingList, setPendingList] = useState<KnowledgeItem[] | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["knowledge"],
@@ -62,15 +66,40 @@ export function KnowledgeListPage() {
   });
   const list: KnowledgeItem[] = data || [];
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const displayList = pendingList ?? (categoryFilter === "all" ? list : list.filter(k => k.category === categoryFilter));
   const { data: categories } = useQuery({ queryKey: ["knowledge", "categories"], queryFn: fetchKnowledgeCategories });
-  const filtered = categoryFilter === "all" ? list : list.filter(k => k.category === categoryFilter);
 
-  const handleReorder = useCallback(async (ids: number[]) => {
+  const handleReorder = useCallback((ids: number[]) => {
+    const fullList = pendingList ?? list;
+    const reordered = ids.map((id) => fullList.find((i) => i.id === id)!).filter(Boolean);
+    setPendingList(reordered);
+  }, [list, pendingList]);
+
+  const finishSort = useCallback(async () => {
+    if (!pendingList) {
+      setDragEnabled(false);
+      return;
+    }
     try {
-      await sortKnowledge({ ids });
+      await sortKnowledge({ ids: pendingList.map((i) => i.id) });
       qc.invalidateQueries({ queryKey: ["knowledge"] });
+      setPendingList(null);
+      setDragEnabled(false);
     } catch (e) {}
-  }, [qc]);
+  }, [pendingList, qc]);
+
+  const toggleDrag = useCallback(() => {
+    if (dragEnabled) {
+      if (pendingList) {
+        finishSort();
+      } else {
+        setDragEnabled(false);
+      }
+    } else {
+      setPendingList(null);
+      setDragEnabled(true);
+    }
+  }, [dragEnabled, pendingList, finishSort]);
 
   return (
     <>
@@ -81,7 +110,7 @@ export function KnowledgeListPage() {
           <div className="flex items-center gap-2">
             <Button
               variant={dragEnabled ? "default" : "outline"}
-              onClick={() => setDragEnabled(!dragEnabled)}
+              onClick={toggleDrag}
             >
               <GripVertical className="h-4 w-4" />
               {dragEnabled ? "完成排序" : "编辑排序"}
@@ -114,10 +143,9 @@ export function KnowledgeListPage() {
             <TableRow>
               {dragEnabled && <TableHead className="w-10" />}
               <TableHead className="w-16">{t("knowledge.columns.id")}</TableHead>
+              <TableHead className="w-20 text-center">{t("knowledge.columns.status")}</TableHead>
               <TableHead>{t("knowledge.columns.title")}</TableHead>
               <TableHead>{t("knowledge.columns.category")}</TableHead>
-              <TableHead className="w-32">{t("knowledge.form.language")}</TableHead>
-              <TableHead className="w-24 text-center">{t("knowledge.columns.status")}</TableHead>
               <TableHead className="w-24 text-right">{t("knowledge.columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -125,7 +153,7 @@ export function KnowledgeListPage() {
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: dragEnabled ? 7 : 6 }).map((_, j) => (
+                  {Array.from({ length: dragEnabled ? 6 : 5 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
@@ -137,36 +165,25 @@ export function KnowledgeListPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              <SortableContainer items={filtered} onReorder={handleReorder} enabled={dragEnabled}>
-                {filtered.map((k) => (
+              <SortableContainer items={displayList} onReorder={handleReorder} enabled={dragEnabled}>
+                {displayList.map((k) => (
                 <SortableRow key={k.id} id={k.id}>
                   <DragCell />
-                  <TableCell className="font-mono text-xs">#{k.id}</TableCell>
+                  <TableCell><IdBadge id={k.id} /></TableCell>
+                  <TableCell className="text-center">
+                    <Switch checked={!!k.show} onCheckedChange={async (checked) => {
+                      try {
+                        await showKnowledge({ id: k.id, show: checked ? 1 : 0 });
+                        qc.invalidateQueries({ queryKey: ["knowledge"] });
+                      } catch (e) {}
+                    }} />
+                  </TableCell>
                   <TableCell className="font-medium">{k.title}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{k.category || "—"}</Badge>
                   </TableCell>
-                  <TableCell className="text-xs">
-                    {t(`knowledge.languages.${k.language}`, k.language)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {k.show ? <Badge variant="success">ON</Badge> : <Badge variant="secondary">OFF</Badge>}
-                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={async () => {
-                          try {
-                            await showKnowledge({ id: k.id, show: k.show ? 0 : 1 });
-                            qc.invalidateQueries({ queryKey: ["knowledge"] });
-                          } catch (e) {}
-                        }}
-                      >
-                        <Switch checked={!!k.show} />
-                      </Button>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -237,15 +254,29 @@ function KnowledgeFormDialog({
   const [content, setContent] = useState("");
   const [show, setShow] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  // 编辑时从后端获取完整详情
+  const loadDetail = async (id: number) => {
+    setLoadingDetail(true);
+    try {
+      const detail = await fetchKnowledgeDetail(id);
+      setTitle(detail.title || "");
+      setCategory(detail.category || "");
+      setLanguage(detail.language || "zh-CN");
+      setContent((detail as any).body || detail.content || "");
+      setShow(detail.show !== 0);
+    } catch (e) {
+      toast.error(t("knowledge.messages.loadError"));
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
 
   useEffect(() => {
     if (open) {
       if (item) {
-        setTitle(item.title || "");
-        setCategory(item.category || "");
-        setLanguage(item.language || "zh-CN");
-        setContent(item.content || "");
-        setShow(item.show !== 0);
+        loadDetail(item.id);
       } else {
         setTitle("");
         setCategory("");
@@ -254,7 +285,7 @@ function KnowledgeFormDialog({
         setShow(true);
       }
     }
-  }, [open, item]);
+  }, [open, item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async () => {
     if (!title) {
@@ -268,7 +299,7 @@ function KnowledgeFormDialog({
         title,
         category,
         language,
-        content,
+        body: content,
         show: show ? 1 : 0,
       });
       toast.success(t("knowledge.messages.operationSuccess"));
@@ -289,6 +320,15 @@ function KnowledgeFormDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {loadingDetail ? (
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (<>
           <div className="space-y-1.5">
             <Label>{t("knowledge.form.title")}</Label>
             <Input
@@ -324,18 +364,37 @@ function KnowledgeFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label>{t("knowledge.form.content")}</Label>
-            <Textarea rows={8} value={content} onChange={(e) => setContent(e.target.value)} />
+            <div className="knowledge-editor">
+              <ReactQuill
+                theme="snow"
+                value={content}
+                onChange={setContent}
+                modules={{
+                  toolbar: [
+                    [{ header: [1, 2, 3, false] }],
+                    ["bold", "italic", "underline", "strike"],
+                    [{ color: [] }, { background: [] }],
+                    [{ list: "ordered" }, { list: "bullet" }],
+                    ["blockquote", "code-block"],
+                    ["link", "image"],
+                    ["clean"],
+                  ],
+                }}
+                style={{ height: "300px" }}
+              />
+            </div>
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">
             <Label className="text-sm font-normal">{t("knowledge.form.show")}</Label>
             <Switch checked={show} onCheckedChange={setShow} />
           </div>
+          </>)}
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("knowledge.form.cancel")}
           </Button>
-          <Button onClick={submit} disabled={submitting}>
+          <Button onClick={submit} disabled={submitting || loadingDetail}>
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {t("knowledge.form.submit")}
           </Button>

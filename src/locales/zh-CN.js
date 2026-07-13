@@ -963,9 +963,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "description": "开启后，用户在管理员回复前无法在同一工单内连续发送消息。"
         },
         "tryOut": {
-          "label": "注册试用",
-          "placeholder": "关闭",
+          "label": "注册试用套餐",
+          "placeholder": "请选择套餐",
           "description": "选择需要试用的订阅，如果没有选项请先前往订阅管理添加。",
+          "no_plan": "关闭",
           "duration": {
             "label": "注册试用时长",
             "placeholder": "0",
@@ -1515,7 +1516,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "description": "配置节点通信和同步设置，包括通信密钥、轮询间隔、负载均衡等高级选项。",
       "server_token": {
         "title": "通讯密钥",
-        "description": "Xboard与节点通讯的密钥，以便数据不会被他人获取。",
+        "description": "Fboard与节点通讯的密钥，以便数据不会被他人获取。",
         "placeholder": "请输入通讯密钥",
         "generate_tooltip": "点击生成随机通信密钥"
       },
@@ -1539,12 +1540,17 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "server_ws_enable": {
         "title": "启用 WebSocket 通信",
         "description": "开启后节点将通过 WebSocket 与面板进行实时通信，延迟更低、推送更及时。",
-        "supported_clients": "目前支持 WebSocket 通信的节点端：Xboard Node"
+        "supported_clients": "目前支持 WebSocket 通信的节点端：Fboard-Node"
       },
       "server_ws_url": {
         "title": "WebSocket 地址",
         "description": "节点连接面板的 WebSocket 地址，留空则自动使用站点网址。",
         "placeholder": "留空则使用站点网址"
+      },
+      "node_install_script_url": {
+        "title": "节点安装脚本地址",
+        "description": "自定义节点安装脚本的 URL 地址，留空则使用默认的 GitHub 地址。",
+        "placeholder": "留空则使用默认地址"
       },
       "saving": "保存中...",
       "manage": {
@@ -1923,8 +1929,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "standalone": "独立部署",
         "standalone_row_hint": "未绑定服务器",
         "standalone_description": "该节点不依赖服务器托管，适用于单节点独立部署。",
-        "online": "服务器在线",
-        "offline": "服务器离线",
+        "online": "在线",
+        "offline": "离线",
         "inactive": "服务器未激活",
         "disabled": "节点停用",
         "enabled": "在服务器上启用",
@@ -2010,7 +2016,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "confirm": "确认重置"
       },
       "batch_reset_traffic_success": "成功重置 {{count}} 个节点的流量",
-      "batch_reset_traffic_error": "批量重置流量失败"
+      "batch_reset_traffic_error": "批量重置流量失败",
+      "virtualNode": "虚拟节点"
     },
     "form": {
       "add_node": "添加节点",
@@ -2019,7 +2026,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "type": {
         "placeholder": "选择协议类型",
         "select_prompt": "请先选择协议类型",
-        "select_error": "请先选择协议类型"
+        "select_error": "请先选择协议类型",
+        "configHint": "选择协议类型后可配置"
       },
       "name": {
         "label": "节点名称",
@@ -2069,7 +2077,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "tags": {
         "label": "节点标签",
-        "placeholder": "输入后回车添加标签"
+        "placeholder": "输入后按逗号/回车添加"
       },
       "groups": {
         "label": "权限组",
@@ -2113,6 +2121,21 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "label": "父级节点",
         "placeholder": "选择父节点",
         "none": "无"
+      },
+      "virtualNode": {
+        "label": "虚拟节点",
+        "add": "添加虚拟节点",
+        "addDialogTitle": "添加虚拟节点",
+        "save": "保存虚拟节点",
+        "saveSuccess": "虚拟节点已保存",
+        "description": "虚拟节点是同一服务的额外接入点，与子父节点是独立功能",
+        "empty": "暂无虚拟节点",
+        "tagsPlaceholder": "输入后按回车添加",
+        "host": "主机地址",
+        "port": "端口",
+        "groupIds": "权限组",
+        "tags": "标签",
+        "generateKeyPair": "生成密钥对"
       },
       "route": {
         "label": "路由组",
@@ -2880,7 +2903,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "name": "服务器名称",
       "status": "状态",
       "nodes": "节点数",
-      "nodesHosted": "已承载节点",
+      "nodesHosted": "节点数",
       "nodesIdle": "暂无承载",
       "load": "负载",
       "lastSeen": "最后心跳",
@@ -2934,19 +2957,19 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "notes": "备注",
       "notesPlaceholder": "关于此服务器的可选备注",
       "isActive": "启用服务器",
-      "isActiveDescription": "禁用后 xboard-node 将不再使用此服务器。",
+      "isActiveDescription": "禁用后 Fboard-Node 将不再使用此服务器。",
       "cancel": "取消",
       "submit": "提交",
       "update": "更新"
     },
     "token": {
       "title": "服务器 Token",
-      "description": "此 Token 用于 xboard-node 向面板认证，请妥善保管。",
+      "description": "此 Token 用于 Fboard-Node 向面板认证，请妥善保管。",
       "show": "查看 Token",
       "hide": "隐藏 Token",
       "reset": "重置 Token",
       "resetConfirm": "确认重置 Token？",
-      "resetDescription": "旧 Token 将立即失效，xboard-node 需要重新配置新 Token。",
+      "resetDescription": "旧 Token 将立即失效，Fboard-Node 需要重新配置新 Token。",
       "copy": "复制",
       "copied": "Token 已复制到剪贴板",
       "copiedInline": "已复制!",
@@ -2956,8 +2979,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "createdHint": "Token 已生成，后续可在服务器详情页中查看。"
     },
     "install": {
-      "title": "安装 xboard-node",
-      "description": "在目标服务器上执行此命令，即可用 machine mode 安装 xboard-node 并接入当前服务器记录。",
+      "title": "安装 Fboard-Node",
+      "description": "在目标服务器上执行此命令，即可用 machine mode 安装 Fboard-Node 并接入当前服务器记录。",
       "copy": "复制安装命令",
       "copied": "安装命令已复制",
       "copiedInline": "已复制!",
@@ -3068,7 +3091,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "deleteConfirm": "确认删除",
       "deleteDescription": "此操作将永久删除该知识库记录，删除后无法恢复。确定要继续吗？",
       "deleteButton": "删除",
-      "operationSuccess": "操作成功"
+      "operationSuccess": "操作成功",
+      "loadError": "加载失败"
     },
     "toolbar": {
       "searchPlaceholder": "搜索知识...",
@@ -3244,10 +3268,12 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "title": "配置",
       "description": "修改插件配置",
       "save": "保存",
-      "cancel": "取消"
+      "cancel": "取消",
+      "noConfigs": "该插件没有可配置的选项"
     },
     "readme": {
-      "title": "插件文档"
+      "title": "插件文档",
+      "empty": "暂无文档"
     },
     "author": "作者",
     "messages": {
@@ -3268,7 +3294,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "uploadError": "插件上传失败",
       "deleteSuccess": "插件删除成功",
       "deleteError": "插件删除失败"
-    }
+    },
+    "noPlugins": "暂无插件"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -3565,7 +3592,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "description": "修改主题的样式、布局和其他显示选项。",
       "cancel": "取消",
       "save": "保存",
-      "success": "保存成功"
+      "success": "保存成功",
+      "noConfigs": "该主题没有可配置的选项",
+      "error": "保存失败"
     }
   }
 };

@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table,
@@ -146,7 +147,7 @@ function TemplatesPanel() {
                     <DragCell />
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="font-mono text-xs">{g.id}</Badge>
+                        <IdBadge id={g.id} />
                         <Switch
                           checked={!!g.status}
                           onCheckedChange={async (checked) => {
@@ -648,7 +649,7 @@ function CodesPanel() {
                 <TableRow key={c.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="font-mono text-xs">{c.id}</Badge>
+                      <IdBadge id={c.id} />
                       {c.status === 0 || c.status === 3 ? (
                         <Switch
                           checked={c.status === 0}
@@ -931,7 +932,7 @@ function UsagesPanel() {
           ) : (
             list.map((u) => (
               <TableRow key={u.id}>
-                <TableCell className="font-mono text-xs">#{u.id}</TableCell>
+                <TableCell><IdBadge id={u.id} /></TableCell>
                 <TableCell className="font-mono text-xs">{u.code}</TableCell>
                 <TableCell>{u.user_email}</TableCell>
                 <TableCell className="text-xs">

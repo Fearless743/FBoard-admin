@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import {
@@ -131,7 +132,7 @@ export function PlanListPage() {
                 {plans.map((p) => (
                   <SortableRow key={p.id} id={p.id}>
                     <DragCell />
-                    <TableCell className="font-mono text-xs">{p.id}</TableCell>
+                    <TableCell><IdBadge id={p.id} /></TableCell>
                     <TableCell className="text-center">
                       <Switch
                         checked={!!p.show}

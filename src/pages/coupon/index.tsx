@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -141,7 +142,7 @@ export function CouponListPage() {
             ) : (
               filtered.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-mono text-xs">#{c.id}</TableCell>
+                  <TableCell><IdBadge id={c.id} /></TableCell>
                   <TableCell className="text-center">
                     <Switch
                       checked={!!c.show}

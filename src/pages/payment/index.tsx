@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -40,6 +41,7 @@ import {
   dropPayment,
   fetchPayments,
   getPaymentMethods,
+  getPaymentForm,
   savePayment,
   updatePayment,
   togglePaymentShow,
@@ -54,19 +56,45 @@ export function PaymentListPage() {
   const [editing, setEditing] = useState<PaymentMethod | null>(null);
   const [deleting, setDeleting] = useState<PaymentMethod | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
+  const [pendingList, setPendingList] = useState<PaymentMethod[] | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["payments"],
     queryFn: () => fetchPayments({}),
   });
   const list: PaymentMethod[] = data?.data || data || [];
+  const displayList = pendingList ?? list;
 
-  const handleReorder = useCallback(async (ids: number[]) => {
+  const handleReorder = useCallback((ids: number[]) => {
+    const reordered = ids.map((id) => displayList.find((i) => i.id === id)!).filter(Boolean);
+    setPendingList(reordered);
+  }, [displayList]);
+
+  const finishSort = useCallback(async () => {
+    if (!pendingList) {
+      setDragEnabled(false);
+      return;
+    }
     try {
-      await sortPayments(ids);
+      await sortPayments(pendingList.map((i) => i.id));
       qc.invalidateQueries({ queryKey: ["payments"] });
+      setPendingList(null);
+      setDragEnabled(false);
     } catch (e) {}
-  }, [qc]);
+  }, [pendingList, qc]);
+
+  const toggleDrag = useCallback(() => {
+    if (dragEnabled) {
+      if (pendingList) {
+        finishSort();
+      } else {
+        setDragEnabled(false);
+      }
+    } else {
+      setPendingList(null);
+      setDragEnabled(true);
+    }
+  }, [dragEnabled, pendingList, finishSort]);
 
   return (
     <>
@@ -77,7 +105,7 @@ export function PaymentListPage() {
           <div className="flex items-center gap-2">
             <Button
               variant={dragEnabled ? "default" : "outline"}
-              onClick={() => setDragEnabled(!dragEnabled)}
+              onClick={toggleDrag}
             >
               <GripVertical className="h-4 w-4" />
               {dragEnabled ? "完成排序" : "编辑排序"}
@@ -116,11 +144,11 @@ export function PaymentListPage() {
                 <TableCell colSpan={dragEnabled ? 6 : 5}><EmptyState /></TableCell>
               </TableRow>
             ) : (
-              <SortableContainer items={list} onReorder={handleReorder} enabled={dragEnabled}>
-                {list.map((p) => (
+              <SortableContainer items={displayList} onReorder={handleReorder} enabled={dragEnabled}>
+                {displayList.map((p) => (
                 <SortableRow key={p.id} id={p.id}>
                   <DragCell />
-                  <TableCell className="font-mono text-xs">#{p.id}</TableCell>
+                  <TableCell><IdBadge id={p.id} /></TableCell>
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{p.payment}</Badge>
@@ -206,14 +234,24 @@ function PaymentFormDialog({
   const [handlingFeePercent, setHandlingFeePercent] = useState("");
   const [handlingFeeFixed, setHandlingFeeFixed] = useState("");
   const [enable, setEnable] = useState(true);
-  const [config, setConfig] = useState("{}");
+  const [configValues, setConfigValues] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const { data: methods } = useQuery({
     queryKey: ["payment", "methods"],
     queryFn: getPaymentMethods,
   });
-  const methodList = methods?.data || [];
+  const methodList: string[] = Array.isArray(methods) ? methods : [];
+
+  // 获取支付配置的模式定义
+  const { data: paymentFormRaw, isLoading: formLoading } = useQuery({
+    queryKey: ["payment", "form", paymentType],
+    queryFn: () => getPaymentForm(paymentType),
+    enabled: !!paymentType,
+  });
+  const formSchema: Record<string, { type: string; label: string; placeholder: string; description: string; value: any; options: any[] }> =
+    (paymentFormRaw as any)?.data || paymentFormRaw || {};
+  const formFields = Object.entries(formSchema).map(([key, def]) => ({ key, ...def }));
 
   useEffect(() => {
     if (open) {
@@ -225,7 +263,7 @@ function PaymentFormDialog({
         setHandlingFeePercent(payment.handling_fee_percent?.toString() || "");
         setHandlingFeeFixed(payment.handling_fee_fixed?.toString() || "");
         setEnable(payment.enable !== 0);
-        setConfig(JSON.stringify(payment.config || {}, null, 2));
+        setConfigValues(typeof payment.config === "object" && payment.config !== null ? payment.config : {});
       } else {
         setName("");
         setPaymentType("");
@@ -234,10 +272,14 @@ function PaymentFormDialog({
         setHandlingFeePercent("");
         setHandlingFeeFixed("");
         setEnable(true);
-        setConfig("{}");
+        setConfigValues({});
       }
     }
   }, [open, payment]);
+
+  const setConfigValue = (key: string, val: any) => {
+    setConfigValues((prev) => ({ ...prev, [key]: val }));
+  };
 
   const submit = async () => {
     if (!name) {
@@ -250,14 +292,6 @@ function PaymentFormDialog({
     }
     setSubmitting(true);
     try {
-      let parsedConfig: any = {};
-      try {
-        parsedConfig = config ? JSON.parse(config) : {};
-      } catch (e) {
-        toast.error("配置 JSON 格式错误");
-        setSubmitting(false);
-        return;
-      }
       const payload: any = {
         name,
         payment: paymentType,
@@ -266,7 +300,7 @@ function PaymentFormDialog({
         handling_fee_percent: handlingFeePercent ? Number(handlingFeePercent) : 0,
         handling_fee_fixed: handlingFeeFixed ? Number(handlingFeeFixed) : 0,
         enable: enable ? 1 : 0,
-        config: parsedConfig,
+        config: configValues,
       };
       if (payment) {
         await updatePayment({ id: payment.id, ...payload });
@@ -301,14 +335,14 @@ function PaymentFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label>{t("payment.form.fields.payment.label")}</Label>
-            <Select value={paymentType} onValueChange={setPaymentType}>
+            <Select value={paymentType} onValueChange={(v) => { setPaymentType(v); setConfigValues({}); }}>
               <SelectTrigger>
                 <SelectValue placeholder={t("payment.form.fields.payment.placeholder")} />
               </SelectTrigger>
               <SelectContent>
                 {methodList.map((m) => (
-                  <SelectItem key={m.name} value={m.name}>
-                    {m.label || m.name}
+                  <SelectItem key={m} value={m}>
+                    {m}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -349,15 +383,100 @@ function PaymentFormDialog({
               />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>支付参数 (JSON)</Label>
-            <Textarea
-              rows={6}
-              value={config}
-              onChange={(e) => setConfig(e.target.value)}
-              className="font-mono text-xs"
-            />
-          </div>
+
+          {paymentType && (
+            <div className="border-t pt-4 mt-4 space-y-4">
+              <h4 className="text-sm font-medium">{t("payment.form.config.title")}</h4>
+              {formLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : formFields.length > 0 ? (
+                formFields.map((f) => {
+                  const key = f.key;
+                  const label = f.label || key;
+                  const description = f.description || "";
+                  const placeholder = f.placeholder || "";
+
+                  if (f.type === "boolean") {
+                    return (
+                      <div key={key} className="flex items-center justify-between rounded-md border bg-card px-4 py-3">
+                        <div className="space-y-0.5 pr-4">
+                          <Label className="text-sm font-medium">{label}</Label>
+                          {description && <p className="text-xs text-muted-foreground">{description}</p>}
+                        </div>
+                        <Switch
+                          checked={!!configValues[key]}
+                          onCheckedChange={(v) => setConfigValue(key, v)}
+                        />
+                      </div>
+                    );
+                  }
+
+                  if (f.type === "select" && Array.isArray(f.options) && f.options.length > 0) {
+                    return (
+                      <div key={key} className="space-y-1.5">
+                        <Label className="text-sm font-medium">{label}</Label>
+                        <Select
+                          value={String(configValues[key] ?? f.value ?? "")}
+                          onValueChange={(v) => setConfigValue(key, v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={placeholder} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {f.options.map((opt: any) => {
+                              const optVal = typeof opt === "string" ? opt : opt.value ?? opt;
+                              const optLabel = typeof opt === "string" ? opt : opt.label ?? opt;
+                              return (
+                                <SelectItem key={String(optVal)} value={String(optVal)}>
+                                  {optLabel}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+                      </div>
+                    );
+                  }
+
+                  if (f.type === "text") {
+                    return (
+                      <div key={key} className="space-y-1.5">
+                        <Label className="text-sm font-medium">{label}</Label>
+                        <Textarea
+                          value={configValues[key] ?? f.value ?? ""}
+                          placeholder={placeholder}
+                          rows={4}
+                          onChange={(e) => setConfigValue(key, e.target.value)}
+                        />
+                        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+                      </div>
+                    );
+                  }
+
+                  // string / default
+                  return (
+                    <div key={key} className="space-y-1.5">
+                      <Label className="text-sm font-medium">{label}</Label>
+                      <Input
+                        value={configValues[key] ?? f.value ?? ""}
+                        placeholder={placeholder}
+                        onChange={(e) => setConfigValue(key, e.target.value)}
+                      />
+                      {description && <p className="text-xs text-muted-foreground">{description}</p>}
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("payment.form.config.noConfig")}</p>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center justify-between rounded-md border p-3">
             <Label className="text-sm font-normal">{t("payment.table.columns.enable")}</Label>
             <Switch checked={enable} onCheckedChange={setEnable} />
@@ -367,7 +486,7 @@ function PaymentFormDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("payment.form.buttons.cancel")}
           </Button>
-          <Button onClick={submit} disabled={submitting}>
+          <Button onClick={submit} disabled={submitting || formLoading}>
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {t("payment.form.buttons.submit")}
           </Button>

@@ -116,3 +116,62 @@ export async function get<T = any>(url: string, params?: any): Promise<T> {
 export async function post<T = any>(url: string, data?: any): Promise<T> {
   return request<T>("POST", url, data);
 }
+
+/** 上传文件（FormData），不设置 JSON Content-Type */
+export async function upload<T = any>(url: string, formData: FormData): Promise<T> {
+  const query = "";
+  const auth = getAuth();
+  const headers: Record<string, string> = {};
+  if (auth) headers["Authorization"] = auth;
+
+  try {
+    const res = await fetch(`${API_PREFIX}${url}${query}`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    const text = await res.text();
+    let json: any;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return text as any;
+    }
+
+    if (!res.ok) {
+      const msg = json?.message || json?.error?.message || `HTTP ${res.status}`;
+      if (res.status === 401) {
+        clearAuth();
+        const path = getSecurePath();
+        if (!location.pathname.includes(`/${path}/login`)) {
+          toast.error("登录已过期，请重新登录");
+          setTimeout(() => { location.href = `/${path}/login`; }, 500);
+        }
+      } else if (res.status !== 404 && res.status !== 422) {
+        toast.error(translateErrorMsg(msg));
+      }
+      throw new Error(msg);
+    }
+
+    if (typeof json === "object" && "status" in json && "data" in json) {
+      if (json.status !== "success") {
+        const msg = json.message || "请求失败";
+        toast.error(translateErrorMsg(msg));
+        throw new Error(msg);
+      }
+      return json.data as T;
+    }
+
+    return json as T;
+  } catch (err: any) {
+    if (err.name !== "Error" || !err.message.startsWith("HTTP")) {
+      const msg = err.message || "网络错误";
+      if (msg !== "登录已过期，请重新登录") {
+        toast.error(translateErrorMsg(msg));
+      }
+    }
+    throw err;
+  }
+}

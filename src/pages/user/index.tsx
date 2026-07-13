@@ -23,6 +23,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/common/empty-state";
@@ -291,7 +292,7 @@ export function UserListPage() {
                         onCheckedChange={(c) => handleSelect(u.id, c === true)}
                       />
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{u.id}</TableCell>
+                    <TableCell><IdBadge id={u.id} /></TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{u.email}</span>

@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -29,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { dropNotice, fetchNotices, saveNotice, updateNotice, toggleNoticeShow, sortNotices, type NoticeItem } from "@/api/misc";
+import { fetchNoticeDetail, dropNotice, fetchNotices, saveNotice, updateNotice, toggleNoticeShow, sortNotices, type NoticeItem } from "@/api/misc";
 
 export function NoticeListPage() {
   const { t } = useTranslation();
@@ -38,19 +39,46 @@ export function NoticeListPage() {
   const [editing, setEditing] = useState<NoticeItem | null>(null);
   const [deleting, setDeleting] = useState<NoticeItem | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
+  const [pendingList, setPendingList] = useState<any[] | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["notices"],
     queryFn: fetchNotices,
   });
   const list = data || [];
+  const displayList = pendingList ?? list;
 
-  const handleReorder = useCallback(async (ids: number[]) => {
+  const handleReorder = useCallback((ids: number[]) => {
+    const reordered = ids.map((id) => displayList.find((i: any) => i.id === id)!).filter(Boolean);
+    setPendingList(reordered);
+  }, [displayList]);
+
+  const finishSort = useCallback(async () => {
+    if (!pendingList) {
+      setDragEnabled(false);
+      return;
+    }
     try {
-      await sortNotices(ids);
+      await sortNotices(pendingList.map((i: any) => i.id));
       qc.invalidateQueries({ queryKey: ["notices"] });
+      setPendingList(null);
+      setDragEnabled(false);
     } catch (e) {}
-  }, [qc]);
+  }, [pendingList, qc]);
+
+  const toggleDrag = useCallback(() => {
+    if (dragEnabled) {
+      // 正在退出排序模式 → 如果有变更则保存
+      if (pendingList) {
+        finishSort();
+      } else {
+        setDragEnabled(false);
+      }
+    } else {
+      setPendingList(null);
+      setDragEnabled(true);
+    }
+  }, [dragEnabled, pendingList, finishSort]);
 
   return (
     <>
@@ -61,7 +89,7 @@ export function NoticeListPage() {
           <div className="flex items-center gap-2">
             <Button
               variant={dragEnabled ? "default" : "outline"}
-              onClick={() => setDragEnabled(!dragEnabled)}
+              onClick={toggleDrag}
             >
               <GripVertical className="h-4 w-4" />
               {dragEnabled ? "完成排序" : "编辑排序"}
@@ -99,11 +127,11 @@ export function NoticeListPage() {
                 <TableCell colSpan={dragEnabled ? 5 : 4}><EmptyState /></TableCell>
               </TableRow>
             ) : (
-              <SortableContainer items={list} onReorder={handleReorder} enabled={dragEnabled}>
-                {list.map((n) => (
+              <SortableContainer items={displayList} onReorder={handleReorder} enabled={dragEnabled}>
+                {displayList.map((n) => (
                 <SortableRow key={n.id} id={n.id}>
                   <DragCell />
-                  <TableCell className="font-mono text-xs">#{n.id}</TableCell>
+                  <TableCell><IdBadge id={n.id} /></TableCell>
                   <TableCell className="font-medium">{n.title}</TableCell>
                   <TableCell className="text-center">
                     <Switch checked={!!n.show} onCheckedChange={async (checked) => {
@@ -184,15 +212,37 @@ function NoticeFormDialog({
   const [imgUrl, setImgUrl] = useState("");
   const [show, setShow] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  // 编辑时从后端获取完整详情（含 content、img_url）
+  const loadDetail = async (id: number) => {
+    setLoadingDetail(true);
+    try {
+      const detail = await fetchNoticeDetail(id);
+      setTitle(detail.title || "");
+      setContent(detail.content || "");
+      setImgUrl(detail.img_url || "");
+      setShow(detail.show !== 0);
+    } catch (e) {
+      toast.error(t("notice.messages.loadError"));
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
 
   useEffect(() => {
     if (open) {
-      setTitle(notice?.title || "");
-      setContent(notice?.content || "");
-      setImgUrl(notice?.img_url || "");
-      setShow(notice?.show !== 0);
+      if (notice) {
+        // 列表中的 notice 不含 content/img_url，需单独加载
+        loadDetail(notice.id);
+      } else {
+        setTitle("");
+        setContent("");
+        setImgUrl("");
+        setShow(true);
+      }
     }
-  }, [open, notice]);
+  }, [open, notice?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async () => {
     if (!title) {
@@ -230,6 +280,14 @@ function NoticeFormDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {loadingDetail ? (
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (<>
           <div className="space-y-1.5">
             <Label>{t("notice.form.fields.title.label")}</Label>
             <Input
@@ -254,12 +312,13 @@ function NoticeFormDialog({
             <Label className="text-sm font-normal">{t("notice.form.fields.show.label")}</Label>
             <Switch checked={show} onCheckedChange={setShow} />
           </div>
+          </>)}
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("notice.form.buttons.cancel")}
           </Button>
-          <Button onClick={submit} disabled={submitting}>
+          <Button onClick={submit} disabled={submitting || loadingDetail}>
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {t("notice.form.buttons.submit")}
           </Button>

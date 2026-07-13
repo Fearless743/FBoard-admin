@@ -17,6 +17,13 @@ const STANDALONE_SWITCHES: SwitchKey[] = [
 ];
 
 const baseFields: FieldDef[] = [
+  { key: "email_verify", type: "switch", label: "", placeholder: "" },
+  { key: "safe_mode_enable", type: "switch", label: "", placeholder: "" },
+  { key: "email_gmail_limit_enable", type: "switch", label: "", placeholder: "" },
+  { key: "register_limit_by_ip_enable", type: "switch", label: "", placeholder: "" },
+  { key: "password_limit_enable", type: "switch", label: "", placeholder: "" },
+  { key: "email_whitelist_enable", type: "switch", label: "", placeholder: "" },
+  { key: "captcha_enable", type: "switch", label: "", placeholder: "" },
   { key: "secure_path", type: "text", label: "", placeholder: "admin" },
   { key: "register_limit_count", type: "number", label: "", placeholder: "3", min: 1 },
   { key: "register_limit_expire", type: "number", label: "", placeholder: "60", min: 1 },
