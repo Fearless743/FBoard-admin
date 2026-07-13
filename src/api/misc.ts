@@ -1,4 +1,4 @@
-import { adminGet, adminPost } from "@/api/client";
+import { adminGet, adminPost, adminUpload } from "@/api/client";
 
 /* ============ 工单 ============ */
 export interface TicketItem {
@@ -39,7 +39,7 @@ export async function getTicketDetail(id: number) {
 export interface NoticeItem {
   id: number;
   title: string;
-  content: string;
+  content?: string;
   show: 0 | 1;
   img_url?: string;
   tags?: string[];
@@ -49,6 +49,10 @@ export interface NoticeItem {
 
 export async function fetchNotices(): Promise<NoticeItem[]> {
   return adminGet<NoticeItem[]>("/notice/fetch");
+}
+
+export async function fetchNoticeDetail(id: number): Promise<NoticeItem> {
+  return adminGet<NoticeItem>("/notice/detail", { id });
 }
 
 export async function saveNotice(payload: Partial<NoticeItem>) {
@@ -227,7 +231,8 @@ export interface KnowledgeItem {
   title: string;
   category: string;
   language: string;
-  content: string;
+  content?: string;
+  body?: string;
   show: 0 | 1;
   [k: string]: any;
 }
@@ -238,6 +243,10 @@ export async function fetchKnowledgeCategories(): Promise<string[]> {
 
 export async function fetchKnowledges(): Promise<KnowledgeItem[]> {
   return adminGet<KnowledgeItem[]>("/knowledge/fetch");
+}
+
+export async function fetchKnowledgeDetail(id: number): Promise<KnowledgeItem> {
+  return adminGet<KnowledgeItem>("/knowledge/fetch", { id });
 }
 
 export async function saveKnowledge(payload: any) {
@@ -270,11 +279,15 @@ export async function saveThemeConfig(payload: { name: string; config: any }) {
 }
 
 export async function uploadTheme(formData: FormData) {
-  return adminPost<any>("/theme/upload", formData);
+  return adminUpload("/theme/upload", formData);
 }
 
 export async function deleteTheme(name: string) {
   return adminPost<any>("/theme/delete", { name });
+}
+
+export async function switchTheme(name: string) {
+  return adminPost<any>("/theme/switchTheme", { name });
 }
 
 /* ============ 插件 ============ */
@@ -282,42 +295,50 @@ export async function fetchPluginTypes(): Promise<any[]> {
   return adminGet<any[]>("/plugin/types");
 }
 
-export async function fetchPlugins(): Promise<any[]> {
-  return adminGet<any[]>("/plugin/getPlugins");
+export async function fetchPlugins(params?: { type?: string; page?: number; pageSize?: number }): Promise<any[]> {
+  return adminGet<any[]>("/plugin/getPlugins", params || {});
 }
 
-export async function installPlugin(name: string) {
-  return adminPost<any>("/plugin/install", { name });
+export async function installPlugin(code: string) {
+  return adminPost<any>("/plugin/install", { code });
 }
 
-export async function upgradePlugin(name: string) {
-  return adminPost<any>("/plugin/upgrade", { name });
+export async function upgradePlugin(code: string) {
+  return adminPost<any>("/plugin/upgrade", { code });
 }
 
-export async function uninstallPlugin(name: string) {
-  return adminPost<any>("/plugin/uninstall", { name });
+export async function uninstallPlugin(code: string) {
+  return adminPost<any>("/plugin/uninstall", { code });
 }
 
-export async function deletePlugin(name: string) {
-  return adminPost<any>("/plugin/delete", { name });
+export async function deletePlugin(code: string) {
+  return adminPost<any>("/plugin/delete", { code });
 }
 
-export async function enablePlugin(name: string) {
-  return adminPost<any>("/plugin/enable", { name });
+export async function enablePlugin(code: string) {
+  return adminPost<any>("/plugin/enable", { code });
 }
 
-export async function disablePlugin(name: string) {
-  return adminPost<any>("/plugin/disable", { name });
+export async function disablePlugin(code: string) {
+  return adminPost<any>("/plugin/disable", { code });
 }
 
-export async function configPlugin(name: string) {
-  return adminGet<any>("/plugin/config", { name });
+export async function configPlugin(code: string) {
+  return adminGet<any>("/plugin/config", { code });
 }
 
-export async function savePluginConfig(name: string, config: any) {
-  return adminPost<any>("/plugin/config", { name, config });
+export async function savePluginConfig(code: string, config: any) {
+  return adminPost<any>("/plugin/config", { code, config });
 }
 
 export async function uploadPlugin(formData: FormData) {
-  return adminPost<any>("/plugin/upload", formData);
+  return adminUpload("/plugin/upload", formData);
+}
+
+export async function fetchPluginReadme(code: string) {
+  return adminGet<any>("/plugin/readme", { code });
+}
+
+export async function fetchPluginStaticFiles(code: string) {
+  return adminGet<any[]>("/plugin/staticFiles", { code });
 }

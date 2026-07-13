@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import {
   Plus,
   Trash2,
@@ -22,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -81,8 +83,10 @@ const STATUS_MAP: Record<number, { label: string; variant: "default" | "secondar
 export function ServerListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [editing, setEditing] = useState<Server | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [createMachineId, setCreateMachineId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<Server | null>(null);
   const [resetting, setResetting] = useState<Server | null>(null);
   const [search, setSearch] = useState("");
@@ -90,11 +94,28 @@ export function ServerListPage() {
   const [dragEnabled, setDragEnabled] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [showVirtual, setShowVirtual] = useState(false);
+
+  // Handle createWithMachineId URL param
+  useEffect(() => {
+    const raw = searchParams.get("createWithMachineId");
+    if (raw) {
+      const id = parseInt(raw, 10);
+      if (!isNaN(id)) {
+        setCreateMachineId(id);
+        setCreateOpen(true);
+        // Clean up the URL param
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("createWithMachineId");
+          return next;
+        }, { replace: true });
+      }
+    }
+  }, []);
 
   const { data, isLoading } = useQuery<any>({
-    queryKey: ["servers", "nodes", page, pageSize, search, typeFilter, showVirtual],
-    queryFn: () => getNodes({ current: page, pageSize, search: search || undefined, type: typeFilter === "all" ? undefined : typeFilter, show_virtual: showVirtual || undefined }),
+    queryKey: ["servers", "nodes", page, pageSize, search, typeFilter],
+    queryFn: () => getNodes({ current: page, pageSize, search: search || undefined, type: typeFilter === "all" ? undefined : typeFilter }),
   });
 
   const { data: sortNodes } = useQuery({
@@ -109,9 +130,9 @@ export function ServerListPage() {
     staleTime: 300000,
   });
 
-  const { data: machines = [] } = useQuery({
+  const { data: machines } = useQuery({
     queryKey: ["machines"],
-    queryFn: fetchMachines,
+    queryFn: () => fetchMachines(1, 1000),
     staleTime: 300000,
   });
 
@@ -123,9 +144,12 @@ export function ServerListPage() {
 
   const machinesMap = useMemo(() => {
     const m: Record<number, string> = {};
-    (machines as any[]).forEach((x: any) => { m[x.id] = x.name; });
+    const machineList: any[] = (machines as any)?.data || machines || [];
+    (machineList).forEach((x: any) => { m[x.id] = x.name; });
     return m;
   }, [machines]);
+
+  const machineList: any[] = (machines as any)?.data || machines || [];
 
   const groupsMap = useMemo(() => {
     const m: Record<number, string> = {};
@@ -164,7 +188,7 @@ export function ServerListPage() {
               onClick={() => setDragEnabled(!dragEnabled)}
             >
               <GripVertical className="h-4 w-4" />
-              {dragEnabled ? "完成排序" : "编辑排序"}
+              {dragEnabled ? t("server.toolbar.sort.save") : t("server.toolbar.sort.edit")}
             </Button>
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" />
@@ -197,10 +221,6 @@ export function ServerListPage() {
             ))}
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Switch checked={showVirtual} onCheckedChange={setShowVirtual} className="scale-75" />
-          <span>虚拟节点</span>
-        </div>
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -210,7 +230,7 @@ export function ServerListPage() {
               {dragEnabled ? (
                 <>
                   <TableHead className="w-10" />
-                  <TableHead className="w-16">ID</TableHead>
+                  <TableHead className="w-16">{t("server.columns.nodeId")}</TableHead>
                   <TableHead>{t("server.columns.node")}</TableHead>
                 </>
               ) : (
@@ -223,7 +243,7 @@ export function ServerListPage() {
                   <TableHead className="text-right">{t("server.columns.rate.title")}</TableHead>
                   <TableHead>{t("server.columns.groups.title")}</TableHead>
                   <TableHead className="text-right">{t("server.columns.traffic.title")}</TableHead>
-                  <TableHead className="w-20 text-center">在线</TableHead>
+                  <TableHead className="w-20 text-center">{t("server.columns.onlineUsers.title")}</TableHead>
                   <TableHead className="w-32 text-right">{t("server.columns.actions")}</TableHead>
                 </>
               )}
@@ -249,15 +269,18 @@ export function ServerListPage() {
             ) : dragEnabled ? (
               <SortableContainer items={sortList} onReorder={handleReorder} enabled={dragEnabled}>
                 {sortList.map((n) => {
-                  const proto = PROTOCOL_TYPES.find((p) => p.type === n.type);
+                  let proto = PROTOCOL_TYPES.find((p) => p.type === n.type);
+                  const isVirtual = n.type === "virtual";
                   return (
-                    <SortableRow key={n.id} id={n.id}>
+                    <SortableRow key={n.code || n.id} id={n.code || n.id}>
                       <DragCell />
-                      <TableCell className="font-mono text-xs"><Badge variant="outline">{n.id}</Badge></TableCell>
-                      <TableCell className="font-medium"><div className="space-y-0.5">
-                        <p className="font-medium">{n.name}</p>
-                        <Badge variant="outline">{proto?.name || `#${n.type}`}</Badge>
-                      </div></TableCell>
+                      <TableCell><IdBadge id={(n.code || n.id) + (n.parent_id ? "->" + n.parent_id : "")} /></TableCell>
+                      <TableCell className="font-medium">
+                        <div className="space-y-0.5">
+                          <p className="font-medium">{n.name}</p>
+                          <Badge variant={isVirtual ? "secondary" : "outline"}>{isVirtual ? "虚拟节点" : (proto?.name || `#${n.type}`)}</Badge>
+                        </div>
+                      </TableCell>
                     </SortableRow>
                   );
                 })}
@@ -271,10 +294,8 @@ export function ServerListPage() {
                 const trafficUsed = ((n as any).u || 0) + ((n as any).d || 0);
                 const trafficPct = trafficLimit > 0 ? ((trafficUsed / trafficLimit) * 100).toFixed(1) : null;
                 return (
-                  <SortableRow key={n.id} id={n.id}>
-                    <TableCell className="font-mono text-xs">
-                      <Badge variant="outline">{n.code || n.id}</Badge>
-                    </TableCell>
+                  <SortableRow key={n.code || n.id} id={n.code || n.id}>
+                    <TableCell><IdBadge id={(n.code || n.id) + (n.parent_id ? "->" + n.parent_id : "")} /></TableCell>
                     <TableCell className="text-center">
                       <Switch
                         checked={!!n.show}
@@ -298,20 +319,21 @@ export function ServerListPage() {
                         <div className="flex items-center gap-1.5">
                           <span>{machinesMap[n.machine_id] || `#${n.machine_id}`}</span>
                           {(() => {
-                            const machine = (machines as any[]).find((m: any) => m.id === n.machine_id);
-                            return machine?.is_active ? (
+                            const machine = machineList.find((m: any) => m.id === n.machine_id);
+                            const online = machine?.is_online ?? machine?.is_active;
+                            return online ? (
                               <Badge variant="success" className="gap-1 text-[10px] px-1.5 py-0">
-                                <Wifi className="h-3 w-3" /> 在线
+                                <Wifi className="h-3 w-3" /> {t("server.columns.deployment.online")}
                               </Badge>
                             ) : (
                               <Badge variant="secondary" className="gap-1 text-[10px] px-1.5 py-0">
-                                <WifiOff className="h-3 w-3" /> 离线
+                                <WifiOff className="h-3 w-3" /> {t("server.columns.deployment.offline")}
                               </Badge>
                             );
                           })()}
                         </div>
                       ) : (
-                        <Badge variant="secondary">独立部署</Badge>
+                        <Badge variant="secondary">{t("server.columns.deployment.standalone")}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="max-w-[200px]">
@@ -384,7 +406,7 @@ export function ServerListPage() {
                             }}
                           >
                             <Copy className="h-4 w-4" />
-                            复制
+                            {t("server.columns.actions_dropdown.copy")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setResetting(n)}>
                             <RotateCcw className="h-4 w-4" />
@@ -421,10 +443,12 @@ export function ServerListPage() {
       <ServerFormDialog
         open={createOpen || !!editing}
         server={editing}
+        initialMachineId={createMachineId}
         onOpenChange={(v) => {
           if (!v) {
             setEditing(null);
             setCreateOpen(false);
+            setCreateMachineId(null);
           }
         }}
         onSaved={() => qc.invalidateQueries({ queryKey: ["servers", "nodes"] })}

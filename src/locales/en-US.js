@@ -944,12 +944,17 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "server_ws_enable": {
         "title": "Enable WebSocket Communication",
         "description": "When enabled, nodes will communicate with the panel via WebSocket for lower latency and more timely pushes.",
-        "supported_clients": "Node clients that currently support WebSocket communication: Xboard Node"
+        "supported_clients": "Node clients that currently support WebSocket communication: Fboard-Node"
       },
       "server_ws_url": {
         "title": "WebSocket URL",
         "description": "The WebSocket address nodes use to connect to the panel. Leave empty to use the site URL.",
         "placeholder": "Leave empty to use site URL"
+      },
+      "node_install_script_url": {
+        "title": "Node Install Script URL",
+        "description": "Custom URL for the node installation script. Leave empty to use the default GitHub URL.",
+        "placeholder": "Leave empty to use default URL"
       },
       "saving": "Saving..."
     },
@@ -1054,9 +1059,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "description": "When enabled, users cannot continue sending messages in the same ticket until an administrator replies."
         },
         "tryOut": {
-          "label": "Registration Trial",
-          "placeholder": "Disabled",
+          "label": "Registration Trial Plan",
+          "placeholder": "Select a plan",
           "description": "Select the subscription for trial, if no options please add in subscription management first.",
+          "no_plan": "Disabled",
           "duration": {
             "label": "Trial Duration",
             "placeholder": "0",
@@ -1851,7 +1857,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "description": "Configure node communication and synchronization settings, including communication key, polling interval, load balancing and other advanced options.",
     "server_token": {
       "title": "Communication Key",
-      "description": "The key for communication between Xboard and nodes to prevent unauthorized data access.",
+      "description": "The key for communication between Fboard and nodes to prevent unauthorized data access.",
       "placeholder": "Please enter communication key"
     },
     "server_pull_interval": {
@@ -1935,8 +1941,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "standalone": "Standalone",
         "standalone_row_hint": "Not bound to a server",
         "standalone_description": "This node runs independently without server hosting.",
-        "online": "Server online",
-        "offline": "Server offline",
+        "online": "Online",
+        "offline": "Offline",
         "inactive": "Server inactive",
         "disabled": "Node disabled",
         "enabled": "Enable on server",
@@ -2022,7 +2028,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "confirm": "Confirm Reset"
       },
       "batch_reset_traffic_success": "Successfully reset traffic for {{count}} nodes",
-      "batch_reset_traffic_error": "Batch reset traffic failed"
+      "batch_reset_traffic_error": "Batch reset traffic failed",
+      "virtualNode": "Virtual Node"
     },
     "form": {
       "add_node": "Add Node",
@@ -2031,7 +2038,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "type": {
         "placeholder": "Select Protocol Type",
         "select_prompt": "Please select a protocol type first",
-        "select_error": "Please select a protocol type"
+        "select_error": "Please select a protocol type",
+        "configHint": "Can be configured after selecting a protocol type"
       },
       "name": {
         "label": "Node Name",
@@ -2118,6 +2126,21 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "label": "Parent Node",
         "placeholder": "Select parent node",
         "none": "None"
+      },
+      "virtualNode": {
+        "label": "Virtual Nodes",
+        "add": "Add Virtual Node",
+        "addDialogTitle": "Add Virtual Node",
+        "save": "Save Virtual Nodes",
+        "saveSuccess": "Virtual nodes saved",
+        "description": "Virtual nodes are additional access points for the same service, independent from child/parent relationship",
+        "empty": "No virtual nodes",
+        "tagsPlaceholder": "Press Enter to add",
+        "host": "Host",
+        "port": "Port",
+        "groupIds": "Permission Groups",
+        "tags": "Tags",
+        "generateKeyPair": "Generate Key Pair"
       },
       "route": {
         "label": "Route Groups",
@@ -2850,7 +2873,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "name": "Server Name",
       "status": "Status",
       "nodes": "Nodes",
-      "nodesHosted": "hosting nodes",
+      "nodesHosted": "Nodes",
       "nodesIdle": "idle",
       "load": "Load",
       "lastSeen": "Last Seen",
@@ -2869,7 +2892,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "search": "Search by server name, notes or SID...",
       "status": "Status",
       "nodes": "Nodes",
-      "nodesHosted": "hosting nodes",
+      "nodesHosted": "Nodes",
       "nodesIdle": "idle",
       "with_nodes": "Hosting nodes",
       "idle_nodes": "Idle servers",
@@ -2906,19 +2929,19 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "notes": "Notes",
       "notesPlaceholder": "Optional notes about this server",
       "isActive": "Enable Server",
-      "isActiveDescription": "Disabled servers will not be used by xboard-node.",
+      "isActiveDescription": "Disabled servers will not be used by Fboard-Node.",
       "cancel": "Cancel",
       "submit": "Submit",
       "update": "Update"
     },
     "token": {
       "title": "Server Token",
-      "description": "This token is used by xboard-node to authenticate with the panel. Keep it safe.",
+      "description": "This token is used by Fboard-Node to authenticate with the panel. Keep it safe.",
       "show": "View Token",
       "hide": "Hide Token",
       "reset": "Reset Token",
       "resetConfirm": "Reset Token?",
-      "resetDescription": "The old token will be invalidated immediately. xboard-node must be reconfigured with the new token.",
+      "resetDescription": "The old token will be invalidated immediately. Fboard-Node must be reconfigured with the new token.",
       "copy": "Copy",
       "copied": "Token copied to clipboard",
       "copiedInline": "Copied!",
@@ -2928,8 +2951,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "createdHint": "Token generated. You can view it anytime in the server detail page."
     },
     "install": {
-      "title": "Install xboard-node",
-      "description": "Run this command on the target server to install xboard-node in machine mode and connect it to this server record.",
+      "title": "Install Fboard-Node",
+      "description": "Run this command on the target server to install Fboard-Node in machine mode and connect it to this server record.",
       "copy": "Copy install command",
       "copied": "Install command copied",
       "copiedInline": "Copied!",
@@ -3040,7 +3063,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "deleteConfirm": "Confirm Delete",
       "deleteDescription": "This action will permanently delete this knowledge base record and cannot be recovered. Are you sure you want to continue?",
       "deleteButton": "Delete",
-      "operationSuccess": "Operation Successful"
+      "operationSuccess": "Operation Successful",
+      "loadError": "Failed to load"
     },
     "toolbar": {
       "searchPlaceholder": "Search knowledge...",
@@ -3215,10 +3239,12 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "title": "Configuration",
       "description": "Modify plugin configuration",
       "save": "Save",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "noConfigs": "This plugin has no configurable options"
     },
     "readme": {
-      "title": "Plugin Documentation"
+      "title": "Plugin Documentation",
+      "empty": "No documentation"
     },
     "author": "Author",
     "messages": {
@@ -3239,7 +3265,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "uploadError": "Failed to upload plugin",
       "deleteSuccess": "Plugin deleted successfully",
       "deleteError": "Failed to delete plugin"
-    }
+    },
+    "noPlugins": "No plugins"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -3541,7 +3568,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "description": "Modify theme styles, layouts, and other display options.",
       "cancel": "Cancel",
       "save": "Save",
-      "success": "Settings saved successfully"
+      "success": "Settings saved successfully",
+      "noConfigs": "This theme has no configurable options",
+      "error": "Save failed"
     }
   }
 };

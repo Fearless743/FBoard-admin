@@ -1,15 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Upload, Trash2, Puzzle, Loader2 } from "lucide-react";
+import { Upload, Trash2, Puzzle, Loader2, Wrench, Power, PowerOff, BookOpen, FileIcon, ExternalLink, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Pagination } from "@/components/common/pagination";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -23,8 +28,10 @@ import {
   deletePlugin,
   disablePlugin,
   enablePlugin,
+  fetchPluginReadme,
   fetchPlugins,
   fetchPluginTypes,
+  fetchPluginStaticFiles,
   installPlugin,
   savePluginConfig,
   uninstallPlugin,
@@ -39,15 +46,24 @@ export function PluginPage() {
   const [uploading, setUploading] = useState(false);
   const [action, setAction] = useState<{ name: string; type: "uninstall" | "delete" } | null>(null);
   const [configuring, setConfiguring] = useState<string | null>(null);
+  const [reading, setReading] = useState<string | null>(null);
+  const [browsing, setBrowsing] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState("feature");
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["plugins"],
-    queryFn: fetchPlugins,
+    queryKey: ["plugins", typeFilter, page],
+    queryFn: () => fetchPlugins({ type: typeFilter, page, pageSize }),
   });
-  const list: any[] = data || [];
-  const [typeFilter, setTypeFilter] = useState("all");
+  const list: any[] = (data as any)?.data || [];
+  const total = (data as any)?.total || 0;
+
   const { data: pluginTypes } = useQuery({ queryKey: ["plugin", "types"], queryFn: fetchPluginTypes });
-  const filtered = typeFilter === "all" ? list : list.filter(p => p.type === typeFilter);
+  const typeRaw = (pluginTypes as any)?.data || pluginTypes || [];
+  const typeOptions: { value: string; label: string }[] = Array.isArray(typeRaw)
+    ? typeRaw.map((t: any) => ({ value: t.value ?? t, label: t.label ?? t }))
+    : [];
 
   const onUpload = async (file: File) => {
     setUploading(true);
@@ -61,6 +77,11 @@ export function PluginPage() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const getTypeLabel = (type: string) => {
+    const found = typeOptions.find((o) => o.value === type);
+    return found?.label || type;
   };
 
   return (
@@ -86,137 +107,155 @@ export function PluginPage() {
       />
 
       <div className="mb-4 flex items-center gap-2">
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
+        <Select
+          value={typeFilter}
+          onValueChange={(v) => { setTypeFilter(v); setPage(1); }}
+        >
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="全部分类" />
+            <SelectValue placeholder={t("plugin.type.placeholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">全部分类</SelectItem>
-            {pluginTypes?.map((t: string) => (
-              <SelectItem key={t} value={t}>{t}</SelectItem>
+            {typeOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-40" />
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
       ) : list.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Puzzle className="mb-3 h-10 w-10" />
-            <p>暂无插件</p>
+            <p>{t("plugin.noPlugins")}</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => (
-            <Card key={p.name}>
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold">{p.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {p.version || "—"} · {p.description || ""}
-                    </p>
+        <div className="space-y-2">
+          {list.map((p) => {
+            const status = !p.is_installed ? "not_installed" : p.is_enabled ? "enabled" : "disabled";
+            return (
+              <Card key={p.code || p.name}>
+                <CardContent className="flex items-center justify-between gap-4 p-4">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold truncate">{p.name}</h3>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {getTypeLabel(p.type)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground shrink-0">v{p.version || "—"}</span>
+                        {p.has_readme && (
+                          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setReading(p.code)}>
+                            <BookOpen className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {p.has_static_files && status === "enabled" && (
+                          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setBrowsing(p.code)}>
+                            <FileIcon className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {p.description || ""}
+                      </p>
+                    </div>
+                    {status === "enabled" ? (
+                      <Badge variant="success" className="shrink-0">{t("plugin.status.enabled")}</Badge>
+                    ) : status === "disabled" ? (
+                      <Badge variant="secondary" className="shrink-0">{t("plugin.status.disabled")}</Badge>
+                    ) : (
+                      <Badge variant="outline" className="shrink-0">{t("plugin.status.not_installed")}</Badge>
+                    )}
                   </div>
-                  {p.status === "enabled" ? (
-                    <Badge variant="success">{t("plugin.status.enabled")}</Badge>
-                  ) : p.status === "disabled" ? (
-                    <Badge variant="secondary">{t("plugin.status.disabled")}</Badge>
-                  ) : (
-                    <Badge variant="outline">{t("plugin.status.not_installed")}</Badge>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-1">
-                  {p.status === "not_installed" ? (
-                    <Button
-                      size="sm"
-                      onClick={async () => {
-                        try {
-                          await installPlugin(p.name);
-                          toast.success(t("plugin.messages.installSuccess"));
-                          qc.invalidateQueries({ queryKey: ["plugins"] });
-                        } catch (e) {}
-                      }}
-                    >
-                      {t("plugin.button.install")}
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setConfiguring(p.name)}
-                      >
-                        {t("plugin.button.config")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
+                  <div className="flex items-center gap-1 shrink-0">
+                    {status === "not_installed" ? (
+                      <>
+                        <Button size="sm" onClick={async () => {
                           try {
-                            await upgradePlugin(p.name);
-                            toast.success(t("plugin.messages.upgradeSuccess"));
+                            await installPlugin(p.code);
+                            toast.success(t("plugin.messages.installSuccess"));
                             qc.invalidateQueries({ queryKey: ["plugins"] });
                           } catch (e) {}
-                        }}
-                      >
-                        {t("plugin.button.upgrade")}
-                      </Button>
-                      {p.status === "enabled" ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={async () => {
+                        }}>
+                          {t("plugin.button.install")}
+                        </Button>
+                        {p.can_be_deleted && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive"
+                            onClick={() => setAction({ name: p.code, type: "delete" })}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {p.has_config ? (
+                            <Button size="sm" variant="outline" disabled={status !== "enabled"} onClick={() => setConfiguring(p.code)}>
+                              <Wrench className="h-3.5 w-3.5" />
+                              {t("plugin.button.config")}
+                            </Button>
+                          ) : null}
+                        {p.need_upgrade && (
+                          <Button size="sm" variant="outline" onClick={async () => {
                             try {
-                              await disablePlugin(p.name);
+                              await upgradePlugin(p.code);
+                              toast.success(t("plugin.messages.upgradeSuccess"));
+                              qc.invalidateQueries({ queryKey: ["plugins"] });
+                            } catch (e) {}
+                          }}>
+                            {t("plugin.button.upgrade")}
+                          </Button>
+                        )}
+                        {status === "enabled" ? (
+                          <Button size="sm" variant="ghost" onClick={async () => {
+                            try {
+                              await disablePlugin(p.code);
                               toast.success(t("plugin.messages.disableSuccess"));
                               qc.invalidateQueries({ queryKey: ["plugins"] });
                             } catch (e) {}
-                          }}
-                        >
-                          {t("plugin.button.disable")}
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={async () => {
+                          }}>
+                            <PowerOff className="h-3.5 w-3.5" />
+                            {t("plugin.button.disable")}
+                          </Button>
+                        ) : (
+                          <Button size="sm" onClick={async () => {
                             try {
-                              await enablePlugin(p.name);
+                              await enablePlugin(p.code);
                               toast.success(t("plugin.messages.enableSuccess"));
                               qc.invalidateQueries({ queryKey: ["plugins"] });
                             } catch (e) {}
-                          }}
-                        >
-                          {t("plugin.button.enable")}
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setAction({ name: p.name, type: "uninstall" })}
-                      >
-                        {t("plugin.button.uninstall")}
-                      </Button>
-                    </>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive"
-                    onClick={() => setAction({ name: p.name, type: "delete" })}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                          }}>
+                            <Power className="h-3.5 w-3.5" />
+                            {t("plugin.button.enable")}
+                          </Button>
+                        )}
+                        {status === "disabled" && (
+                          <Button size="sm" variant="ghost" onClick={() => setAction({ name: p.code, type: "uninstall" })}>
+                            {t("plugin.button.uninstall")}
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+          />
         </div>
       )}
 
@@ -254,7 +293,143 @@ export function PluginPage() {
         name={configuring}
         onOpenChange={(v) => !v && setConfiguring(null)}
       />
+
+      <PluginReadmeDialog
+        code={reading}
+        onOpenChange={(v) => !v && setReading(null)}
+      />
+
+      <PluginStaticFilesDialog
+        code={browsing}
+        onOpenChange={(v) => !v && setBrowsing(null)}
+      />
     </>
+  );
+}
+
+function PluginStaticFilesDialog({
+  code,
+  onOpenChange,
+}: {
+  code: string | null;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["plugin", "static-files", code],
+    queryFn: () => fetchPluginStaticFiles(code!),
+    enabled: !!code,
+  });
+
+  const files: any[] = (data as any)?.data || [];
+
+  // Auto-open if only one file — runs before dialog ever renders
+  useEffect(() => {
+    if (!isLoading && files.length === 1 && code) {
+      window.open(files[0].url, "_blank");
+      onOpenChange(false);
+    }
+  }, [isLoading]); // only trigger on loading transition; ignore files/code changes
+
+  // If only one file (loaded), don't render dialog at all
+  if (!isLoading && files.length === 1) {
+    return null;
+  }
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const formatDate = (ts: number) => {
+    return new Date(ts * 1000).toLocaleString();
+  };
+
+  const handleOpenFile = (url: string) => {
+    setSelectedFile(url);
+  };
+
+  // If a file is selected, show it in full-screen dialog
+  if (selectedFile) {
+    return (
+      <Dialog open={!!code} onOpenChange={(v) => { if (!v) { setSelectedFile(null); onOpenChange(false); } }}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0">
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-card">
+            <Button size="sm" variant="ghost" onClick={() => setSelectedFile(null)}>
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              返回列表
+            </Button>
+            <DialogTitle className="text-sm">{selectedFile}</DialogTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => window.open(selectedFile, "_blank")}
+            >
+              <ExternalLink className="h-3.5 w-3.5 mr-1" />
+              新标签页打开
+            </Button>
+          </div>
+          <iframe
+            src={selectedFile}
+            className="w-full flex-1 border-0"
+            style={{ height: "calc(95vh - 53px)" }}
+            title="Plugin HTML Preview"
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={!!code} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{code} · HTML 静态文件</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : files.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">暂无静态文件</p>
+        ) : (
+          <div className="space-y-1">
+            {files.map((file, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between rounded-md border bg-card px-4 py-2.5 hover:bg-accent/50 transition-colors cursor-pointer"
+                onClick={() => handleOpenFile(file.url)}
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="text-lg shrink-0">📄</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{file.path}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatSize(file.size)} · {formatDate(file.last_modified)}
+                    </p>
+                  </div>
+                </div>
+                <Button size="sm" variant="ghost" className="shrink-0" onClick={(e) => { e.stopPropagation(); window.open(file.url, "_blank"); }}>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("plugin.config.cancel")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -266,30 +441,44 @@ function PluginConfigDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const [config, setConfig] = useState("{}");
+  const [values, setValues] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data: schema, isLoading } = useQuery({
     queryKey: ["plugin", "config", name],
     queryFn: () => configPlugin(name!),
     enabled: !!name,
   });
 
-  if (name && config === "{}" && data && !(data as any).__loaded__) {
-    setConfig(JSON.stringify(data, null, 2));
-    (data as any).__loaded__ = true;
-  }
+  // schema is the config object: { field_name: { type, label, description, value, options } }
+  const fields = schema && typeof schema === "object" && !Array.isArray(schema)
+    ? Object.entries(schema as Record<string, any>).map(([key, cfg]) => ({ key, ...cfg }))
+    : [];
+
+  // Load values from schema on first load
+  useEffect(() => {
+    if (fields.length > 0 && Object.keys(values).length === 0) {
+      const initial: Record<string, any> = {};
+      for (const f of fields) {
+        initial[f.key] = f.value !== undefined && f.value !== null ? f.value : "";
+      }
+      setValues(initial);
+    }
+  }, [fields]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const setValue = (key: string, val: any) => {
+    setValues((prev) => ({ ...prev, [key]: val }));
+  };
 
   const submit = async () => {
     if (!name) return;
     setSaving(true);
     try {
-      const parsed = JSON.parse(config || "{}");
-      await savePluginConfig(name, parsed);
+      await savePluginConfig(name, values);
       toast.success(t("plugin.messages.configSaveSuccess"));
       onOpenChange(false);
     } catch (e) {
-      toast.error("JSON 格式错误");
+      toast.error(t("plugin.messages.configSaveError"));
     } finally {
       setSaving(false);
     }
@@ -297,30 +486,190 @@ function PluginConfigDialog({
 
   return (
     <Dialog open={!!name} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{name} · {t("plugin.config.title")}</DialogTitle>
         </DialogHeader>
         {isLoading ? (
-          <Skeleton className="h-40" />
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ) : fields.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("plugin.config.noConfigs")}</p>
         ) : (
-          <div className="space-y-2">
-            <Label>配置 (JSON)</Label>
-            <Textarea
-              rows={15}
-              value={config}
-              onChange={(e) => setConfig(e.target.value)}
-              className="font-mono text-xs"
-            />
+          <div className="space-y-5">
+            {fields.map((f) => {
+              const label = f.label || f.key;
+              const description = f.description || "";
+              const placeholder = f.placeholder || "";
+
+              if (f.type === "select") {
+                const options = Array.isArray(f.options) ? f.options : [];
+                return (
+                  <div key={f.key} className="space-y-1.5">
+                    <Label className="text-sm font-medium">{label}</Label>
+                    <Select
+                      value={String(values[f.key] ?? "")}
+                      onValueChange={(v) => setValue(f.key, v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={placeholder} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {options.map((opt: any) => {
+                          const optVal = typeof opt === "string" ? opt : opt.value ?? opt;
+                          const optLabel = typeof opt === "string" ? opt : opt.label ?? opt;
+                          return (
+                            <SelectItem key={String(optVal)} value={String(optVal)}>
+                              {optLabel}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    {description && (
+                      <p className="text-xs text-muted-foreground">{description}</p>
+                    )}
+                  </div>
+                );
+              }
+
+              if (f.type === "boolean") {
+                return (
+                  <div key={f.key} className="flex items-center justify-between rounded-md border bg-card px-4 py-3">
+                    <div className="space-y-0.5 pr-4">
+                      <Label className="text-sm font-medium">{label}</Label>
+                      {description && (
+                        <p className="text-xs text-muted-foreground">{description}</p>
+                      )}
+                    </div>
+                    <Switch
+                      checked={!!values[f.key]}
+                      onCheckedChange={(v) => setValue(f.key, v)}
+                    />
+                  </div>
+                );
+              }
+
+              // text (multi-line)
+              if (f.type === "text") {
+                return (
+                  <div key={f.key} className="space-y-1.5">
+                    <Label className="text-sm font-medium">{label}</Label>
+                    <Textarea
+                      value={values[f.key] ?? ""}
+                      placeholder={placeholder}
+                      rows={4}
+                      onChange={(e) => setValue(f.key, e.target.value)}
+                    />
+                    {description && (
+                      <p className="text-xs text-muted-foreground">{description}</p>
+                    )}
+                  </div>
+                );
+              }
+
+              // string / default
+              return (
+                <div key={f.key} className="space-y-1.5">
+                  <Label className="text-sm font-medium">{label}</Label>
+                  <Input
+                    value={values[f.key] ?? ""}
+                    placeholder={placeholder}
+                    onChange={(e) => setValue(f.key, e.target.value)}
+                  />
+                  {description && (
+                    <p className="text-xs text-muted-foreground">{description}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("plugin.config.cancel")}
           </Button>
-          <Button onClick={submit} disabled={saving}>
+          <Button onClick={submit} disabled={saving || fields.length === 0}>
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {t("plugin.config.save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PluginReadmeDialog({
+  code,
+  onOpenChange,
+}: {
+  code: string | null;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const { data, isLoading } = useQuery({
+    queryKey: ["plugin", "readme", code],
+    queryFn: () => fetchPluginReadme(code!),
+    enabled: !!code,
+  });
+  const content: string = ((data as any)?.data ?? data ?? "") as string;
+
+  return (
+    <Dialog open={!!code} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{code} · {t("plugin.readme.title")}</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ) : content ? (
+          <div className="markdown-body text-sm leading-relaxed">
+            <style>{`
+              .markdown-body { all: revert; }
+              .markdown-body h1 { font-size: 1.5rem; font-weight: 700; margin: 1.5rem 0 0.75rem; padding-bottom: 0.3rem; border-bottom: 1px solid hsl(var(--border)); }
+              .markdown-body h2 { font-size: 1.3rem; font-weight: 600; margin: 1.25rem 0 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid hsl(var(--border)); }
+              .markdown-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+              .markdown-body h4 { font-size: 1rem; font-weight: 600; margin: 0.75rem 0 0.25rem; }
+              .markdown-body p { margin-bottom: 0.75rem; line-height: 1.6; }
+              .markdown-body ul, .markdown-body ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+              .markdown-body li { margin-bottom: 0.25rem; }
+              .markdown-body ul > li { list-style-type: disc; }
+              .markdown-body ol > li { list-style-type: decimal; }
+              .markdown-body li > ul, .markdown-body li > ol { margin-bottom: 0; }
+              .markdown-body code:not(pre code) { background: hsl(var(--muted)); padding: 0.15rem 0.35rem; border-radius: 0.25rem; font-size: 0.875em; font-weight: 500; }
+              .markdown-body pre { background: hsl(var(--muted)); padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1rem; border: 1px solid hsl(var(--border)); }
+              .markdown-body pre code { background: none; padding: 0; border-radius: 0; font-size: 0.875em; line-height: 1.5; }
+              .markdown-body a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
+              .markdown-body a:hover { opacity: 0.8; }
+              .markdown-body blockquote { border-left: 4px solid hsl(var(--primary)); padding: 0.5rem 1rem; margin: 0 0 1rem; background: hsl(var(--muted)/0.3); border-radius: 0 0.375rem 0.375rem 0; }
+              .markdown-body blockquote p:last-child { margin-bottom: 0; }
+              .markdown-body table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; display: block; overflow-x: auto; }
+              .markdown-body th, .markdown-body td { border: 1px solid hsl(var(--border)); padding: 0.5rem 0.75rem; text-align: left; font-size: 0.875rem; }
+              .markdown-body th { background: hsl(var(--muted)); font-weight: 600; }
+              .markdown-body tr:nth-child(even) { background: hsl(var(--muted)/0.3); }
+              .markdown-body hr { border: none; border-top: 1px solid hsl(var(--border)); margin: 1.5rem 0; }
+              .markdown-body img { max-width: 100%; border-radius: 0.375rem; margin: 0.5rem 0; }
+              .markdown-body strong { font-weight: 600; }
+              .markdown-body input[type="checkbox"] { margin-right: 0.375rem; accent-color: hsl(var(--primary)); }
+              .markdown-body ::-webkit-scrollbar { height: 6px; }
+              .markdown-body ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+            `}</style>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t("plugin.readme.empty")}</p>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("plugin.config.cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>

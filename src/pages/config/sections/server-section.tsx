@@ -9,6 +9,7 @@ import { useSectionData } from "../use-section-data";
 
 const NUMBER_FIELDS = ["server_pull_interval", "server_push_interval"];
 const SELECT_FIELDS = ["device_limit_mode"];
+const TEXT_FIELDS = ["node_install_script_url"];
 
 export function ServerSection() {
   const { data, isLoading } = useSectionData("server");
@@ -44,6 +45,13 @@ function ServerSectionBody({ data }: { data: Record<string, unknown> }) {
         { value: 0 as const, label: t("settings.server.device_limit_mode.strict") },
         { value: 1 as const, label: t("settings.server.device_limit_mode.relaxed") },
       ] },
+      ...TEXT_FIELDS.map((k) => ({
+        key: k,
+        type: "text" as const,
+        label: meta(k).label,
+        description: meta(k).description,
+        placeholder: meta(k).placeholder,
+      })),
     ],
   };
   const { values, set, dirty, saving, reset } = useConfigSection(section, data, { autoSave: true });
@@ -87,6 +95,21 @@ function ServerSectionBody({ data }: { data: Record<string, unknown> }) {
       }}
       value={values.device_limit_mode}
       onChange={(v) => set("device_limit_mode", v)}
+    />
+  );
+
+  const renderText = (key: string) => (
+    <FieldRow
+      key={key}
+      field={{
+        key,
+        type: "text",
+        label: meta(key).label,
+        description: meta(key).description,
+        placeholder: meta(key).placeholder,
+      }}
+      value={values[key]}
+      onChange={(v) => set(key, v)}
     />
   );
 
@@ -144,6 +167,10 @@ function ServerSectionBody({ data }: { data: Record<string, unknown> }) {
       <div className="grid gap-4 md:grid-cols-3">
         {NUMBER_FIELDS.map(renderNumber)}
         {renderDeviceLimit()}
+      </div>
+
+      <div className="space-y-4">
+        {TEXT_FIELDS.map(renderText)}
       </div>
     </SectionCard>
   );

@@ -4,6 +4,7 @@ import { SectionCard } from "../section-card";
 import { SectionSkeleton } from "../section-skeleton";
 import { useConfigSection } from "../use-config-section";
 import { useSectionData } from "../use-section-data";
+import { usePlanOptions } from "@/hooks/use-plans";
 import type { FieldDef } from "../schema";
 
 const fields: FieldDef[] = [
@@ -18,7 +19,7 @@ const fields: FieldDef[] = [
   { key: "force_https", type: "switch", label: "" },
   { key: "stop_register", type: "switch", label: "" },
   { key: "ticket_must_wait_reply", type: "switch", label: "" },
-  { key: "try_out_plan_id", type: "number", label: "", placeholder: "0", min: 0 },
+  { key: "try_out_plan_id", type: "select", label: "", placeholder: "" },
   { key: "try_out_hour", type: "number", label: "", placeholder: "1", min: 0 },
 ];
 
@@ -30,20 +31,42 @@ export function SiteSection() {
 
 function SiteSectionBody({ data }: { data: Record<string, unknown> }) {
   const { t } = useTranslation();
+  const planOptions = usePlanOptions();
+  const plans = planOptions.data || [];
   const section = {
     key: "site",
     title: t("settings.site.title"),
     description: t("settings.site.description"),
-    fields: fields.map((f) => ({
-      ...f,
-      label: t(`settings.site.form.${labelKey(f.key)}.label`),
-      placeholder: t(`settings.site.form.${labelKey(f.key)}.placeholder`, {
-        defaultValue: f.placeholder,
-      }),
-      description: t(`settings.site.form.${labelKey(f.key)}.description`, {
-        defaultValue: "",
-      }),
-    })),
+    fields: fields.map((f) => {
+      const base = {
+        key: f.key,
+        type: f.type,
+        label: t(`settings.site.form.${labelKey(f.key)}.label`),
+        placeholder: t(`settings.site.form.${labelKey(f.key)}.placeholder`, {
+          defaultValue: (f as any).placeholder ?? "",
+        }),
+        description: t(`settings.site.form.${labelKey(f.key)}.description`, {
+          defaultValue: "",
+        }),
+      };
+      if (f.key === "try_out_plan_id" && f.type === "select") {
+        return {
+          ...base,
+          type: "select" as const,
+          options: [
+            { value: 0, label: t("settings.site.form.tryOut.no_plan") },
+            ...plans.map((p: { id: number; name: string }) => ({
+              value: p.id,
+              label: p.name,
+            })),
+          ],
+        };
+      }
+      if (f.type === "number") {
+        return { ...base, type: "number" as const, min: (f as any).min, placeholder: (f as any).placeholder ?? "" };
+      }
+      return base;
+    }),
   };
   const { values, set, dirty, saving, reset } = useConfigSection(section, data, { autoSave: true });
   return (
@@ -81,7 +104,7 @@ function labelKey(key: string): string {
     stop_register: "stopRegister",
     ticket_must_wait_reply: "ticketMustWaitReply",
     try_out_plan_id: "tryOut",
-    try_out_hour: "tryOut",
+    try_out_hour: "tryOut.duration",
   };
   return map[key] ?? key;
 }

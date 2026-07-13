@@ -93,3 +93,27 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
+
+/* Quill 编辑器适配暗色主题 */
+.knowledge-editor .quill {
+  display: flex;
+  flex-direction: column;
+}
+.knowledge-editor .ql-container {
+  flex: 1;
+  overflow: auto;
+  font-size: 0.875rem;
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+.knowledge-editor .ql-toolbar {
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+  background: hsl(var(--muted));
+}
+.knowledge-editor .ql-editor {
+  min-height: 260px;
+}
+.knowledge-editor .ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+}

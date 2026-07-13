@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { IdBadge } from "@/components/common/id-badge";
 import {
   Dialog,
   DialogContent,
@@ -78,7 +79,7 @@ export function GroupListPage() {
             ) : (
               groups.map((g) => (
                 <TableRow key={g.id}>
-                  <TableCell className="font-mono text-xs">#{g.id}</TableCell>
+                  <TableCell><IdBadge id={g.id} /></TableCell>
                   <TableCell className="font-medium">{g.name}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">

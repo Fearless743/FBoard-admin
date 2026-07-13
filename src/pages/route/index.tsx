@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import {
   Table,
   TableBody,
@@ -93,7 +94,7 @@ export function RouteListPage() {
             ) : (
               list.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-mono text-xs">#{r.id}</TableCell>
+                  <TableCell><IdBadge id={r.id} /></TableCell>
                   <TableCell className="font-medium">{r.remarks}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{t(`route.actions.${r.action}`)}</Badge>

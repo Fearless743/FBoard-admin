@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { IdBadge } from "@/components/common/id-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -181,7 +182,7 @@ export function TicketListPage() {
             ) : (
               list.map((tk) => (
                 <TableRow key={tk.id}>
-                  <TableCell><Badge variant="outline" className="font-mono text-xs">{tk.id}</Badge></TableCell>
+                  <TableCell><IdBadge id={tk.id} /></TableCell>
                   <TableCell className="font-medium">{tk.subject}</TableCell>
                   <TableCell>
                     <Badge variant="outline">
@@ -292,7 +293,7 @@ export function TicketListPage() {
                     }}
                   >
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <Badge variant="outline" className="text-[10px] px-1 py-0 font-mono">{tk.id}</Badge>
+                      <IdBadge id={tk.id} compact />
                       {tk.status === 1 ? (
                         <Badge variant="secondary" className="text-[10px] px-1 py-0">
                           {t("ticket.status.closed")}

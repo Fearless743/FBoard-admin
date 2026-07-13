@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Upload, Trash2, Palette, Settings as SettingsIcon, Eye } from "lucide-react";
@@ -10,7 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { deleteTheme, getThemeConfig, getThemes, saveThemeConfig, uploadTheme } from "@/api/misc";
+import { deleteTheme, getThemeConfig, getThemes, saveThemeConfig, switchTheme, uploadTheme } from "@/api/misc";
 
 export function ThemePage() {
   const { t } = useTranslation();
@@ -31,13 +39,14 @@ export function ThemePage() {
     queryKey: ["themes"],
     queryFn: getThemes,
   });
-  // /theme/getThemes 返回 { themes: { name: config } }
+  // /theme/getThemes 返回 { themes: { name: config }, active: "Xboard" }
+  const activeTheme = (data as any)?.active;
   const themesObj = (data as any)?.themes ?? data ?? {};
   const list: any[] = Object.entries(themesObj).map(([name, cfg]: [string, any]) => ({
     name,
     version: cfg?.version,
     description: cfg?.description,
-    is_current: cfg?.is_current,
+    is_current: name === activeTheme,
     images: cfg?.images,
     config: cfg,
   }));
@@ -108,7 +117,7 @@ export function ThemePage() {
                   ) : (
                     <Button size="sm" variant="outline" onClick={async () => {
                       try {
-                        await saveThemeConfig({ name: th.name, config: { ...th, is_current: true } });
+                        await switchTheme(th.name);
                         toast.success("已激活");
                         qc.invalidateQueries({ queryKey: ["themes"] });
                       } catch (e) {}
@@ -172,32 +181,58 @@ function ThemeConfigDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const [config, setConfig] = useState("{}");
+  const [values, setValues] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  // 获取主题列表（含 configs 模式）
+  const { data: themesData } = useQuery({
+    queryKey: ["themes"],
+    queryFn: getThemes,
+    enabled: !!name,
+  });
+  const themesObj = (themesData as any)?.themes ?? themesData ?? {};
+  const themeSchema = name ? (themesObj[name] as any) : null;
+  const configs: any[] = themeSchema?.configs ?? [];
+
+  // 获取已保存的配置值
+  const { data: savedConfig, isLoading } = useQuery({
     queryKey: ["theme", "config", name],
     queryFn: () => getThemeConfig(name!),
     enabled: !!name,
   });
 
-  // 把配置载入到编辑器（仅在第一次）
-  if (name && config === "{}" && data && data !== "__loaded__") {
-    setConfig(JSON.stringify(data, null, 2));
-    // 标记已加载（用一个不可见的状态字段）
-    (data as any).__loaded__ = true;
-  }
+  // 将配置值载入表单
+  useEffect(() => {
+    if (savedConfig && typeof savedConfig === "object" && !Array.isArray(savedConfig)) {
+      setValues((prev) => {
+        // 只在首次加载时填充
+        if (Object.keys(prev).length > 0) return prev;
+        const initial: Record<string, any> = {};
+        for (const cfg of configs) {
+          const fieldName = cfg.field_name;
+          initial[fieldName] =
+            savedConfig[fieldName] !== undefined && savedConfig[fieldName] !== null
+              ? savedConfig[fieldName]
+              : cfg.default_value ?? "";
+        }
+        return initial;
+      });
+    }
+  }, [savedConfig, configs]);
+
+  const setValue = (key: string, val: any) => {
+    setValues((prev) => ({ ...prev, [key]: val }));
+  };
 
   const submit = async () => {
     if (!name) return;
     setSaving(true);
     try {
-      const parsed = JSON.parse(config || "{}");
-      await saveThemeConfig({ name, config: parsed });
+      await saveThemeConfig({ name, config: values });
       toast.success(t("theme.config.success"));
       onOpenChange(false);
     } catch (e) {
-      toast.error("JSON 格式错误");
+      toast.error(t("theme.config.error"));
     } finally {
       setSaving(false);
     }
@@ -205,30 +240,73 @@ function ThemeConfigDialog({
 
   return (
     <Dialog open={!!name} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {name && t("theme.config.title", { name })}
           </DialogTitle>
         </DialogHeader>
         {isLoading ? (
-          <Skeleton className="h-40" />
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ) : configs.length === 0 ? (
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {t("theme.config.noConfigs")}
+            </p>
+          </div>
         ) : (
-          <div className="space-y-2">
-            <Label>配置 (JSON)</Label>
-            <Textarea
-              rows={20}
-              value={config}
-              onChange={(e) => setConfig(e.target.value)}
-              className="font-mono text-xs"
-            />
+          <div className="space-y-5">
+            {configs.map((cfg) => {
+              const fieldName = cfg.field_name;
+              const label = cfg.label || fieldName;
+              const placeholder = cfg.placeholder ?? "";
+              return (
+                <div key={fieldName} className="space-y-1.5">
+                  <Label className="text-sm font-medium">{label}</Label>
+                  {cfg.field_type === "select" ? (
+                    <Select
+                      value={String(values[fieldName] ?? cfg.default_value ?? "")}
+                      onValueChange={(v) => setValue(fieldName, v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={placeholder} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(cfg.select_options ?? {}).map(([optVal, optLabel]) => (
+                          <SelectItem key={optVal} value={optVal}>
+                            {optLabel as string}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : cfg.field_type === "textarea" ? (
+                    <Textarea
+                      value={values[fieldName] ?? ""}
+                      placeholder={placeholder}
+                      rows={4}
+                      onChange={(e) => setValue(fieldName, e.target.value)}
+                    />
+                  ) : (
+                    <Input
+                      value={values[fieldName] ?? ""}
+                      placeholder={placeholder}
+                      onChange={(e) => setValue(fieldName, e.target.value)}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("theme.config.cancel")}
           </Button>
-          <Button onClick={submit} disabled={saving}>
+          <Button onClick={submit} disabled={saving || configs.length === 0}>
             {t("theme.config.save")}
           </Button>
         </DialogFooter>

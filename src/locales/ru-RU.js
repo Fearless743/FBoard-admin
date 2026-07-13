@@ -886,12 +886,17 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "server_ws_enable": {
         "title": "Включить связь через WebSocket",
         "description": "При включении узлы будут связываться с панелью через WebSocket для снижения задержки.",
-        "supported_clients": "Клиенты, поддерживающие WebSocket: Xboard Node"
+        "supported_clients": "Клиенты, поддерживающие WebSocket: Fboard-Node"
       },
       "server_ws_url": {
         "title": "URL WebSocket",
         "description": "Адрес WebSocket для подключения узлов. Оставьте пустым, чтобы использовать URL сайта.",
         "placeholder": "Оставьте пустым для URL сайта"
+      },
+      "node_install_script_url": {
+        "title": "URL скрипта установки узла",
+        "description": "Пользовательский URL скрипта установки узла. Оставьте пустым, чтобы использовать URL по умолчанию из GitHub.",
+        "placeholder": "Оставьте пустым для URL по умолчанию"
       },
       "saving": "Сохранение..."
     },
@@ -996,9 +1001,10 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
           "description": "Пользователь не может отправить новое сообщение, пока админ не ответит."
         },
         "tryOut": {
-          "label": "Тестовый период",
-          "placeholder": "Отключено",
+          "label": "Пробный тариф",
+          "placeholder": "Выберите тариф",
           "description": "Выберите тариф для триала при регистрации.",
+          "no_plan": "Отключено",
           "duration": {
             "label": "Длительность (часов)",
             "placeholder": "0",
@@ -1378,7 +1384,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       },
       "email_from_name": {
         "title": "Имя отправителя",
-        "description": "Напр. 'Администрация Xboard'"
+        "description": "Напр. 'Администрация Fboard'"
       },
       "email_template": {
         "title": "Шаблон письма",
@@ -1793,7 +1799,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
     "description": "Настройка параметров связи и синхронизации узла, включая ключ связи, интервал опроса, балансировку нагрузки и другие расширенные параметры.",
     "server_token": {
       "title": "Ключ связи",
-      "description": "Ключ для связи между Xboard и узлами для предотвращения несанкционированного доступа к данным.",
+      "description": "Ключ для связи между Fboard и узлами для предотвращения несанкционированного доступа к данным.",
       "placeholder": "Пожалуйста, введите ключ связи"
     },
     "server_pull_interval": {
@@ -1877,8 +1883,8 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
         "standalone": "Автономно",
         "standalone_row_hint": "Без привязки к серверу",
         "standalone_description": "Этот узел работает независимо и не требует серверного хостинга.",
-        "online": "Сервер онлайн",
-        "offline": "Сервер офлайн",
+        "online": "Онлайн",
+        "offline": "Офлайн",
         "inactive": "Сервер неактивен",
         "disabled": "Узел выключен",
         "enabled": "Включить на сервере",
@@ -2765,7 +2771,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "name": "Имя сервера",
       "status": "Статус",
       "nodes": "Узлы",
-      "nodesHosted": "размещено узлов",
+      "nodesHosted": "Узлы",
       "nodesIdle": "нет узлов",
       "load": "Нагрузка",
       "lastSeen": "Последний отклик",
@@ -2784,7 +2790,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "search": "Поиск по имени сервера, заметкам или SID...",
       "status": "Статус",
       "nodes": "Узлы",
-      "nodesHosted": "размещено узлов",
+      "nodesHosted": "Узлы",
       "nodesIdle": "нет узлов",
       "with_nodes": "С размещёнными узлами",
       "idle_nodes": "Свободные серверы",
@@ -2821,19 +2827,19 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "notes": "Заметки",
       "notesPlaceholder": "Необязательные заметки о сервере",
       "isActive": "Включить сервер",
-      "isActiveDescription": "Отключённые серверы не используются xboard-node.",
+      "isActiveDescription": "Отключённые серверы не используются Fboard-Node.",
       "cancel": "Отмена",
       "submit": "Сохранить",
       "update": "Обновить"
     },
     "token": {
       "title": "Токен сервера",
-      "description": "Этот токен используется xboard-node для аутентификации. Храните его в безопасности.",
+      "description": "Этот токен используется Fboard-Node для аутентификации. Храните его в безопасности.",
       "show": "Показать токен",
       "hide": "Скрыть токен",
       "reset": "Сбросить токен",
       "resetConfirm": "Сбросить токен?",
-      "resetDescription": "Старый токен будет немедленно аннулирован. xboard-node потребует перенастройки.",
+      "resetDescription": "Старый токен будет немедленно аннулирован. Fboard-Node потребует перенастройки.",
       "copy": "Копировать",
       "copied": "Токен скопирован",
       "copiedInline": "Скопировано!",
@@ -2843,8 +2849,8 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "createdHint": "Токен создан. Вы можете просмотреть его в любое время на странице сервера."
     },
     "install": {
-      "title": "Установить xboard-node",
-      "description": "Выполните эту команду на целевом сервере, чтобы установить xboard-node в режиме machine mode и подключить его к текущей записи сервера.",
+      "title": "Установить Fboard-Node",
+      "description": "Выполните эту команду на целевом сервере, чтобы установить Fboard-Node в режиме machine mode и подключить его к текущей записи сервера.",
       "copy": "Копировать команду установки",
       "copied": "Команда установки скопирована",
       "copiedInline": "Скопировано!",
@@ -2955,7 +2961,8 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "deleteConfirm": "Подтверждение удаления",
       "deleteDescription": "Это действие навсегда удалит статью из базы знаний. Вы уверены, что хотите продолжить?",
       "deleteButton": "Удалить",
-      "operationSuccess": "Операция выполнена успешно"
+      "operationSuccess": "Операция выполнена успешно",
+      "loadError": "Ошибка загрузки"
     },
     "toolbar": {
       "searchPlaceholder": "Поиск по базе знаний...",
@@ -3130,10 +3137,12 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "title": "Конфигурация",
       "description": "Изменение настроек плагина",
       "save": "Сохранить",
-      "cancel": "Отмена"
+      "cancel": "Отмена",
+      "noConfigs": "У этого плагина нет настраиваемых параметров"
     },
     "readme": {
-      "title": "Документация плагина"
+      "title": "Документация плагина",
+      "empty": "Нет документации"
     },
     "author": "Автор",
     "messages": {
@@ -3154,7 +3163,8 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "uploadError": "Ошибка загрузки плагина",
       "deleteSuccess": "Плагин удален",
       "deleteError": "Ошибка удаления плагина"
-    }
+    },
+    "noPlugins": "Нет плагинов"
   },
   "dashboard": {
     "title": "Панель управления",
@@ -3420,7 +3430,7 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
   },
   "theme": {
     "title": "Конфигурация тем",
-    "description": "Конфигурация тем, включая цвета, размеры шрифтов и т.д. Если вы развернули Xboard с раздельным фронтендом и бэкендом, конфигурация тем не вступит в силу.",
+    "description": "Конфигурация тем, включая цвета, размеры шрифтов и т.д. Если вы развернули Fboard с раздельным фронтендом и бэкендом, конфигурация тем не вступит в силу.",
     "upload": {
       "button": "Загрузить тему",
       "title": "Загрузить тему",
@@ -3457,7 +3467,9 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
       "description": "Изменение стилей темы, макетов и других параметров отображения.",
       "cancel": "Отмена",
       "save": "Сохранить",
-      "success": "Настройки успешно сохранены"
+      "success": "Настройки успешно сохранены",
+      "noConfigs": "У этой темы нет настраиваемых параметров",
+      "error": "Ошибка сохранения"
     }
   }
 };

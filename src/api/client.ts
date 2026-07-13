@@ -1,5 +1,5 @@
 import { getSecurePath } from "@/lib/api";
-import { get, post } from "@/lib/api";
+import { get, post, upload as uploadFile } from "@/lib/api";
 
 /** 与安全路径绑定的请求：admin 接口实际位于 /api/v2/{secure_path}/... */
 const secure = () => `/${getSecurePath()}`;
@@ -12,4 +12,9 @@ export async function adminGet<T = any>(path: string, params?: any): Promise<T> 
 /** admin POST */
 export async function adminPost<T = any>(path: string, data?: any): Promise<T> {
   return post<T>(`${secure()}${path}`, data);
+}
+
+/** admin 文件上传（FormData） */
+export async function adminUpload<T = any>(path: string, formData: FormData): Promise<T> {
+  return uploadFile<T>(`${secure()}${path}`, formData);
 }
