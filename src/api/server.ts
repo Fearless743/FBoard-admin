@@ -170,6 +170,18 @@ export async function generateEchKey() {
   return adminGet<any>("/server/manage/generateEchKey");
 }
 
+export async function upgradeNode(id: number) {
+  return adminPost<any>("/server/manage/upgrade", { id });
+}
+
+export async function restartNodeService(id: number) {
+  return adminPost<any>("/server/manage/restart", { id });
+}
+
+export async function batchUpgradeNodes() {
+  return adminPost<any>("/server/manage/batchUpgrade", {});
+}
+
 /* ============ 协议定义 ============ */
 export interface ProtocolConfigField {
   type: "string" | "integer" | "number" | "boolean" | "array" | "object";
@@ -260,4 +272,24 @@ export async function getMachineHistory(id: number, rangeHours?: number) {
 
 export async function getMachineNodes(id: number) {
   return adminGet<any>("/server/machine/nodes", { machine_id: id });
+}
+
+export async function upgradeMachine(id: number) {
+  return adminPost<{ submitted: boolean; machine_id: number }>("/server/machine/upgrade", { id });
+}
+
+export async function restartMachine(id: number) {
+  return adminPost<{ submitted: boolean; machine_id: number }>("/server/machine/restart", { id });
+}
+
+export interface BatchMachineUpgradeResult {
+  submitted: number;
+  skipped: {
+    inactive: number;
+    offline: number;
+  };
+}
+
+export async function batchUpgradeMachines() {
+  return adminPost<BatchMachineUpgradeResult>("/server/machine/batchUpgrade", {});
 }

@@ -1,30 +1,93 @@
+import { lazy, Suspense, type ReactNode } from "react";
 import { createHashRouter, Navigate } from "react-router-dom";
+import PageLoading from "@/components/common/page-loading";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProtectedRoute } from "@/components/layout/protected-route";
-import LoginPage from "@/pages/login";
-import { Dashboard } from "@/pages/dashboard";
-import { UserListPage } from "@/pages/user";
-import { OrderListPage } from "@/pages/order";
-import { PlanListPage } from "@/pages/plan";
-import { ServerListPage } from "@/pages/server/manage";
-import { GroupListPage } from "@/pages/server/group";
-import { RouteListPage } from "@/pages/route";
-import { MachineListPage } from "@/pages/machine";
-import { ConfigPage } from "@/pages/config";
-import { ThemePage } from "@/pages/theme";
-import { PluginPage } from "@/pages/plugin";
-import { NoticeListPage } from "@/pages/notice";
-import { PaymentListPage } from "@/pages/payment";
-import { KnowledgeListPage } from "@/pages/knowledge";
-import { CouponListPage } from "@/pages/coupon";
-import { GiftCardPage } from "@/pages/gift-card";
-import { TicketListPage } from "@/pages/ticket";
-import { NotFound } from "@/pages/not-found";
+
+const LoginPage = lazy(() => import("@/pages/login"));
+const Dashboard = lazy(() =>
+  import("@/pages/dashboard").then(({ Dashboard }) => ({ default: Dashboard })),
+);
+const UserListPage = lazy(() =>
+  import("@/pages/user").then(({ UserListPage }) => ({ default: UserListPage })),
+);
+const OrderListPage = lazy(() =>
+  import("@/pages/order").then(({ OrderListPage }) => ({ default: OrderListPage })),
+);
+const PlanListPage = lazy(() =>
+  import("@/pages/plan").then(({ PlanListPage }) => ({ default: PlanListPage })),
+);
+const ServerListPage = lazy(() =>
+  import("@/pages/server/manage").then(({ ServerListPage }) => ({
+    default: ServerListPage,
+  })),
+);
+const GroupListPage = lazy(() =>
+  import("@/pages/server/group").then(({ GroupListPage }) => ({
+    default: GroupListPage,
+  })),
+);
+const RouteListPage = lazy(() =>
+  import("@/pages/route").then(({ RouteListPage }) => ({
+    default: RouteListPage,
+  })),
+);
+const MachineListPage = lazy(() =>
+  import("@/pages/machine").then(({ MachineListPage }) => ({
+    default: MachineListPage,
+  })),
+);
+const ConfigPage = lazy(() =>
+  import("@/pages/config").then(({ ConfigPage }) => ({ default: ConfigPage })),
+);
+const ThemePage = lazy(() =>
+  import("@/pages/theme").then(({ ThemePage }) => ({ default: ThemePage })),
+);
+const PluginPage = lazy(() =>
+  import("@/pages/plugin").then(({ PluginPage }) => ({ default: PluginPage })),
+);
+const NoticeListPage = lazy(() =>
+  import("@/pages/notice").then(({ NoticeListPage }) => ({
+    default: NoticeListPage,
+  })),
+);
+const PaymentListPage = lazy(() =>
+  import("@/pages/payment").then(({ PaymentListPage }) => ({
+    default: PaymentListPage,
+  })),
+);
+const KnowledgeListPage = lazy(() =>
+  import("@/pages/knowledge").then(({ KnowledgeListPage }) => ({
+    default: KnowledgeListPage,
+  })),
+);
+const CouponListPage = lazy(() =>
+  import("@/pages/coupon").then(({ CouponListPage }) => ({
+    default: CouponListPage,
+  })),
+);
+const GiftCardPage = lazy(() =>
+  import("@/pages/gift-card").then(({ GiftCardPage }) => ({
+    default: GiftCardPage,
+  })),
+);
+const TicketListPage = lazy(() =>
+  import("@/pages/ticket").then(({ TicketListPage }) => ({
+    default: TicketListPage,
+  })),
+);
+const NotFound = lazy(() =>
+  import("@/pages/not-found").then(({ NotFound }) => ({ default: NotFound })),
+);
+
+const lazyElement = (element: ReactNode) => (
+  <Suspense fallback={<PageLoading />}>{element}</Suspense>
+);
 
 export const router = createHashRouter([
   {
     path: "/login",
-    element: <LoginPage />,
+    element: lazyElement(<LoginPage />),
   },
   {
     path: "/",
@@ -35,30 +98,30 @@ export const router = createHashRouter([
     ),
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: "dashboard", element: <Dashboard /> },
+      { path: "dashboard", element: lazyElement(<Dashboard />) },
 
-      { path: "user", element: <UserListPage /> },
-      { path: "order", element: <OrderListPage /> },
-      { path: "ticket", element: <TicketListPage /> },
+      { path: "user", element: lazyElement(<UserListPage />) },
+      { path: "order", element: lazyElement(<OrderListPage />) },
+      { path: "ticket", element: lazyElement(<TicketListPage />) },
 
-      { path: "plan", element: <PlanListPage /> },
-      { path: "coupon", element: <CouponListPage /> },
-      { path: "gift-card", element: <GiftCardPage /> },
+      { path: "plan", element: lazyElement(<PlanListPage />) },
+      { path: "coupon", element: lazyElement(<CouponListPage />) },
+      { path: "gift-card", element: lazyElement(<GiftCardPage />) },
 
-      { path: "server/manage", element: <ServerListPage /> },
-      { path: "server/group", element: <GroupListPage /> },
-      { path: "server/route", element: <RouteListPage /> },
-      { path: "machine", element: <MachineListPage /> },
+      { path: "server/manage", element: lazyElement(<ServerListPage />) },
+      { path: "server/group", element: lazyElement(<GroupListPage />) },
+      { path: "server/route", element: lazyElement(<RouteListPage />) },
+      { path: "machine", element: lazyElement(<MachineListPage />) },
 
-      { path: "config", element: <ConfigPage /> },
-      { path: "config/:tab", element: <ConfigPage /> },
-      { path: "theme", element: <ThemePage /> },
-      { path: "plugin", element: <PluginPage /> },
-      { path: "notice", element: <NoticeListPage /> },
-      { path: "payment", element: <PaymentListPage /> },
-      { path: "knowledge", element: <KnowledgeListPage /> },
+      { path: "config", element: lazyElement(<ConfigPage />) },
+      { path: "config/:tab", element: lazyElement(<ConfigPage />) },
+      { path: "theme", element: lazyElement(<ThemePage />) },
+      { path: "plugin", element: lazyElement(<PluginPage />) },
+      { path: "notice", element: lazyElement(<NoticeListPage />) },
+      { path: "payment", element: lazyElement(<PaymentListPage />) },
+      { path: "knowledge", element: lazyElement(<KnowledgeListPage />) },
 
-      { path: "*", element: <NotFound /> },
+      { path: "*", element: lazyElement(<NotFound />) },
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },

@@ -1035,6 +1035,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "label": "Force HTTPS",
           "description": "Need to enable when the site is not using HTTPS but CDN or reverse proxy has forced HTTPS."
         },
+        "maintenanceMode": {
+          "label": "Maintenance Mode",
+          "description": "When enabled, user state changes and proxy traffic are paused while administrators can still disable maintenance mode."
+        },
         "logo": {
           "label": "Site LOGO",
           "placeholder": "Please enter LOGO URL, without trailing /",
@@ -1929,6 +1933,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "speed": "Speed"
         }
       },
+      "version": "Version",
       "customId": "Custom ID",
       "originalId": "Original ID",
       "type": "Type",
@@ -1974,6 +1979,26 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "confirm": "Delete"
         },
         "copy_success": "Copied successfully",
+        "upgrade": {
+          "title": "Confirm Standalone Service Upgrade",
+          "description": "This will upgrade the entire Fboard-Node process for this standalone node. The service will be briefly interrupted during the upgrade.",
+          "standalone": "Upgrade Standalone Fboard-Node",
+          "standalone_title": "Confirm Standalone Fboard-Node Upgrade",
+          "standalone_description": "This upgrades the entire Fboard-Node process for the standalone node, not an individual protocol node. The service will be briefly interrupted.",
+          "confirm": "Upgrade"
+        },
+        "upgrade_success": "Upgrade task submitted",
+        "restart": {
+          "menu": "Restart Service",
+          "standalone_menu": "Restart Standalone Fboard-Node Service",
+          "title": "Confirm Service Restart",
+          "standalone_description": "This will restart the entire Fboard-Node process for this standalone node, briefly interrupting its service.",
+          "machine_description": "Machine-level restart is available in Server Management and affects all nodes hosted on the machine.",
+          "confirm": "Restart Service",
+          "submitted": "Restart task submitted",
+          "error": "Failed to submit restart task"
+        },
+        "machine_manage": "Open Server Management",
         "delete_success": "Deleted successfully"
       }
     },
@@ -2029,6 +2054,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "batch_reset_traffic_success": "Successfully reset traffic for {{count}} nodes",
       "batch_reset_traffic_error": "Batch reset traffic failed",
+      "batch_upgrade": "Upgrade All",
+      "batch_upgrade_confirm_title": "Confirm Batch Upgrade",
+      "batch_upgrade_confirm_description": "This will upgrade Fboard-Node on all deployed nodes to the latest version. Are you sure you want to continue?",
+      "batch_upgrade_success": "Batch upgrade task submitted",
       "virtualNode": "Virtual Node"
     },
     "form": {
@@ -2867,7 +2896,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
   },
   "machine": {
     "title": "Server Management",
-    "description": "Review server health, load, and hosted nodes, then launch node actions from an operations view.",
+    "description": "Review server health, load, and hosted nodes, then manage the Fboard-Node service from an operations view.",
     "columns": {
       "id": "ID",
       "name": "Server Name",
@@ -2901,6 +2930,20 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "high_load_count": "High load",
       "tip": "Use this page to quickly review server health, hosted node count, and resource pressure.",
       "reset": "Reset"
+    },
+    "operations": {
+      "upgrade": "Upgrade Fboard-Node",
+      "restart": "Restart Fboard-Node Service",
+      "upgradeTitle": "Confirm Server Upgrade",
+      "upgradeDescription": "Fboard-Node on server “{{name}}” will be upgraded. The service may be briefly interrupted during the upgrade.",
+      "restartTitle": "Confirm Service Restart",
+      "restartDescription": "The entire Fboard-Node service process on server “{{name}}” will be restarted, briefly interrupting services on that server.",
+      "upgradeSubmitted": "Upgrade task submitted for server “{{name}}”",
+      "restartSubmitted": "Restart task submitted for server “{{name}}”",
+      "batchUpgrade": "Upgrade All Servers",
+      "batchUpgradeTitle": "Confirm Batch Server Upgrade",
+      "batchUpgradeDescription": "One Fboard-Node upgrade task will be submitted for each online and enabled server. This does not depend on how many nodes the server hosts.",
+      "batchUpgradeSubmitted": "Submitted {{submitted}} servers; skipped {{inactive}} disabled and {{offline}} offline servers"
     },
     "overview": {
       "total": "Total Servers",
