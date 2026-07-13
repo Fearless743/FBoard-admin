@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   Plus,
   Trash2,
@@ -15,8 +15,6 @@ import {
   WifiOff,
   Pencil,
   Server as ServerIcon,
-  RefreshCw,
-  Power,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -69,15 +67,12 @@ import {
   fetchMachines,
   fetchGroups,
   sortServers,
-  upgradeNode,
-  restartNodeService,
   type Server,
   type ProtocolType,
   type ServerGroup,
 } from "@/api/server";
 import { ServerFormDialog } from "./server-form-dialog";
 import { formatBytes, bytesToGb } from "@/lib/utils";
-import { adminPath } from "@/lib/paths";
 
 const STATUS_MAP: Record<number, { label: string; variant: "default" | "secondary" | "destructive" | "success" }> = {
   0: { label: "未运行", variant: "secondary" },
@@ -88,17 +83,12 @@ const STATUS_MAP: Record<number, { label: string; variant: "default" | "secondar
 export function ServerListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [editing, setEditing] = useState<Server | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createMachineId, setCreateMachineId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<Server | null>(null);
   const [resetting, setResetting] = useState<Server | null>(null);
-  const [upgrading, setUpgrading] = useState<Server | null>(null);
-  const [restartTarget, setRestartTarget] = useState<Server | null>(null);
-  const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
-  const [restartSubmitting, setRestartSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dragEnabled, setDragEnabled] = useState(false);
@@ -426,23 +416,6 @@ export function ServerListPage() {
                             <RotateCcw className="h-4 w-4" />
                             {t("server.columns.actions_dropdown.reset_traffic.title")}
                           </DropdownMenuItem>
-                          {n.machine_id == null && n.type !== "virtual" ? (
-                            <>
-                              <DropdownMenuItem onClick={() => setUpgrading(n)}>
-                                <RefreshCw className="h-4 w-4" />
-                                {t("server.columns.actions_dropdown.upgrade.standalone")}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setRestartTarget(n)}>
-                                <Power className="h-4 w-4" />
-                                {t("server.columns.actions_dropdown.restart.standalone_menu")}
-                              </DropdownMenuItem>
-                            </>
-                          ) : n.machine_id != null && n.type !== "virtual" ? (
-                            <DropdownMenuItem onClick={() => navigate(adminPath("machine"))}>
-                              <ServerIcon className="h-4 w-4" />
-                              {t("server.columns.actions_dropdown.machine_manage")}
-                            </DropdownMenuItem>
-                          ) : null}
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => setDeleting(n)}
@@ -519,59 +492,6 @@ export function ServerListPage() {
         }}
       />
 
-      <ConfirmDialog
-        open={!!upgrading}
-        onOpenChange={(v) => {
-          if (!v && !upgradeSubmitting) setUpgrading(null);
-        }}
-        title={t("server.columns.actions_dropdown.upgrade.standalone_title")}
-        description={t("server.columns.actions_dropdown.upgrade.standalone_description")}
-        confirmText={t("server.columns.actions_dropdown.upgrade.standalone")}
-        loading={upgradeSubmitting}
-        onConfirm={async () => {
-          if (!upgrading || upgradeSubmitting) return;
-          setUpgradeSubmitting(true);
-          try {
-            await upgradeNode(upgrading.id);
-            toast.success(t("server.columns.actions_dropdown.upgrade_success"));
-            setUpgrading(null);
-          } catch (e) {}
-          finally {
-            setUpgradeSubmitting(false);
-          }
-        }}
-      />
-
-      <ConfirmDialog
-        open={!!restartTarget}
-        onOpenChange={(v) => {
-          if (!v && !restartSubmitting) setRestartTarget(null);
-        }}
-        title={t("server.columns.actions_dropdown.restart.title")}
-        description={
-          restartTarget && restartTarget.machine_id != null
-            ? t("server.columns.actions_dropdown.restart.machine_description", {
-                name: machinesMap[restartTarget.machine_id] || `#${restartTarget.machine_id}`,
-              })
-            : t("server.columns.actions_dropdown.restart.standalone_description")
-        }
-        confirmText={t("server.columns.actions_dropdown.restart.confirm")}
-        variant="default"
-        loading={restartSubmitting}
-        onConfirm={async () => {
-          if (!restartTarget || restartSubmitting) return;
-          setRestartSubmitting(true);
-          try {
-            await restartNodeService(restartTarget.id);
-            toast.success(t("server.columns.actions_dropdown.restart.submitted"));
-            setRestartTarget(null);
-          } catch (e) {
-            // API client displays the server error consistently with existing actions.
-          } finally {
-            setRestartSubmitting(false);
-          }
-        }}
-      />
 
 
     </>

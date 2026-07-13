@@ -1967,26 +1967,6 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "confirm": "删除"
         },
         "copy_success": "复制成功",
-        "upgrade": {
-          "title": "确认升级独立服务",
-          "description": "将升级该独立节点运行的整个 Fboard-Node 进程，升级过程中服务将短暂中断。确定要继续吗？",
-          "standalone": "升级独立 Fboard-Node",
-          "standalone_title": "确认升级独立 Fboard-Node",
-          "standalone_description": "将升级该独立节点运行的整个 Fboard-Node 进程，而不是单个协议节点。升级过程中服务会短暂中断。确定要继续吗？",
-          "confirm": "升级"
-        },
-        "upgrade_success": "升级任务已提交",
-        "restart": {
-          "menu": "重启服务",
-          "standalone_menu": "重启独立 Fboard-Node 服务",
-          "title": "确认重启服务",
-          "standalone_description": "将重启该独立节点运行的整个 Fboard-Node 进程，期间节点服务会短暂中断。确定要继续吗？",
-          "machine_description": "机器级重启请前往服务器管理，同机部署的全部节点都会受到影响。",
-          "confirm": "重启服务",
-          "submitted": "重启任务已提交",
-          "error": "重启任务提交失败"
-        },
-        "machine_manage": "前往服务器管理",
         "delete_success": "删除成功"
       }
     },
@@ -2042,10 +2022,6 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "batch_reset_traffic_success": "成功重置 {{count}} 个节点的流量",
       "batch_reset_traffic_error": "批量重置流量失败",
-      "batch_upgrade": "一键升级",
-      "batch_upgrade_confirm_title": "确认批量升级",
-      "batch_upgrade_confirm_description": "将升级所有已部署节点的 Fboard-Node 到最新版本。确定要继续吗？",
-      "batch_upgrade_success": "批量升级任务已提交",
       "virtualNode": "虚拟节点"
     },
     "form": {

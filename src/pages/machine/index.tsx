@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, Loader2, Server, Copy, Check, Eye, EyeOff,
-  Activity, Terminal, Unlink, Link2, ExternalLink, ArrowRight, RefreshCw, Power,
+  Activity, Terminal, Unlink, Link2, ExternalLink, ArrowRight, ArrowUpToLine, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -85,7 +85,7 @@ export function MachineListPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={() => setBatchUpgradeOpen(true)}>
-              <RefreshCw className="h-4 w-4" />
+              <ArrowUpToLine className="h-4 w-4" />
               {t("machine.operations.batchUpgrade")}
             </Button>
             <Button onClick={() => { setEditing(null); setOpen(true); }}>
@@ -167,7 +167,7 @@ export function MachineListPage() {
                         title={t("machine.operations.upgrade")}
                         onClick={() => setUpgrading(m)}
                       >
-                        <RefreshCw className="h-4 w-4" />
+                        <ArrowUpToLine className="h-4 w-4" />
                       </Button>
                       <Button
                         size="icon"
@@ -177,7 +177,7 @@ export function MachineListPage() {
                         title={t("machine.operations.restart")}
                         onClick={() => setRestarting(m)}
                       >
-                        <Power className="h-4 w-4" />
+                        <RotateCcw className="h-4 w-4" />
                       </Button>
                       <Button
                         size="icon"
@@ -886,12 +886,12 @@ function MachineDetailDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-mono">
             <Server className="h-5 w-5" />
-            {machine.name}
+            {machine.name} <DialogDescription>
+              节点数: {machine.servers_count ?? 0} · 最后心跳:{" "}
+              {machine.last_seen_at ? formatDate(machine.last_seen_at) : "从未"}
+            </DialogDescription>
           </DialogTitle>
-          <DialogDescription>
-            SID:#{machine.id} · 节点数: {machine.servers_count ?? 0} · 最后心跳:{" "}
-            {machine.last_seen_at ? formatDate(machine.last_seen_at) : "从未"}
-          </DialogDescription>
+          
         </DialogHeader>
 
         <div className="max-h-[70vh] space-y-4 overflow-y-auto">
