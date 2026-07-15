@@ -2548,6 +2548,22 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "placeholder": "选择传输协议"
         }
       },
+            "sudoku": {
+        "name": "Sudoku",
+        "master_public_key": "Master 公钥",
+        "master_private_key": "Master 私钥",
+        "aead_method": "AEAD 算法",
+        "padding_min": "最小填充率",
+        "padding_max": "最大填充率",
+        "table_type": "表类型",
+        "enable_pure_downlink": "纯 Sudoku 下行",
+        "custom_table": "自定义表",
+        "custom_tables": "自定义表列表",
+        "handshake_timeout": "握手超时",
+        "fallback": "回落地址",
+        "multiplex": "多路复用",
+        "httpmask": "HTTPMask"
+      },
       "naive": {
         "tls_settings": {
           "server_name": {

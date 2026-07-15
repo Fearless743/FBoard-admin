@@ -2443,6 +2443,22 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
           "placeholder": "Select transport protocol"
         }
       },
+            "sudoku": {
+        "name": "Sudoku",
+        "master_public_key": "Master Public Key",
+        "master_private_key": "Master Private Key",
+        "aead_method": "AEAD",
+        "padding_min": "Padding Min",
+        "padding_max": "Padding Max",
+        "table_type": "Table Type",
+        "enable_pure_downlink": "Pure Downlink",
+        "custom_table": "Custom Table",
+        "custom_tables": "Custom Tables",
+        "handshake_timeout": "Handshake Timeout",
+        "fallback": "Fallback",
+        "multiplex": "Multiplex",
+        "httpmask": "HTTPMask"
+      },
       "naive": {
         "tls_settings": {
           "server_name": {
