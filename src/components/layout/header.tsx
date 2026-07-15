@@ -102,9 +102,16 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
             {supportedLngs.map((lng) => (
               <DropdownMenuItem
                 key={lng}
+                disabled={language === lng}
                 onClick={() => {
+                  if (language === lng) return;
                   setLanguage(lng);
-                  i18n.changeLanguage(lng);
+                  try {
+                    localStorage.setItem("xboard-admin-lang", lng);
+                  } catch {
+                    /* ignore */
+                  }
+                  void i18n.changeLanguage(lng);
                 }}
                 className={language === lng ? "bg-accent" : ""}
               >
