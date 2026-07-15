@@ -7,9 +7,8 @@ import {
   ChevronsUpDown,
   X,
   ArrowRight,
-  Plus,
   RefreshCw,
-  Pencil,
+  Settings2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -54,20 +53,15 @@ import {
   fetchProtocolDefinitions,
   fetchMachines,
   getNodes,
-  createChildNode,
-  updateChildNode,
-  getChildNodes,
-  dropServer,
   type Server,
-  type ServerGroup,
-  type ProtocolType,
   type ProtocolConfigField,
   type ProtocolDefinition,
 } from "@/api/server";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { gbToBytes } from "@/lib/utils";
-import { NetworkTemplateDialog } from "./network-template-dialog";
-import type { NetworkTemplate } from "./network-templates";
+import { AdvancedSettingsDialog } from "./advanced-settings-dialog";
+import { NetworkSettingsDialog } from "./network-settings-dialog";
+import { VirtualNodeList } from "./virtual-node-list";
 
 interface FormValues {
   id?: number;
@@ -86,6 +80,10 @@ interface FormValues {
   banned: boolean;
   tags: string;
   protocol_settings?: Record<string, any>;
+  cert_config?: Record<string, any> | null;
+  custom_outbounds?: any[] | null;
+  custom_routes?: any[] | null;
+  route_ids?: number[];
 }
 
 export function ServerFormDialog({
@@ -102,7 +100,6 @@ export function ServerFormDialog({
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
-  const qc = useQueryClient();
 
   const { data: groupsData } = useQuery({
     queryKey: ["server", "groups"],
@@ -141,80 +138,6 @@ export function ServerFormDialog({
   const allNodes: any[] =
     (Array.isArray(nodesData) ? nodesData : (nodesData as any)?.data) ?? [];
 
-  const { data: childrenData } = useQuery({
-    queryKey: ["server", "child-nodes", server?.id],
-    queryFn: () => getChildNodes(server!.id),
-    enabled: open && !!server?.id,
-  });
-  const [childNodes, setChildNodes] = useState<Server[]>([]);
-  const [showAddChild, setShowAddChild] = useState(false);
-  const [editChildNode, setEditChildNode] = useState<Server | null>(null);
-  const [deleteChildId, setDeleteChildId] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (open && childrenData) {
-      setChildNodes(childrenData);
-    }
-  }, [open, childrenData]);
-
-  const refreshChildNodes = useCallback(async () => {
-    if (!server?.id) return;
-    try {
-      const data = await getChildNodes(server.id);
-      setChildNodes(data);
-    } catch (e) {}
-  }, [server?.id]);
-
-  const handleAddChildNode = useCallback(
-    async (payload: {
-      name: string;
-      host: string;
-      port: number;
-      group_ids?: number[];
-      tags?: string[];
-      show?: boolean;
-    }) => {
-      if (!server?.id) return;
-      try {
-        await createChildNode({ parent_id: server.id, ...payload });
-        setShowAddChild(false);
-        toast.success(t("server.form.virtualNode.saveSuccess"));
-        await refreshChildNodes();
-      } catch (e) {}
-    },
-    [server?.id, refreshChildNodes, t],
-  );
-
-  const handleEditChildNode = useCallback(
-    async (payload: {
-      id: number;
-      name: string;
-      host: string;
-      port: number;
-      group_ids?: number[];
-      tags?: string[];
-      show?: boolean;
-    }) => {
-      try {
-        await updateChildNode(payload);
-        setEditChildNode(null);
-        toast.success(t("server.form.virtualNode.saveSuccess"));
-        await refreshChildNodes();
-      } catch (e) {}
-    },
-    [refreshChildNodes, t],
-  );
-
-  const handleDeleteChildNode = useCallback(async () => {
-    if (!deleteChildId) return;
-    try {
-      await dropServer(deleteChildId);
-      setDeleteChildId(null);
-      toast.success(t("server.columns.actions_dropdown.delete_success"));
-      await refreshChildNodes();
-    } catch (e) {}
-  }, [deleteChildId, refreshChildNodes, t]);
-
   const {
     register,
     handleSubmit,
@@ -239,6 +162,10 @@ export function ServerFormDialog({
       show: true,
       banned: false,
       tags: "",
+      cert_config: { cert_mode: "none" },
+      custom_outbounds: null,
+      custom_routes: null,
+      route_ids: [],
     },
   });
 
@@ -248,7 +175,7 @@ export function ServerFormDialog({
 
   const [tags, setTags] = useState<string[]>([]);
   const [inputVal, setInputVal] = useState("");
-  const [networkDialogOpen, setNetworkDialogOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const addTag = useCallback(() => {
     const t = inputVal.trim().replace(/,/g, "");
@@ -288,6 +215,10 @@ export function ServerFormDialog({
         show: server?.show !== 0,
         banned: !!server?.banned,
         protocol_settings: protocolSettings,
+        cert_config: server?.cert_config || { cert_mode: "none" },
+        custom_outbounds: server?.custom_outbounds ?? null,
+        custom_routes: server?.custom_routes ?? null,
+        route_ids: (server?.route_ids || []).map(Number),
       });
     }
   }, [open, server, initialMachineId, reset, protocolTypes]);
@@ -302,6 +233,14 @@ export function ServerFormDialog({
         tags,
         show: values.show ? 1 : 0,
         banned: values.banned ? 1 : 0,
+        cert_config: values.cert_config || { cert_mode: "none" },
+        custom_outbounds: values.custom_outbounds?.length
+          ? values.custom_outbounds
+          : null,
+        custom_routes: values.custom_routes?.length
+          ? values.custom_routes
+          : null,
+        route_ids: values.route_ids || [],
       };
       delete payload.traffic_limit_gb;
 
@@ -355,17 +294,6 @@ export function ServerFormDialog({
                 )}
               />
             </div>
-            {selectedType && (
-              <Button
-                type="button"
-                variant="link"
-                size="sm"
-                className="h-8 px-2 -ml-2"
-                onClick={() => setNetworkDialogOpen(true)}
-              >
-                网络模板
-              </Button>
-            )}
           </div>
         </DialogHeader>
 
@@ -524,121 +452,10 @@ export function ServerFormDialog({
                   )}
                 />
               </div>
-              {/* 虚拟节点列表 */}
-              {server?.id && (
-                <div className="space-y-1.5 sm:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <Label>{t("server.form.virtualNode.label")}</Label>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditChildNode(null);
-                        setShowAddChild(true);
-                      }}
-                    >
-                      <Plus className="h-3 w-3" />
-                      {t("server.form.virtualNode.add")}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("server.form.virtualNode.description")}
-                  </p>
-                  {childNodes.length > 0 ? (
-                    <div className="space-y-1">
-                      {childNodes.map((v) => (
-                        <div
-                          key={v.id}
-                          className="flex items-center justify-between rounded-md border px-3 py-2 text-xs"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={!!v.show}
-                              onCheckedChange={async (checked) => {
-                                try {
-                                  await updateChildNode({ id: v.id, name: v.name, host: v.host, port: v.port, show: checked, group_ids: v.group_ids, tags: v.tags });
-                                  await refreshChildNodes();
-                                } catch (e) {}
-                              }}
-                              className="scale-75"
-                            />
-                            <span className="font-medium">{v.name}</span>
-                            <span className="font-mono text-muted-foreground">
-                              {v.host}:{v.port}
-                            </span>
-                            {(v.tags || []).map((t: string) => (
-                              <span
-                                key={t}
-                                className="rounded bg-secondary px-1.5 py-0.5 text-[10px]"
-                              >
-                                {t}
-                              </span>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={() => {
-                                setEditChildNode(v);
-                                setShowAddChild(true);
-                              }}
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-destructive"
-                              onClick={() => {
-                                setDeleteChildId(v.id);
-                              }}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      {t("server.form.virtualNode.empty")}
-                    </p>
-                  )}
-                  {/* 删除确认弹窗 */}
-                  <Dialog
-                    open={!!deleteChildId}
-                    onOpenChange={(v) => !v && setDeleteChildId(null)}
-                  >
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>确认删除</DialogTitle>
-                      </DialogHeader>
-                      <p className="text-sm text-muted-foreground">
-                        确定要删除这个虚拟节点吗？
-                      </p>
-                      <DialogFooter className="gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setDeleteChildId(null)}
-                        >
-                          取消
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={handleDeleteChildNode}
-                        >
-                          删除
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              )}
+              {/* 虚拟节点列表（仅编辑已有节点时） */}
+              {server?.id ? (
+                <VirtualNodeList parentId={server.id} enabled={open} />
+              ) : null}
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>{t("server.form.tags.label")}</Label>
                 <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm focus-within:ring-1 focus-within:ring-ring">
@@ -741,6 +558,14 @@ export function ServerFormDialog({
           <DialogFooter className="sticky bottom-0 z-10 gap-3 bg-background px-6 py-4 shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.15)]">
             <Button
               type="button"
+              variant="secondary"
+              onClick={() => setAdvancedOpen(true)}
+            >
+              <Settings2 className="h-4 w-4" />
+              {t("server.dynamic_form.advanced.trigger_label")}
+            </Button>
+            <Button
+              type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
@@ -754,250 +579,12 @@ export function ServerFormDialog({
         </form>
       </DialogContent>
 
-      <ChildNodeDialog
-        open={showAddChild}
-        onOpenChange={(v) => {
-          if (!v) {
-            setShowAddChild(false);
-            setEditChildNode(null);
-          }
-        }}
-        editNode={editChildNode}
-        serverId={server?.id}
-        onAdd={handleAddChildNode}
-        onEdit={handleEditChildNode}
+      <AdvancedSettingsDialog
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
+        watch={watch}
+        setValue={setValue}
       />
-
-      <NetworkTemplateDialog
-        open={networkDialogOpen}
-        onOpenChange={setNetworkDialogOpen}
-        protocol={selectedType}
-        onApply={(tmpl) => {
-          for (const [key, value] of Object.entries(tmpl.protocol_settings)) {
-            setValue(`protocol_settings.${key}`, value);
-          }
-          setNetworkDialogOpen(false);
-        }}
-      />
-    </Dialog>
-  );
-}
-
-function ChildNodeDialog({
-  open,
-  onOpenChange,
-  editNode,
-  serverId,
-  onAdd,
-  onEdit,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  editNode: Server | null;
-  serverId?: number;
-  onAdd: (payload: {
-    name: string;
-    host: string;
-    port: number;
-    group_ids?: number[];
-    tags?: string[];
-    show?: boolean;
-  }) => Promise<void>;
-  onEdit: (payload: {
-    id: number;
-    name: string;
-    host: string;
-    port: number;
-    group_ids?: number[];
-    tags?: string[];
-    show?: boolean;
-  }) => Promise<void>;
-}) {
-  const { t } = useTranslation();
-  const { data: groupsData } = useQuery<ServerGroup[]>({
-    queryKey: ["server", "groups"],
-    queryFn: fetchGroups,
-    enabled: open,
-  });
-  const groups = groupsData || [];
-
-  const [name, setName] = useState("");
-  const [host, setHost] = useState("");
-  const [port, setPort] = useState(443);
-  const [show, setShow] = useState(true);
-  const [groupIds, setGroupIds] = useState<number[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
-
-  const isEditing = !!editNode;
-
-  useEffect(() => {
-    if (!open) {
-      setName("");
-      setHost("");
-      setPort(443);
-      setShow(true);
-      setGroupIds([]);
-      setTags([]);
-      setTagInput("");
-    } else if (editNode) {
-      setName(editNode.name);
-      setHost(editNode.host);
-      setPort(editNode.port);
-      setShow(!!editNode.show);
-      setGroupIds(editNode.group_ids || []);
-      setTags(editNode.tags || []);
-      setTagInput("");
-    } else {
-      setName("");
-      setHost("");
-      setPort(443);
-      setShow(true);
-      setGroupIds([]);
-      setTags([]);
-      setTagInput("");
-    }
-  }, [open, editNode]);
-
-  const handleConfirm = async () => {
-    if (!host) return;
-    if (isEditing && editNode) {
-      await onEdit({
-        id: editNode.id,
-        name,
-        host,
-        port,
-        group_ids: groupIds.length ? groupIds : undefined,
-        tags: tags.length ? tags : undefined,
-        show,
-      });
-    } else {
-      await onAdd({
-        name,
-        host,
-        port,
-        group_ids: groupIds.length ? groupIds : undefined,
-        tags: tags.length ? tags : undefined,
-        show,
-      });
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "编辑虚拟节点" : t("server.form.virtualNode.addDialogTitle")}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>名称</Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="节点名称"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>{t("server.form.virtualNode.host")}</Label>
-              <Input
-                value={host}
-                onChange={(e) => setHost(e.target.value)}
-                placeholder="host"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t("server.form.virtualNode.port")}</Label>
-              <Input
-                type="number"
-                value={port}
-                onChange={(e) => setPort(Number(e.target.value))}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={show} onCheckedChange={setShow} />
-            <Label className="text-sm">显示</Label>
-          </div>
-          <div className="space-y-1.5">
-            <Label>{t("server.form.virtualNode.groupIds")}</Label>
-            <div className="flex flex-wrap gap-2 rounded-md border p-2">
-              {groups.length === 0 && (
-                <span className="text-xs text-muted-foreground">暂无权限组</span>
-              )}
-              {groups.map((g: any) => {
-                const active = groupIds.includes(g.id);
-                return (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() =>
-                      setGroupIds(
-                        active
-                          ? groupIds.filter((id: number) => id !== g.id)
-                          : [...groupIds, g.id],
-                      )
-                    }
-                    className={
-                      "rounded-md border px-2.5 py-1 text-xs transition-colors " +
-                      (active
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "hover:bg-accent")
-                    }
-                  >
-                    {g.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label>{t("server.form.virtualNode.tags")}</Label>
-            <div className="flex flex-wrap gap-1.5 rounded-md border px-2 py-1.5">
-              {tags.map((t, i) => (
-                <span
-                  key={i}
-                  className="rounded bg-secondary px-2 py-0.5 text-xs"
-                >
-                  {t}
-                  <button
-                    type="button"
-                    className="ml-1 text-muted-foreground hover:text-destructive"
-                    onClick={() => setTags(tags.filter((_, j) => j !== i))}
-                  >
-                    &times;
-                  </button>
-                </span>
-              ))}
-              <input
-                className="flex-1 min-w-[80px] border-0 bg-transparent p-0 text-sm outline-none"
-                placeholder={t("server.form.virtualNode.tagsPlaceholder")}
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === ",") {
-                    e.preventDefault();
-                    const t = tagInput.trim();
-                    if (t && !tags.includes(t)) setTags([...tags, t]);
-                    setTagInput("");
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t("common.cancel")}
-          </Button>
-          <Button onClick={handleConfirm} disabled={!host || !name}>
-            {isEditing ? "保存" : "添加"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
     </Dialog>
   );
 }
@@ -1017,6 +604,11 @@ function ProtocolConfigFields({
   watch: any;
   setValue: any;
 }) {
+  const { t } = useTranslation();
+  const [networkSettingsOpen, setNetworkSettingsOpen] = useState(false);
+  const hasNetworkSettingsField =
+    !prefix && Object.prototype.hasOwnProperty.call(fields, "network_settings");
+
   const pluginHints: Record<string, string> = {
     "simple-obfs": "配置格式如 obfs=http;obfs-host=www.bing.com;path=/",
     "v2ray-plugin":
@@ -1032,6 +624,11 @@ function ProtocolConfigFields({
   return (
     <div className="space-y-3">
       {Object.entries(fields).map(([key, field]) => {
+        // network_settings 改由「传输协议」旁的文字按钮弹窗编辑
+        if (key === "network_settings" && !prefix) {
+          return null;
+        }
+
         const fieldPath = prefix ? `${prefix}.${key}` : key;
         const fieldName = field.label || key;
         let desc = field.description;
@@ -1137,9 +734,29 @@ function ProtocolConfigFields({
               </div>
             );
           }
+
+          // 传输协议：旁挂「网络设置」文字按钮，弹窗编辑 network_settings
+          const showNetworkSettingsBtn =
+            key === "network" && !prefix && hasNetworkSettingsField;
+
           return (
             <div key={key} className="space-y-1.5">
-              <Label>{fieldName}</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>{fieldName}</Label>
+                {showNetworkSettingsBtn && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => setNetworkSettingsOpen(true)}
+                  >
+                    {t("server.network_settings.edit_protocol_config", {
+                      defaultValue: "编辑网络设置",
+                    })}
+                  </Button>
+                )}
+              </div>
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
               <Controller
                 control={control}
@@ -1265,6 +882,20 @@ function ProtocolConfigFields({
           </div>
         );
       })}
+
+      {hasNetworkSettingsField && (
+        <NetworkSettingsDialog
+          open={networkSettingsOpen}
+          onOpenChange={setNetworkSettingsOpen}
+          network={watch("protocol_settings.network")}
+          value={watch("protocol_settings.network_settings")}
+          onConfirm={(next) =>
+            setValue("protocol_settings.network_settings", next, {
+              shouldDirty: true,
+            })
+          }
+        />
+      )}
     </div>
   );
 }
