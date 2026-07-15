@@ -19,6 +19,7 @@ export function Sidebar() {
 
   const siteName = window.settings?.title || "Fboard";
   const logo = window.settings?.logo;
+  const version = window.settings?.version;
 
   const toggleGroup = (key: string) =>
     setCollapsedGroups((s) => ({ ...s, [key]: !s[key] }));
@@ -81,9 +82,15 @@ export function Sidebar() {
 
       {/* 底部版本信息 */}
       <div className="border-t border-sidebar-border px-5 py-3 text-xs text-muted-foreground">
-        <div className="flex items-center justify-between">
-          <span className="font-medium text-sidebar-foreground">{siteName}</span>
-          <span className="opacity-60">Admin</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate font-medium text-sidebar-foreground">{siteName}</span>
+          {version ? (
+            <span className="shrink-0 opacity-60" title={`v${version}`}>
+              v{version}
+            </span>
+          ) : (
+            <span className="shrink-0 opacity-60">Admin</span>
+          )}
         </div>
       </div>
     </aside>

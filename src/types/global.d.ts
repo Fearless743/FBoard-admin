@@ -4,6 +4,7 @@ interface Window {
   // 由后端 settings.js 注入的站点配置
   settings?: {
     title?: string;
+    version?: string;
     theme_sidebar?: "light" | "dark";
     theme_header?: "light" | "dark";
     theme_color?: string;
