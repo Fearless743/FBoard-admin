@@ -5,7 +5,7 @@ const STORAGE_AUTH = "xboard-admin-auth";
 const STORAGE_USER = "xboard-admin-user";
 
 export function getSecurePath(): string {
-  return window.settings?.secure_path || "8be4f2c4";
+  return window.settings?.secure_path || "";
 }
 
 export function getAuth(): string | null {

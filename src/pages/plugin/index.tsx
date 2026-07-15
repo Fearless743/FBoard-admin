@@ -17,6 +17,12 @@ import {
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  applyPluginActionResult,
+  buildLinkActionResult,
+  unwrapPluginActionResponse,
+  type PluginActionMeta,
+} from "@/lib/plugin-action";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,10 +77,15 @@ export function PluginPage() {
   } | null>(null);
   const [configuring, setConfiguring] = useState<{
     code: string;
+    name: string;
     actions: any[];
   } | null>(null);
-  const [reading, setReading] = useState<string | null>(null);
-  const [browsing, setBrowsing] = useState<string | null>(null);
+  const [reading, setReading] = useState<{ code: string; name: string } | null>(
+    null,
+  );
+  const [browsing, setBrowsing] = useState<{ code: string; name: string } | null>(
+    null,
+  );
   const [typeFilter, setTypeFilter] = useState("feature");
   const [page, setPage] = useState(1);
   const pageSize = 20;
@@ -203,7 +214,7 @@ export function PluginPage() {
                             size="icon"
                             variant="ghost"
                             className="h-5 w-5"
-                            onClick={() => setReading(p.code)}
+                            onClick={() => setReading({ code: p.code, name: p.name })}
                           >
                             <BookOpen className="h-3.5 w-3.5" />
                           </Button>
@@ -213,7 +224,7 @@ export function PluginPage() {
                             size="icon"
                             variant="ghost"
                             className="h-5 w-5"
-                            onClick={() => setBrowsing(p.code)}
+                            onClick={() => setBrowsing({ code: p.code, name: p.name })}
                           >
                             <FileIcon className="h-3.5 w-3.5" />
                           </Button>
@@ -269,7 +280,8 @@ export function PluginPage() {
                       </>
                     ) : (
                       <>
-                        {p.has_config ? (
+                        {/* 有配置项或有动作按钮时都显示入口（动作是通用能力，不依赖 config.json） */}
+                        {p.has_config || (Array.isArray(p.actions) && p.actions.length > 0) ? (
                           <Button
                             size="sm"
                             variant="outline"
@@ -277,6 +289,7 @@ export function PluginPage() {
                             onClick={() =>
                               setConfiguring({
                                 code: p.code,
+                                name: p.name,
                                 actions: p.actions || [],
                               })
                             }
@@ -399,17 +412,20 @@ export function PluginPage() {
 
       <PluginConfigDialog
         code={configuring?.code ?? null}
+        name={configuring?.name ?? null}
         actions={configuring?.actions ?? []}
         onOpenChange={(v) => !v && setConfiguring(null)}
       />
 
       <PluginReadmeDialog
-        code={reading}
+        code={reading?.code ?? null}
+        name={reading?.name ?? null}
         onOpenChange={(v) => !v && setReading(null)}
       />
 
       <PluginStaticFilesDialog
-        code={browsing}
+        code={browsing?.code ?? null}
+        name={browsing?.name ?? null}
         onOpenChange={(v) => !v && setBrowsing(null)}
       />
     </>
@@ -418,9 +434,11 @@ export function PluginPage() {
 
 function PluginStaticFilesDialog({
   code,
+  name,
   onOpenChange,
 }: {
   code: string | null;
+  name: string | null;
   onOpenChange: (v: boolean) => void;
 }) {
   const { t } = useTranslation();
@@ -510,7 +528,7 @@ function PluginStaticFilesDialog({
     <Dialog open={!!code} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{code} · HTML 静态文件</DialogTitle>
+          <DialogTitle>{name || code} · HTML 静态文件</DialogTitle>
         </DialogHeader>
         {isLoading ? (
           <div className="space-y-2">
@@ -566,10 +584,12 @@ function PluginStaticFilesDialog({
 
 function PluginConfigDialog({
   code,
+  name,
   actions,
   onOpenChange,
 }: {
   code: string | null;
+  name: string | null;
   actions: any[];
   onOpenChange: (v: boolean) => void;
 }) {
@@ -676,18 +696,40 @@ function PluginConfigDialog({
     }
   };
 
-  const runAction = async (act: any) => {
+  const runAction = async (act: PluginActionMeta | any) => {
     if (!code) return;
-    const key = `${code}:${act.name}`;
+    const meta = act as PluginActionMeta;
+    const key = `${code}:${meta.name}`;
     setActionLoading(key);
     try {
-      const res = await executePluginAction(code, act.name);
-      const data = (res as any)?.data;
-      const message = data?.message || act.label + " 执行成功";
-      toast.success(message);
-      qc.invalidateQueries({ queryKey: ["plugins"] });
-    } catch (e) {
-      toast.error(act.label + " 执行失败");
+      // type=link 且带静态 url：可直接打开，无需等后端（任意插件通用）
+      const linkOnly = buildLinkActionResult(meta);
+      if (linkOnly) {
+        applyPluginActionResult(linkOnly, meta, {
+          fallbackMessage: (meta.label || "动作") + " 执行成功",
+          defaultReload: false,
+          onReload: () => qc.invalidateQueries({ queryKey: ["plugins"] }),
+          onToastSuccess: (msg) => toast.success(msg || "执行成功"),
+          onToastError: (msg) => toast.error(msg || "执行失败"),
+        });
+        return;
+      }
+
+      const res = await executePluginAction(code, meta.name);
+      const payload = unwrapPluginActionResponse(res);
+      applyPluginActionResult(payload, meta, {
+        fallbackMessage: (meta.label || "动作") + " 执行成功",
+        // 默认刷新；动作返回 reload:false 时可跳过
+        defaultReload: true,
+        onReload: () => qc.invalidateQueries({ queryKey: ["plugins"] }),
+        onToastSuccess: (msg) => toast.success(msg || "执行成功"),
+        onToastError: (msg) => toast.error(msg || "执行失败"),
+      });
+    } catch (e: any) {
+      const msg =
+        (typeof e?.message === "string" && e.message) ||
+        (meta.label || "动作") + " 执行失败";
+      toast.error(msg);
     } finally {
       setActionLoading(null);
     }
@@ -698,7 +740,7 @@ function PluginConfigDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {code} · {t("plugin.config.title")}
+            {name || code} · {t("plugin.config.title")}
           </DialogTitle>
         </DialogHeader>
         {isLoading ? (
@@ -942,9 +984,11 @@ function PluginConfigDialog({
 
 function PluginReadmeDialog({
   code,
+  name,
   onOpenChange,
 }: {
   code: string | null;
+  name: string | null;
   onOpenChange: (v: boolean) => void;
 }) {
   const { t } = useTranslation();
@@ -960,7 +1004,7 @@ function PluginReadmeDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {code} · {t("plugin.readme.title")}
+            {name || code} · {t("plugin.readme.title")}
           </DialogTitle>
         </DialogHeader>
         {isLoading ? (
