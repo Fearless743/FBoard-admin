@@ -50,9 +50,216 @@ import {
   restartMachine,
   batchUpgradeMachines,
   type Machine,
+  type MachineLoadStatus,
 } from "@/api/server";
 import { formatBytes, formatDate } from "@/lib/utils";
 import { adminPath } from "@/lib/paths";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+function usagePercent(used?: number, total?: number): number | null {
+  if (used == null || total == null || total <= 0) return null;
+  return Math.min(100, Math.round((used / total) * 1000) / 10);
+}
+
+function loadLevelClass(value: number | null | undefined): string {
+  if (value == null) return "bg-muted-foreground/30";
+  if (value >= 90) return "bg-red-500";
+  if (value >= 70) return "bg-amber-500";
+  return "bg-emerald-500";
+}
+
+function LoadMeter({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | null;
+}) {
+  const text = value == null ? "—" : `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
+
+  return (
+    <div className="flex items-center gap-1.5 leading-none">
+      <span className="w-7 shrink-0 text-[10px] text-muted-foreground">{label}</span>
+      <div className="h-1 min-w-[48px] flex-1 overflow-hidden rounded-full bg-muted">
+        <div
+          className={cn("h-full rounded-full transition-all", loadLevelClass(value))}
+          style={{ width: `${value == null ? 0 : Math.max(value, value > 0 ? 4 : 0)}%` }}
+        />
+      </div>
+      <span className="w-8 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
+        {text}
+      </span>
+    </div>
+  );
+}
+
+function LoadStatusCell({ load }: { load?: MachineLoadStatus | null }) {
+  const { t } = useTranslation();
+  if (!load) {
+    return <span className="text-xs text-muted-foreground">{t("machine.columns.noData")}</span>;
+  }
+
+  const cpu = load.cpu == null ? null : Math.min(100, Math.round(load.cpu * 10) / 10);
+  const mem = usagePercent(load.mem?.used, load.mem?.total);
+  const disk = usagePercent(load.disk?.used, load.disk?.total);
+  const swap = usagePercent(load.swap?.used, load.swap?.total);
+  const updatedAt = load.updated_at ? formatDate(load.updated_at) : null;
+  const memDetail =
+    load.mem?.total != null
+      ? `${formatBytes(load.mem.used || 0)} / ${formatBytes(load.mem.total)}`
+      : undefined;
+  const diskDetail =
+    load.disk?.total != null
+      ? `${formatBytes(load.disk.used || 0)} / ${formatBytes(load.disk.total)}`
+      : undefined;
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex min-w-[140px] max-w-[180px] cursor-default flex-col gap-0.5 py-0">
+            <LoadMeter label={t("machine.columns.cpu")} value={cpu} />
+            <LoadMeter label={t("machine.columns.memory")} value={mem} />
+            <LoadMeter label={t("machine.columns.disk")} value={disk} />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="max-w-xs space-y-1 bg-popover text-popover-foreground border text-xs shadow-md"
+        >
+          <p className="font-medium">{t("machine.columns.load")}</p>
+          <p>
+            {t("machine.columns.cpu")}: {cpu == null ? "—" : `${cpu}%`}
+          </p>
+          <p>
+            {t("machine.columns.memory")}: {mem == null ? "—" : `${mem}%`}
+            {memDetail ? ` (${memDetail})` : ""}
+          </p>
+          <p>
+            {t("machine.columns.disk")}: {disk == null ? "—" : `${disk}%`}
+            {diskDetail ? ` (${diskDetail})` : ""}
+          </p>
+          {swap != null && (
+            <p>
+              Swap: {swap}%
+              {load.swap?.total
+                ? ` (${formatBytes(load.swap.used || 0)} / ${formatBytes(load.swap.total)})`
+                : ""}
+            </p>
+          )}
+          {load.net && (
+            <p>
+              Net: ↓ {formatBytes(load.net.in_speed || 0)}/s · ↑ {formatBytes(load.net.out_speed || 0)}/s
+            </p>
+          )}
+          {updatedAt && (
+            <p className="text-muted-foreground">
+              {t("machine.columns.lastReport")}: {updatedAt}
+            </p>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function CurrentLoadSummary({ load }: { load?: MachineLoadStatus | null }) {
+  const { t } = useTranslation();
+  if (!load) {
+    return (
+      <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+        {t("machine.columns.noData")}
+      </div>
+    );
+  }
+
+  const cpu = load.cpu == null ? null : Math.min(100, Math.round(load.cpu * 10) / 10);
+  const mem = usagePercent(load.mem?.used, load.mem?.total);
+  const disk = usagePercent(load.disk?.used, load.disk?.total);
+  const swap = usagePercent(load.swap?.used, load.swap?.total);
+
+  const items = [
+    {
+      key: "cpu",
+      label: t("machine.columns.cpu"),
+      value: cpu,
+      detail: cpu == null ? "—" : `${cpu.toFixed(cpu % 1 === 0 ? 0 : 1)}%`,
+    },
+    {
+      key: "mem",
+      label: t("machine.columns.memory"),
+      value: mem,
+      detail:
+        load.mem?.total != null
+          ? `${formatBytes(load.mem.used || 0)} / ${formatBytes(load.mem.total)}`
+          : mem == null
+            ? "—"
+            : `${mem}%`,
+    },
+    {
+      key: "disk",
+      label: t("machine.columns.disk"),
+      value: disk,
+      detail:
+        load.disk?.total != null
+          ? `${formatBytes(load.disk.used || 0)} / ${formatBytes(load.disk.total)}`
+          : disk == null
+            ? "—"
+            : `${disk}%`,
+    },
+    {
+      key: "swap",
+      label: "Swap",
+      value: swap,
+      detail:
+        load.swap?.total != null
+          ? `${formatBytes(load.swap.used || 0)} / ${formatBytes(load.swap.total)}`
+          : swap == null
+            ? "—"
+            : `${swap}%`,
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {items.map((item) => (
+        <div key={item.key} className="rounded-lg border bg-muted/20 p-3">
+          <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+            <span>{item.label}</span>
+            <span className="tabular-nums font-medium text-foreground">
+              {item.value == null ? "—" : `${item.value.toFixed(item.value % 1 === 0 ? 0 : 1)}%`}
+            </span>
+          </div>
+          <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className={cn("h-full rounded-full", loadLevelClass(item.value))}
+              style={{ width: `${item.value == null ? 0 : Math.max(item.value, item.value > 0 ? 4 : 0)}%` }}
+            />
+          </div>
+          <p className="truncate text-[11px] text-muted-foreground tabular-nums">{item.detail}</p>
+        </div>
+      ))}
+      {load.net && (
+        <div className="col-span-2 rounded-lg border bg-muted/20 p-3 sm:col-span-4">
+          <div className="mb-1 text-xs text-muted-foreground">Network</div>
+          <p className="text-sm tabular-nums">
+            ↓ {formatBytes(load.net.in_speed || 0)}/s · ↑ {formatBytes(load.net.out_speed || 0)}/s
+          </p>
+          {load.updated_at ? (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {t("machine.columns.lastReport")}: {formatDate(load.updated_at)}
+            </p>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function MachineListPage() {
   const { t } = useTranslation();
@@ -104,6 +311,7 @@ export function MachineListPage() {
               <TableHead>{t("machine.columns.name")}</TableHead>
               <TableHead className="w-24 text-center">{t("machine.columns.status")}</TableHead>
               <TableHead className="w-24 text-right">{t("machine.columns.nodesHosted")}</TableHead>
+              <TableHead className="min-w-[160px]">{t("machine.columns.load")}</TableHead>
               <TableHead className="w-40">{t("machine.columns.lastSeen")}</TableHead>
               <TableHead className="w-40 text-right">{t("machine.columns.actions")}</TableHead>
             </TableRow>
@@ -112,14 +320,14 @@ export function MachineListPage() {
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 6 }).map((_, j) => (
+                  {Array.from({ length: 7 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : list.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   <EmptyState icon={<Server className="h-10 w-10" />} />
                 </TableCell>
               </TableRow>
@@ -138,6 +346,9 @@ export function MachineListPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{m.servers_count ?? 0}</TableCell>
+                  <TableCell>
+                    <LoadStatusCell load={m.load_status} />
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {m.last_seen_at ? formatDate(m.last_seen_at) : t("machine.columns.never")}
                   </TableCell>
@@ -917,11 +1128,19 @@ function MachineDetailDialog({
                     />
                     {!machine.is_active ? "禁用" : machine.is_online ? "在线" : "离线"}
                   </Badge>
-                  {history && history.length > 0 && (
-                    <span className="font-mono text-xs text-muted-foreground">
-                      CPU {(history[history.length - 1] as any).cpu.toFixed(0)}%
-                    </span>
-                  )}
+                  {(() => {
+                    const cpu = machine.load_status?.cpu;
+                    if (cpu == null && !(history && history.length > 0)) return null;
+                    const value =
+                      cpu != null
+                        ? cpu
+                        : (history![history!.length - 1] as any).cpu;
+                    return (
+                      <span className="font-mono text-xs text-muted-foreground">
+                        CPU {Number(value).toFixed(0)}%
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span>
@@ -964,6 +1183,19 @@ function MachineDetailDialog({
                 </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── 卡片 1.5: 当前负载 load_status ─── */}
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Activity className="size-4" />
+              {t("machine.columns.load")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CurrentLoadSummary load={machine.load_status} />
           </CardContent>
         </Card>
 
