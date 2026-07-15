@@ -200,6 +200,12 @@ export async function generateRealityKey() {
   return adminGet<{ public_key: string; private_key: string }>("/server/manage/generate-reality-key");
 }
 
+export async function generateSudokuKey() {
+  return adminGet<{ master_public_key: string; master_private_key: string }>(
+    "/server/manage/generate-sudoku-key",
+  );
+}
+
 export interface VirtualNode {
   host: string;
   port: number;

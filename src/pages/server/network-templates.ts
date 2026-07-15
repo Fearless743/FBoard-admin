@@ -119,6 +119,23 @@ const TEMPLATES: Record<string, NetworkTemplate[]> = {
       protocol_settings: {},
     },
   ],
+  sudoku: [
+    {
+      id: "sudoku-default",
+      label: "Sudoku 默认",
+      description: "低熵表 + ChaCha20 + legacy HTTPMask",
+      protocol_settings: {
+        aead_method: "chacha20-poly1305",
+        padding_min: 5,
+        padding_max: 15,
+        table_type: "prefer_entropy",
+        enable_pure_downlink: true,
+        handshake_timeout: 5,
+        multiplex: "off",
+        httpmask: { disable: false, mode: "legacy" },
+      },
+    },
+  ],
 };
 
 export function getTemplatesForProtocol(type: string): NetworkTemplate[] {

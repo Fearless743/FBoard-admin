@@ -173,6 +173,36 @@ export function ServerFormDialog({
   const currentDef = protocolDefs.find((d) => d.type === selectedType);
   const selectedProto = protocolTypes.find((p) => p.type === selectedType);
 
+  // New Sudoku node: auto-generate master key pair when empty
+  useEffect(() => {
+    if (!open || server || selectedType !== "sudoku") return;
+    const pub = watch("protocol_settings.master_public_key");
+    const priv = watch("protocol_settings.master_private_key");
+    if (pub || priv) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { generateSudokuKey } = await import("@/api/server");
+        const res = await generateSudokuKey();
+        if (cancelled) return;
+        setValue("protocol_settings.master_public_key", res.master_public_key, {
+          shouldDirty: true,
+        });
+        setValue(
+          "protocol_settings.master_private_key",
+          res.master_private_key,
+          { shouldDirty: true },
+        );
+      } catch {
+        // user can still click 一键生成
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, server, selectedType]);
+
   const [tags, setTags] = useState<string[]>([]);
   const [inputVal, setInputVal] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -866,6 +896,78 @@ function ProtocolConfigFields({
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
+              </div>
+            </div>
+          );
+        }
+
+        // Sudoku master keys: render once as a combined "one-click generate" block
+        if (
+          !prefix &&
+          (key === "master_public_key" || key === "master_private_key") &&
+          Object.prototype.hasOwnProperty.call(fields, "master_public_key") &&
+          Object.prototype.hasOwnProperty.call(fields, "master_private_key")
+        ) {
+          if (key === "master_private_key") {
+            return null; // rendered with public key block
+          }
+          return (
+            <div
+              key="sudoku-master-keys"
+              className="space-y-3 rounded-md border p-3"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <Label className="text-sm font-medium">Sudoku 密钥对</Label>
+                  <p className="text-xs text-muted-foreground">
+                    服务端使用 Master Public Key；Master Private Key 仅保存在面板用于派生用户密钥，不会下发到节点
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={async () => {
+                    try {
+                      const { generateSudokuKey } =
+                        await import("@/api/server");
+                      const res = await generateSudokuKey();
+                      setValue(
+                        "protocol_settings.master_public_key",
+                        res.master_public_key,
+                        { shouldDirty: true },
+                      );
+                      setValue(
+                        "protocol_settings.master_private_key",
+                        res.master_private_key,
+                        { shouldDirty: true },
+                      );
+                      toast.success("Sudoku 密钥对已生成");
+                    } catch (e) {
+                      toast.error("生成 Sudoku 密钥失败");
+                    }
+                  }}
+                >
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  一键生成
+                </Button>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Master Public Key</Label>
+                <Input
+                  placeholder="点击右上角「一键生成」自动填写"
+                  className="font-mono text-xs"
+                  {...register("protocol_settings.master_public_key")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Master Private Key</Label>
+                <Input
+                  placeholder="仅面板保存，勿泄露"
+                  className="font-mono text-xs"
+                  {...register("protocol_settings.master_private_key")}
+                />
               </div>
             </div>
           );
