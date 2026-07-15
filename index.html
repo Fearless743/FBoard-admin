@@ -9,6 +9,33 @@
     <!-- 站点设置由后端注入到 window.settings -->
     <script src="/settings.js"></script>
     <script src="/settings.local.js"></script>
+    <!-- 首屏应用主题，避免 zustand rehydrate 前闪白 -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem("xboard-admin-settings");
+          var theme = "light";
+          var sidebarTheme = "light";
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            var state = parsed && parsed.state ? parsed.state : parsed;
+            if (state) {
+              if (state.theme) theme = state.theme;
+              if (state.sidebarTheme) sidebarTheme = state.sidebarTheme;
+            }
+          }
+          var isDark =
+            theme === "dark" ||
+            (theme === "system" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", isDark);
+          document.documentElement.classList.toggle(
+            "sidebar-dark",
+            sidebarTheme === "dark"
+          );
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
