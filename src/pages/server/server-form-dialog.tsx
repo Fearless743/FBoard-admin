@@ -49,7 +49,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   saveServer,
-  updateServer,
   fetchGroups,
   fetchProtocolTypes,
   fetchProtocolDefinitions,
@@ -307,14 +306,16 @@ export function ServerFormDialog({
       delete payload.traffic_limit_gb;
 
       if (server) {
-        await updateServer({ ...payload, id: server.id });
+        await saveServer({ ...payload, id: server.id });
       } else {
         await saveServer(payload);
       }
       toast.success(t("server.form.success"));
       onSaved();
       onOpenChange(false);
-    } catch (e) {}
+    } catch (e: any) {
+      toast.error(t("server.messages.saveFailed"));
+    }
   };
 
   return (
