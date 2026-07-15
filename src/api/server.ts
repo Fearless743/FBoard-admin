@@ -266,6 +266,23 @@ export async function fetchProtocolTypes(): Promise<ProtocolType[]> {
 }
 
 /* ============ 机器 ============ */
+export interface MachineLoadResource {
+  total?: number;
+  used?: number;
+}
+
+export interface MachineLoadStatus {
+  cpu?: number;
+  mem?: MachineLoadResource;
+  swap?: MachineLoadResource;
+  disk?: MachineLoadResource;
+  net?: {
+    in_speed?: number;
+    out_speed?: number;
+  };
+  updated_at?: number;
+}
+
 export interface Machine {
   id: number;
   name: string;
@@ -274,6 +291,7 @@ export interface Machine {
   notes?: string;
   last_seen_at?: number | null;
   servers_count?: number;
+  load_status?: MachineLoadStatus | null;
   [k: string]: any;
 }
 
