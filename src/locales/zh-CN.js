@@ -2131,8 +2131,12 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "label": "虚拟节点",
         "add": "添加虚拟节点",
         "addDialogTitle": "添加虚拟节点",
+        "editDialogTitle": "编辑虚拟节点",
+        "edit": "编辑",
+        "delete": "删除",
         "save": "保存虚拟节点",
         "saveSuccess": "虚拟节点已保存",
+        "saveFailed": "保存虚拟节点失败",
         "description": "虚拟节点是同一服务的额外接入点，与子父节点是独立功能",
         "empty": "暂无虚拟节点",
         "tagsPlaceholder": "输入后按回车添加",
@@ -2140,6 +2144,15 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "port": "端口",
         "groupIds": "权限组",
         "tags": "标签",
+        "show": "显示",
+        "visible": "显示",
+        "hidden": "隐藏",
+        "namePlaceholder": "虚拟节点名称",
+        "deleteConfirmTitle": "确认删除",
+        "deleteConfirmDesc": "确定要删除虚拟节点「{{name}}」吗？此操作不可恢复。",
+        "deleteSuccess": "虚拟节点已删除",
+        "deleteFailed": "删除失败",
+        "toggleFailed": "更新显示状态失败",
         "generateKeyPair": "生成密钥对"
       },
       "route": {
@@ -2302,10 +2315,14 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
             "description_short": "每行一个 KEY=VALUE 配置"
           },
           "cert_content": {
-            "label": "证书内容 (Public Key)"
+            "label": "证书内容 (PEM)",
+            "placeholder": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----",
+            "description": "粘贴完整证书 PEM 正文，不是文件路径"
           },
           "key_content": {
-            "label": "密钥内容 (Private Key)"
+            "label": "私钥内容 (PEM)",
+            "placeholder": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
+            "description": "粘贴完整私钥 PEM 正文，不是文件路径"
           },
           "none_desc": "未启用 TLS 证书配置"
         }
@@ -2584,6 +2601,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "cert_config": {
         "tab": "TLS 证书",
+        "none_desc": "未启用 TLS 证书配置",
         "cert_mode": {
           "label": "证书模式",
           "description": "选择证书申请方式，仅部分后端节点支持",
@@ -2608,10 +2626,14 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "description_short": "每行一个 KEY=VALUE 配置"
         },
         "cert_content": {
-          "label": "证书内容 (Public Key)"
+          "label": "证书内容 (PEM)",
+          "placeholder": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----",
+          "description": "粘贴完整证书 PEM 正文，不是文件路径"
         },
         "key_content": {
-          "label": "密钥内容 (Private Key)"
+          "label": "私钥内容 (PEM)",
+          "placeholder": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
+          "description": "粘贴完整私钥 PEM 正文，不是文件路径"
         }
       },
       "routing": {
@@ -2634,11 +2656,31 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     },
     "network_settings": {
       "edit_protocol": "编辑协议",
-      "edit_protocol_config": "编辑协议配置",
+      "edit_protocol_config": "编辑网络设置",
       "edit_padding_scheme": "编辑填充方案",
       "use_template": "使用{{template}}模板",
-      "json_config_placeholder": "请输入JSON配置",
-      "json_config_placeholder_with_template": "请输入JSON配置或选择上方模板",
+      "json_label": "网络设置 (JSON)",
+      "json_config_placeholder": "请输入 JSON 格式的网络设置",
+      "json_config_placeholder_with_template": "请输入 JSON 配置，例如 path / host / serviceName 等",
+      "templates": "模板列表",
+      "templates_empty": "暂无可用模板，可将当前配置保存为模板",
+      "templates_custom": "我的模板",
+      "templates_builtin": "内置模板",
+      "builtin": "内置",
+      "save_as_template": "保存当前为模板",
+      "save_template": "保存模板",
+      "delete_template": "删除模板",
+      "use_template_btn": "使用",
+      "template_name_placeholder": "模板名称，例如：WS 自定义路径",
+      "template_name_required": "请输入模板名称",
+      "template_empty": "当前配置为空，无法保存为模板",
+      "template_from_current": "来自当前 {{network}} 配置",
+      "template_custom_desc": "自定义网络设置模板",
+      "template_saved": "模板已保存",
+      "template_save_failed": "保存模板失败",
+      "template_deleted": "模板已删除",
+      "template_delete_failed": "删除模板失败",
+      "template_applied": "已应用模板：{{name}}",
       "validation": {
         "must_be_array": "配置必须是一个JSON数组",
         "must_be_object": "配置必须是一个JSON对象",

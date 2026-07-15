@@ -2136,8 +2136,12 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "label": "Virtual Nodes",
         "add": "Add Virtual Node",
         "addDialogTitle": "Add Virtual Node",
+        "editDialogTitle": "Edit Virtual Node",
+        "edit": "Edit",
+        "delete": "Delete",
         "save": "Save Virtual Nodes",
-        "saveSuccess": "Virtual nodes saved",
+        "saveSuccess": "Virtual node saved",
+        "saveFailed": "Failed to save virtual node",
         "description": "Virtual nodes are additional access points for the same service, independent from child/parent relationship",
         "empty": "No virtual nodes",
         "tagsPlaceholder": "Press Enter to add",
@@ -2145,6 +2149,15 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "port": "Port",
         "groupIds": "Permission Groups",
         "tags": "Tags",
+        "show": "Visible",
+        "visible": "Visible",
+        "hidden": "Hidden",
+        "namePlaceholder": "Virtual node name",
+        "deleteConfirmTitle": "Confirm delete",
+        "deleteConfirmDesc": "Delete virtual node \"{{name}}\"? This cannot be undone.",
+        "deleteSuccess": "Virtual node deleted",
+        "deleteFailed": "Failed to delete",
+        "toggleFailed": "Failed to update visibility",
         "generateKeyPair": "Generate Key Pair"
       },
       "route": {
@@ -2307,10 +2320,14 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "description_short": "One KEY=VALUE per line"
           },
           "cert_content": {
-            "label": "Public Key content"
+            "label": "Certificate content (PEM)",
+            "placeholder": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----",
+            "description": "Paste full certificate PEM body, not a file path"
           },
           "key_content": {
-            "label": "Private Key content"
+            "label": "Private key content (PEM)",
+            "placeholder": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
+            "description": "Paste full private key PEM body, not a file path"
           },
           "none_desc": "TLS config disabled"
         }
@@ -2587,6 +2604,43 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "success": "Traffic pattern generated"
         }
       },
+      "cert_config": {
+        "tab": "TLS Cert",
+        "none_desc": "TLS config disabled",
+        "cert_mode": {
+          "label": "Cert Mode",
+          "description": "Select how to manage certificates",
+          "none_desc": "TLS config disabled"
+        },
+        "domain": {
+          "label": "Domain"
+        },
+        "email": {
+          "label": "Notification Email"
+        },
+        "http_port": {
+          "label": "Challenge Port",
+          "description": "ACME challenge port (default 80)"
+        },
+        "dns_provider": {
+          "label": "DNS Provider",
+          "doc_link": "DNS provider configuration guide"
+        },
+        "dns_env": {
+          "label": "Env Vars (API Keys)",
+          "description_short": "One KEY=VALUE per line"
+        },
+        "cert_content": {
+          "label": "Certificate content (PEM)",
+          "placeholder": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----",
+          "description": "Paste full certificate PEM body, not a file path"
+        },
+        "key_content": {
+          "label": "Private key content (PEM)",
+          "placeholder": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
+          "description": "Paste full private key PEM body, not a file path"
+        }
+      },
       "routing": {
         "outbounds_tab": "Custom Outbounds",
         "routes_tab": "Custom Routes",
@@ -2607,10 +2661,30 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     },
     "network_settings": {
       "edit_protocol": "Edit Protocol",
-      "edit_protocol_config": "Edit Protocol Configuration",
+      "edit_protocol_config": "Edit Network Settings",
       "use_template": "Use {{template}} Template",
-      "json_config_placeholder": "Please enter JSON configuration",
-      "json_config_placeholder_with_template": "Please enter JSON configuration or select template above",
+      "json_label": "Network Settings (JSON)",
+      "json_config_placeholder": "Enter network settings as JSON",
+      "json_config_placeholder_with_template": "Enter JSON config, e.g. path / host / serviceName",
+      "templates": "Templates",
+      "templates_empty": "No templates yet. Save the current config as a template.",
+      "templates_custom": "My Templates",
+      "templates_builtin": "Built-in Templates",
+      "builtin": "Built-in",
+      "save_as_template": "Save current as template",
+      "save_template": "Save template",
+      "delete_template": "Delete template",
+      "use_template_btn": "Use",
+      "template_name_placeholder": "Template name, e.g. Custom WS path",
+      "template_name_required": "Please enter a template name",
+      "template_empty": "Current config is empty and cannot be saved",
+      "template_from_current": "From current {{network}} config",
+      "template_custom_desc": "Custom network settings template",
+      "template_saved": "Template saved",
+      "template_save_failed": "Failed to save template",
+      "template_deleted": "Template deleted",
+      "template_delete_failed": "Failed to delete template",
+      "template_applied": "Applied template: {{name}}",
       "validation": {
         "must_be_object": "Configuration must be a JSON object",
         "invalid_json": "Invalid JSON format"

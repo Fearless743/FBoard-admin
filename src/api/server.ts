@@ -43,6 +43,45 @@ export async function dropRoute(id: number) {
   return adminPost<any>("/server/route/drop", { id });
 }
 
+/* ============ 网络设置模板 ============ */
+export interface NetworkSettingsTemplate {
+  id: number;
+  name: string;
+  description?: string | null;
+  network?: string | null;
+  settings: Record<string, any>;
+  created_at?: string | number;
+  updated_at?: string | number;
+  [k: string]: any;
+}
+
+export async function fetchNetworkSettingsTemplates(
+  network?: string | null,
+): Promise<NetworkSettingsTemplate[]> {
+  const qs =
+    network != null && network !== ""
+      ? `?network=${encodeURIComponent(network)}`
+      : "";
+  const res = await adminGet<
+    { data: NetworkSettingsTemplate[] } | NetworkSettingsTemplate[]
+  >("/server/network-settings-template/fetch" + qs);
+  return Array.isArray(res) ? res : res.data || [];
+}
+
+export async function saveNetworkSettingsTemplate(payload: {
+  id?: number;
+  name: string;
+  description?: string | null;
+  network?: string | null;
+  settings: Record<string, any>;
+}) {
+  return adminPost<any>("/server/network-settings-template/save", payload);
+}
+
+export async function dropNetworkSettingsTemplate(id: number) {
+  return adminPost<any>("/server/network-settings-template/drop", { id });
+}
+
 /* ============ 节点 ============ */
 export interface Server {
   id: number;
@@ -70,6 +109,21 @@ export interface Server {
   last_check_at?: number;
   status?: 0 | 1 | 2;
   machine_id?: number | null;
+  /** 节点级 TLS 证书自动化配置 */
+  cert_config?: {
+    cert_mode?: string;
+    domain?: string;
+    email?: string;
+    http_port?: number;
+    dns_provider?: string;
+    dns_env?: Record<string, string>;
+    cert_content?: string;
+    key_content?: string;
+  } | null;
+  /** 自定义出站（JSON 数组） */
+  custom_outbounds?: Array<Record<string, any>> | null;
+  /** 自定义路由（JSON 数组） */
+  custom_routes?: Array<Record<string, any>> | null;
   [k: string]: any;
 }
 
