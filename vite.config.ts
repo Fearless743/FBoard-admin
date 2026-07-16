@@ -5,10 +5,18 @@ import fs from "node:fs";
 import { transform } from "esbuild";
 
 const localesSrc = path.resolve(__dirname, "src/locales");
-const localesDest = path.resolve(
-  __dirname,
-  "../Fboard/public/assets/admin/locales",
-);
+
+// outDir 解析规则：
+// - 本地开发：admin 与 Fboard 平级，产物走 "../Fboard/public/assets/admin"
+// - CI（admin 作为 Fboard 子目录被 checkout）：产物走 "../public/assets/admin"
+//
+// 通过 FBOARD_PUBLIC_ASSETS_DIR 环境变量强制指定产物根目录，未设置时
+// 走默认 "../Fboard/public/assets/admin"（与本地布局一致）。CI 在
+// .github/workflows 中显式 export 该变量。
+const assetsRoot =
+  process.env.FBOARD_PUBLIC_ASSETS_DIR ||
+  path.resolve(__dirname, "../Fboard/public/assets/admin");
+const localesDest = path.resolve(assetsRoot, "locales");
 
 /**
  * 把 src/locales/<lang>.ts 编译回 <lang>.js 写入 PHP 端静态目录。
@@ -49,7 +57,8 @@ export default defineConfig({
   base: "/assets/admin/",
   plugins: [react(), copyLocales()],
   build: {
-    outDir: path.resolve(__dirname, "../Fboard/public/assets/admin"),
+    outDir: assetsRoot,
+    emptyOutDir: true,
     manifest: true,
     minify: true,
   },
