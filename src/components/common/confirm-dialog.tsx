@@ -36,12 +36,16 @@ export function ConfirmDialog({
   const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{title || t("common.confirm")}</DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
+          {description && (
+            <DialogDescription className="max-h-[60vh] overflow-y-auto">
+              {description}
+            </DialogDescription>
+          )}
         </DialogHeader>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             {cancelText || t("common.cancel")}
           </Button>

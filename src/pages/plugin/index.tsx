@@ -526,10 +526,11 @@ function PluginStaticFilesDialog({
 
   return (
     <Dialog open={!!code} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{name || code} · HTML 静态文件</DialogTitle>
         </DialogHeader>
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
         {isLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-10 w-full" />
@@ -572,7 +573,8 @@ function PluginStaticFilesDialog({
             ))}
           </div>
         )}
-        <DialogFooter>
+        </div>
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("plugin.config.cancel")}
           </Button>
@@ -737,12 +739,13 @@ function PluginConfigDialog({
 
   return (
     <Dialog open={!!code} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {name || code} · {t("plugin.config.title")}
           </DialogTitle>
         </DialogHeader>
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
         {isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -956,7 +959,8 @@ function PluginConfigDialog({
             </div>
           </div>
         )}
-        <DialogFooter className="gap-2">
+        </div>
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("plugin.config.cancel")}
           </Button>
@@ -1001,12 +1005,13 @@ function PluginReadmeDialog({
 
   return (
     <Dialog open={!!code} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {name || code} · {t("plugin.readme.title")}
           </DialogTitle>
         </DialogHeader>
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
         {isLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />
@@ -1053,7 +1058,8 @@ function PluginReadmeDialog({
             {t("plugin.readme.empty")}
           </p>
         )}
-        <DialogFooter>
+        </div>
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("plugin.config.cancel")}
           </Button>

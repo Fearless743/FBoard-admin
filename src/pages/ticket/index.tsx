@@ -442,8 +442,8 @@ export function TicketListPage() {
 
       {/* 流量记录弹窗 */}
       <Dialog open={showTrafficRecords} onOpenChange={setShowTrafficRecords}>
-        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
             <DialogTitle>{t("ticket.detail.traffic_records")}</DialogTitle>
           </DialogHeader>
           <TrafficRecordsView userId={detailData?.user?.id || viewing?.user_id} />
@@ -452,8 +452,8 @@ export function TicketListPage() {
 
       {/* 订单记录弹窗 */}
       <Dialog open={showOrders} onOpenChange={setShowOrders}>
-        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
             <DialogTitle>{t("ticket.detail.order_records")}</DialogTitle>
           </DialogHeader>
           <OrderRecordsView userId={viewing?.user_id} />
@@ -490,7 +490,7 @@ function TrafficRecordsView({ userId }: { userId?: number }) {
   });
   const list = data?.data || [];
   return (
-    <div className="flex-1 overflow-y-auto -mx-6 px-6">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6">
       {isLoading ? (
         <Skeleton className="h-20 w-full rounded-lg" />
       ) : list.length === 0 ? (
@@ -536,7 +536,7 @@ function OrderRecordsView({ userId }: { userId?: number }) {
   const statusKey: any = { 0: "PENDING", 1: "PROCESSING", 2: "CANCELLED", 3: "COMPLETED", 4: "DISCOUNTED" };
 
   return (
-    <div className="flex-1 overflow-y-auto -mx-6 px-6">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6">
       {isLoading ? (
         <Skeleton className="h-20 w-full rounded-lg" />
       ) : list.length === 0 ? (

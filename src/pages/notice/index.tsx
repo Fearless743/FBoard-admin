@@ -273,13 +273,13 @@ function NoticeFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {notice ? t("notice.form.edit.title") : t("notice.form.add.title")}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
           {loadingDetail ? (
             <div className="space-y-4">
               <Skeleton className="h-10 w-full" />
@@ -314,7 +314,7 @@ function NoticeFormDialog({
           </div>
           </>)}
         </div>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("notice.form.buttons.cancel")}
           </Button>

@@ -422,13 +422,13 @@ function TemplateFormDialog({
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {template ? t("giftCard.template.form.edit") : t("giftCard.template.form.add")}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-4 px-6 py-4">
 
           <CollapsibleSection title={t("giftCard.template.form.name.label") + " / " + t("giftCard.template.form.type.label")} defaultOpen>
             <div className="space-y-3">
@@ -569,7 +569,7 @@ function TemplateFormDialog({
           </CollapsibleSection>
 
         </div>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
           <Button onClick={submit} disabled={submitting}>
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -748,11 +748,11 @@ function GenerateCodesDialog({ open, onOpenChange }: { open: boolean; onOpenChan
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-w-sm max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{t("giftCard.code.form.generate")}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
           <div className="space-y-1.5">
             <Label>{t("giftCard.code.form.template_id.label")}</Label>
             <Input
@@ -771,7 +771,7 @@ function GenerateCodesDialog({ open, onOpenChange }: { open: boolean; onOpenChan
             />
           </div>
         </div>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
@@ -844,11 +844,11 @@ function EditCodeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>编辑礼品码</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
           <div className="space-y-1.5">
             <Label>礼品码</Label>
             <Input value={codeVal} onChange={(e) => setCodeVal(e.target.value)} />
@@ -887,7 +887,7 @@ function EditCodeDialog({
             <Input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
           </div>
         </div>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
           <Button onClick={submit} disabled={submitting}>
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}

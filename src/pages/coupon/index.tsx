@@ -304,11 +304,11 @@ function CouponFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{coupon ? t("coupon.form.edit") : t("coupon.form.add")}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
           <div className="space-y-1.5">
             <Label>{t("coupon.form.name.label")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
@@ -367,7 +367,7 @@ function CouponFormDialog({
             </div>
           )}
         </div>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>

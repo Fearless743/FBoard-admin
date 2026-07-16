@@ -125,13 +125,14 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{t("user.edit.button")}</DialogTitle>
           <DialogDescription>{t("user.edit.title")}</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4 px-6 py-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label={t("user.edit.form.email")} error={errors.email?.message}>
               <Input type="email" {...register("email")} />
@@ -260,8 +261,9 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
             <BoolField control={control} name="is_admin" label={t("user.edit.form.is_admin")} />
             <BoolField control={control} name="is_staff" label={t("user.edit.form.is_staff")} />
           </div>
+          </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("user.edit.form.cancel")}
             </Button>

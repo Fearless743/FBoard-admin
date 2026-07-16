@@ -506,11 +506,11 @@ export function OrderListPage() {
         setAddOpen(v);
         if (!v) { setAddEmail(""); setAddPlanId(""); setAddPeriod(""); setAddAmount(""); }
       }}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
             <DialogTitle>{t("order.dialog.assignOrder")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
             <div className="space-y-1.5">
               <Label>{t("order.dialog.fields.userEmail")}</Label>
               <Input value={addEmail} onChange={(e) => setAddEmail(e.target.value)} placeholder={t("order.dialog.placeholders.email")} />
@@ -555,7 +555,7 @@ export function OrderListPage() {
               <Input type="number" step="0.01" value={addAmount} onChange={(e) => setAddAmount(e.target.value)} />
             </div>
           </div>
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
             <Button variant="outline" onClick={() => setAddOpen(false)}>{t("order.actions.cancel")}</Button>
             <Button disabled={addSubmitting} onClick={async () => {
               if (!addEmail || !addPlanId || !addPeriod) return;

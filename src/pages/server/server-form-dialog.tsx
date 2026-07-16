@@ -585,7 +585,7 @@ export function ServerFormDialog({
             )}
           </div>
 
-          <DialogFooter className="sticky bottom-0 z-10 gap-3 bg-background px-6 py-4 shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.15)]">
+          <DialogFooter className="shrink-0 gap-3 border-t bg-background px-6 py-4 shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.15)]">
             <Button
               type="button"
               variant="secondary"

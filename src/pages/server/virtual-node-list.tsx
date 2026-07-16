@@ -462,8 +462,8 @@ function ChildNodeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md flex flex-col p-0 gap-0 max-h-[90vh]">
+        <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle>
             {isEditing
               ? t("server.form.virtualNode.editDialogTitle", {
@@ -473,7 +473,7 @@ function ChildNodeDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="flex-1 overflow-y-auto space-y-3 px-6 py-4">
           <div className="space-y-1.5">
             <Label>{t("server.form.name.label", { defaultValue: "名称" })}</Label>
             <Input
@@ -585,7 +585,7 @@ function ChildNodeDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="shrink-0 gap-2 border-t bg-background px-6 py-4">
           <Button
             type="button"
             variant="outline"

@@ -58,13 +58,14 @@ export function UserTrafficResetDialog({ open, onOpenChange, user, onDone }: Pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{t("user.traffic_reset.title")}</DialogTitle>
           <DialogDescription>
             {t("user.traffic_reset.description", { email: user.email })}
           </DialogDescription>
         </DialogHeader>
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
 
         <Tabs defaultValue="reset" className="w-full">
           <TabsList>
@@ -140,8 +141,9 @@ export function UserTrafficResetDialog({ open, onOpenChange, user, onDone }: Pro
             </div>
           </TabsContent>
         </Tabs>
+        </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>

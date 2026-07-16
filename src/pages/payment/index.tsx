@@ -318,13 +318,13 @@ function PaymentFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {payment ? t("payment.form.edit.title") : t("payment.form.add.title")}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
           <div className="space-y-1.5">
             <Label>{t("payment.form.fields.name.label")}</Label>
             <Input
@@ -482,7 +482,7 @@ function PaymentFormDialog({
             <Switch checked={enable} onCheckedChange={setEnable} />
           </div>
         </div>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("payment.form.buttons.cancel")}
           </Button>

@@ -240,12 +240,13 @@ function ThemeConfigDialog({
 
   return (
     <Dialog open={!!name} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {name && t("theme.config.title", { name })}
           </DialogTitle>
         </DialogHeader>
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
         {isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -302,7 +303,8 @@ function ThemeConfigDialog({
             })}
           </div>
         )}
-        <DialogFooter className="gap-2">
+        </div>
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("theme.config.cancel")}
           </Button>

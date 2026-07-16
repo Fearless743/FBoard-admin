@@ -171,15 +171,16 @@ export function PlanFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {plan ? t("subscribe.plan.form.edit_title") : t("subscribe.plan.form.add_title")}
           </DialogTitle>
           <DialogDescription>{t("subscribe.plan.page.description")}</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-5 px-6 py-4">
           {/* 基本信息 */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
@@ -278,8 +279,9 @@ export function PlanFormDialog({
             <BoolField control={control} name="sell" label={t("subscribe.plan.columns.sell")} />
             <BoolField control={control} name="renew" label={t("subscribe.plan.columns.renew")} />
           </div>
+          </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("subscribe.plan.form.submit.cancel")}
             </Button>
