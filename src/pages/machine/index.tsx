@@ -463,6 +463,9 @@ export function MachineListPage() {
             qc.invalidateQueries({ queryKey: ["machines"] });
             setUpgrading(null);
           } catch (e) {
+            // api.ts interceptor already surfaces the message via toast.error;
+            // we only need to make sure it is not swallowed silently.
+            console.error("[machine] upgrade failed", upgrading.id, e);
           } finally {
             setUpgradeSubmitting(false);
           }
@@ -487,6 +490,7 @@ export function MachineListPage() {
             qc.invalidateQueries({ queryKey: ["machines"] });
             setRestarting(null);
           } catch (e) {
+            console.error("[machine] restart failed", restarting.id, e);
           } finally {
             setRestartSubmitting(false);
           }
@@ -516,6 +520,7 @@ export function MachineListPage() {
             qc.invalidateQueries({ queryKey: ["machines"] });
             setBatchUpgradeOpen(false);
           } catch (e) {
+            console.error("[machine] batch upgrade failed", e);
           } finally {
             setBatchUpgradeSubmitting(false);
           }
