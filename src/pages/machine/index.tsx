@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, Loader2, Server, Copy, Check, Eye, EyeOff,
   Activity, Terminal, Unlink, Link2, ExternalLink, ArrowRight, ArrowUpToLine, RotateCcw,
+  ScrollText, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -48,6 +49,7 @@ import {
   saveMachine,
   upgradeMachine,
   restartMachine,
+  getMachineLogs,
   batchUpgradeMachines,
   type Machine,
   type MachineLoadStatus,
@@ -992,6 +994,15 @@ function MachineDetailDialog({
   const [historyLoading, setHistoryLoading] = useState(false);
   const [nodes, setNodes] = useState<any[] | null>(null);
   const [nodesLoading, setNodesLoading] = useState(false);
+  const [logLines, setLogLines] = useState<string[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsMeta, setLogsMeta] = useState<{
+    online?: boolean;
+    stale?: boolean;
+    updated_at?: number | null;
+    message?: string;
+  }>({});
+  const logBoxRef = useRef<HTMLPreElement | null>(null);
 
   // Time range state
   const RANGES = [
@@ -1051,12 +1062,45 @@ function MachineDetailDialog({
     }
   }, [machine]);
 
+  const loadLogs = useCallback(
+    async (refresh = true) => {
+      if (!machine) return;
+      setLogsLoading(true);
+      try {
+        const res = await getMachineLogs(machine.id, { limit: 500, refresh });
+        const lines = Array.isArray(res?.lines) ? res.lines : [];
+        setLogLines(lines);
+        setLogsMeta({
+          online: res?.online,
+          stale: res?.stale,
+          updated_at: res?.updated_at,
+          message: res?.message,
+        });
+        // scroll after paint
+        requestAnimationFrame(() => {
+          if (logBoxRef.current) {
+            logBoxRef.current.scrollTop = logBoxRef.current.scrollHeight;
+          }
+        });
+      } catch (e) {
+        toast.error(t("machine.logs.fetchFailed"));
+      } finally {
+        setLogsLoading(false);
+      }
+    },
+    [machine, t],
+  );
+
   useEffect(() => {
     if (machine) {
       loadToken();
       loadCmd();
       loadHistory(RANGES[rangeIdx].hours);
       loadNodes();
+      loadLogs(true);
+    } else {
+      setLogLines([]);
+      setLogsMeta({});
     }
   }, [machine]);
 
@@ -1357,7 +1401,90 @@ function MachineDetailDialog({
           </CardContent>
         </Card>
 
-        {/* ─── 卡片 5: 关联节点 ─── */}
+        {/* ─── 卡片 5: 运行日志 ─── */}
+        <Card className="mb-4">
+          <CardHeader className="pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <ScrollText className="size-4 text-muted-foreground" />
+                {t("machine.logs.title")}
+              </CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                {logsMeta.updated_at ? (
+                  <span className="text-xs text-muted-foreground font-mono">
+                    {t("machine.logs.updatedAt", {
+                      time: formatDate(logsMeta.updated_at),
+                    })}
+                  </span>
+                ) : null}
+                <Badge variant="secondary" className="text-xs font-mono">
+                  {t("machine.logs.lineCount", { count: logLines.length })}
+                </Badge>
+                {logsMeta.stale ? (
+                  <Badge variant="outline" className="text-xs">
+                    {t("machine.logs.stale")}
+                  </Badge>
+                ) : null}
+                {logsMeta.online === false ? (
+                  <Badge variant="destructive" className="text-xs">
+                    {t("machine.logs.offline")}
+                  </Badge>
+                ) : null}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  disabled={logsLoading}
+                  onClick={() => loadLogs(true)}
+                >
+                  {logsLoading ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="size-3.5" />
+                  )}
+                  {t("machine.logs.refresh")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  disabled={!logLines.length}
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(logLines.join("\n"));
+                    toast.success(t("machine.logs.copied"));
+                  }}
+                >
+                  <Copy className="size-3.5" />
+                  {t("machine.logs.copy")}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              {t("machine.logs.description")}
+            </p>
+            {logsMeta.message ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                {logsMeta.message}
+              </p>
+            ) : null}
+            {logsLoading && logLines.length === 0 ? (
+              <Skeleton className="h-[240px] rounded-lg" />
+            ) : (
+              <pre
+                ref={logBoxRef}
+                className="h-[280px] overflow-auto rounded-lg border bg-zinc-950 p-3 font-mono text-[11px] leading-5 text-zinc-100"
+              >
+                {logLines.length === 0
+                  ? t("machine.logs.empty")
+                  : logLines.join("\n")}
+              </pre>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ─── 卡片 6: 关联节点 ─── */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-3">

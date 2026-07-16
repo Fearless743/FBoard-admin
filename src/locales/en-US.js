@@ -3069,6 +3069,22 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "loading": "Generating command...",
       "hint": "Requires root or sudo privileges and a Linux server with systemd."
     },
+    "logs": {
+      "title": "Runtime Logs",
+      "description": "Recent logs from the Fboard-Node process memory ring (up to ~1000 lines).",
+      "refresh": "Refresh",
+      "copy": "Copy logs",
+      "copied": "Logs copied",
+      "loading": "Fetching logs...",
+      "empty": "No logs yet",
+      "offline": "Server is offline; live logs unavailable",
+      "stale": "Showing cached logs (may be stale)",
+      "timeout": "Timed out waiting for node logs",
+      "updatedAt": "Updated {{time}}",
+      "lineCount": "{{count}} lines",
+      "autoScroll": "Auto-scroll to bottom",
+      "fetchFailed": "Failed to fetch logs"
+    },
     "detail": {
       "title": "Server Detail",
       "info": "Server Info",

@@ -359,3 +359,22 @@ export interface BatchMachineUpgradeResult {
 export async function batchUpgradeMachines() {
   return adminPost<BatchMachineUpgradeResult>("/server/machine/batchUpgrade", {});
 }
+
+export interface MachineLogsResult {
+  online: boolean;
+  lines: string[];
+  updated_at?: number | null;
+  stale?: boolean;
+  message?: string;
+  req_id?: string;
+}
+
+export async function getMachineLogs(
+  id: number,
+  opts?: { limit?: number; refresh?: boolean },
+): Promise<MachineLogsResult> {
+  const params: Record<string, any> = { id };
+  if (opts?.limit != null) params.limit = opts.limit;
+  if (opts?.refresh != null) params.refresh = opts.refresh ? 1 : 0;
+  return adminGet<MachineLogsResult>("/server/machine/logs", params);
+}

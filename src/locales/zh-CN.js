@@ -3065,6 +3065,22 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "loading": "正在生成命令...",
       "hint": "需要 root 或 sudo 权限，且目标服务器需为支持 systemd 的 Linux。"
     },
+    "logs": {
+      "title": "运行日志",
+      "description": "来自 Fboard-Node 进程内存中的最近日志（最多约 1000 行）。",
+      "refresh": "刷新日志",
+      "copy": "复制日志",
+      "copied": "日志已复制",
+      "loading": "正在拉取日志...",
+      "empty": "暂无日志",
+      "offline": "服务器离线，无法拉取实时日志",
+      "stale": "显示缓存日志（可能不是最新）",
+      "timeout": "等待节点响应超时",
+      "updatedAt": "更新于 {{time}}",
+      "lineCount": "{{count}} 行",
+      "autoScroll": "自动滚动到底部",
+      "fetchFailed": "拉取日志失败"
+    },
     "detail": {
       "title": "服务器详情",
       "info": "服务器信息",
