@@ -2985,7 +2985,7 @@ const translations: Translations = {
       "lastReport": "负载上报"
     },
     "toolbar": {
-      "search": "搜索服务器名称、备注或 SID...",
+      "search": "搜索服务器名称或备注...",
       "status": "状态",
       "nodes": "节点",
       "with_nodes": "已承载节点",

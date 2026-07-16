@@ -47,8 +47,8 @@ export interface NoticeItem {
   [k: string]: any;
 }
 
-export async function fetchNotices(): Promise<NoticeItem[]> {
-  return adminGet<NoticeItem[]>("/notice/fetch");
+export async function fetchNotices(search = ""): Promise<NoticeItem[]> {
+  return adminGet<NoticeItem[]>("/notice/fetch", search ? { search } : undefined);
 }
 
 export async function fetchNoticeDetail(id: number): Promise<NoticeItem> {
@@ -125,8 +125,11 @@ export interface GiftCardTemplate {
   [k: string]: any;
 }
 
-export async function fetchGiftCardTemplates() {
-  return adminGet<{ data: GiftCardTemplate[] }>("/gift-card/templates");
+export async function fetchGiftCardTemplates(search = "") {
+  return adminGet<{ data: GiftCardTemplate[] }>(
+    "/gift-card/templates",
+    search ? { search } : undefined,
+  );
 }
 
 export async function createGiftCardTemplate(payload: any) {
@@ -149,12 +152,18 @@ export async function generateGiftCardCodes(payload: any) {
   return adminPost<any>("/gift-card/generate-codes", payload);
 }
 
-export async function fetchGiftCardCodes() {
-  return adminGet<{ data: any[] }>("/gift-card/codes");
+export async function fetchGiftCardCodes(search = "") {
+  return adminGet<{ data: any[] }>(
+    "/gift-card/codes",
+    search ? { search } : undefined,
+  );
 }
 
-export async function fetchGiftCardUsages() {
-  return adminGet<{ data: any[] }>("/gift-card/usages");
+export async function fetchGiftCardUsages(search = "") {
+  return adminGet<{ data: any[] }>(
+    "/gift-card/usages",
+    search ? { search } : undefined,
+  );
 }
 
 export async function toggleGiftCardCode(payload: { id: number; action: "enable" | "disable" }) {
@@ -194,6 +203,7 @@ export interface PaymentMethod {
 }
 
 export async function fetchPayments(payload?: any) {
+  // 兼容旧调用：fetchPayments() 不带 search 时 payload 为空对象
   return adminGet<any>("/payment/fetch", payload || {});
 }
 
@@ -241,8 +251,8 @@ export async function fetchKnowledgeCategories(): Promise<string[]> {
   return adminGet<string[]>("/knowledge/getCategory");
 }
 
-export async function fetchKnowledges(): Promise<KnowledgeItem[]> {
-  return adminGet<KnowledgeItem[]>("/knowledge/fetch");
+export async function fetchKnowledges(search = ""): Promise<KnowledgeItem[]> {
+  return adminGet<KnowledgeItem[]>("/knowledge/fetch", search ? { search } : undefined);
 }
 
 export async function fetchKnowledgeDetail(id: number): Promise<KnowledgeItem> {
@@ -295,7 +305,12 @@ export async function fetchPluginTypes(): Promise<any[]> {
   return adminGet<any[]>("/plugin/types");
 }
 
-export async function fetchPlugins(params?: { type?: string; page?: number; pageSize?: number }): Promise<any[]> {
+export async function fetchPlugins(params?: {
+  type?: string;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+}): Promise<any[]> {
   return adminGet<any[]>("/plugin/getPlugins", params || {});
 }
 

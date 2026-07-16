@@ -13,6 +13,7 @@ import {
   FileIcon,
   ExternalLink,
   ArrowLeft,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -89,13 +90,22 @@ export function PluginPage() {
   const [typeFilter, setTypeFilter] = useState("feature");
   const [page, setPage] = useState(1);
   const pageSize = 20;
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["plugins", typeFilter, page],
-    queryFn: () => fetchPlugins({ type: typeFilter, page, pageSize }),
+    queryKey: ["plugins", typeFilter, page, debouncedSearch],
+    queryFn: () => fetchPlugins({ type: typeFilter, page, pageSize, search: debouncedSearch }),
   });
   const list: any[] = (data as any)?.data || [];
   const total = (data as any)?.total || 0;
+
+  // 后端过滤：filtered 与 list 等价（仅作为保留引用，便于后续展示文案调整）
+  const filtered = list;
 
   const { data: pluginTypes } = useQuery({
     queryKey: ["plugin", "types"],
@@ -152,6 +162,15 @@ export function PluginPage() {
       />
 
       <div className="mb-4 flex items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t("plugin.toolbar.search")}
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="pl-9"
+          />
+        </div>
         <Select
           value={typeFilter}
           onValueChange={(v) => {
@@ -178,7 +197,7 @@ export function PluginPage() {
             <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
-      ) : list.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Puzzle className="mb-3 h-10 w-10" />
@@ -187,7 +206,7 @@ export function PluginPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {list.map((p) => {
+          {filtered.map((p) => {
             const status = !p.is_installed
               ? "not_installed"
               : p.is_enabled

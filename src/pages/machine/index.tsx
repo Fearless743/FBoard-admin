@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, Loader2, Server, Copy, Check, Eye, EyeOff,
   Activity, Terminal, Unlink, Link2, ExternalLink, ArrowRight, ArrowUpToLine, RotateCcw,
-  ScrollText, RefreshCw,
+  ScrollText, RefreshCw, Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -268,6 +268,12 @@ export function MachineListPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Machine | null>(null);
   const [deleting, setDeleting] = useState<Machine | null>(null);
@@ -280,8 +286,8 @@ export function MachineListPage() {
   const [batchUpgradeSubmitting, setBatchUpgradeSubmitting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["machines", { page, pageSize }],
-    queryFn: () => fetchMachines(page, pageSize),
+    queryKey: ["machines", { page, pageSize, search: debouncedSearch }],
+    queryFn: () => fetchMachines(page, pageSize, debouncedSearch),
   });
   const list: Machine[] = data?.data || [];
   const total = data?.total || 0;
@@ -304,6 +310,18 @@ export function MachineListPage() {
           </div>
         }
       />
+
+      <div className="mb-4">
+        <div className="relative max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t("machine.toolbar.search")}
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="pl-9"
+          />
+        </div>
+      </div>
 
       <div className="rounded-lg border bg-card">
         <Table>

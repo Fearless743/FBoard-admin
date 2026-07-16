@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, Gift, Download, ChevronDown, ChevronRight, X, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Gift, Download, ChevronDown, ChevronRight, X, GripVertical, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -89,12 +89,20 @@ function TemplatesPanel() {
   const [editing, setEditing] = useState<GiftCardTemplate | null>(null);
   const [deleting, setDeleting] = useState<GiftCardTemplate | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["gift-card", "templates"],
-    queryFn: fetchGiftCardTemplates,
+    queryKey: ["gift-card", "templates", debouncedSearch],
+    queryFn: () => fetchGiftCardTemplates(debouncedSearch),
   });
   const list: GiftCardTemplate[] = data?.data || [];
+  // 后端已过滤；filtered 仅作为渲染源
+  const filtered = list;
 
   const handleReorder = useCallback(async (ids: number[]) => {
     try {
@@ -105,10 +113,20 @@ function TemplatesPanel() {
 
   return (
     <>
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t("giftCard.common.search")}
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); if (dragEnabled) setDragEnabled(false); }}
+            className="pl-9"
+          />
+        </div>
         <Button
           variant={dragEnabled ? "default" : "outline"}
           onClick={() => setDragEnabled(!dragEnabled)}
+          disabled={!!search}
         >
           <GripVertical className="h-4 w-4" />
           {dragEnabled ? "完成排序" : "编辑排序"}
@@ -134,7 +152,7 @@ function TemplatesPanel() {
               <TableRow>
                 <TableCell colSpan={dragEnabled ? 5 : 4}><Skeleton className="h-20 w-full" /></TableCell>
               </TableRow>
-            ) : list.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={dragEnabled ? 5 : 4}>
                   <EmptyState icon={<Gift className="h-10 w-10" />} />
@@ -142,7 +160,7 @@ function TemplatesPanel() {
               </TableRow>
             ) : (
               <SortableContainer items={list} onReorder={handleReorder} enabled={dragEnabled}>
-                {list.map((g) => (
+                {filtered.map((g) => (
                   <SortableRow key={g.id} id={g.id}>
                     <DragCell />
                     <TableCell>
@@ -589,7 +607,7 @@ function CodesPanel() {
   const [deleteCode, setDeleteCode] = useState<any>(null);
   const { data, isLoading } = useQuery({
     queryKey: ["gift-card", "codes"],
-    queryFn: fetchGiftCardCodes,
+    queryFn: () => fetchGiftCardCodes(),
   });
   const list: any[] = data?.data || [];
 
@@ -805,7 +823,7 @@ function EditCodeDialog({
 
   const { data: templatesData } = useQuery({
     queryKey: ["gift-card", "templates"],
-    queryFn: fetchGiftCardTemplates,
+    queryFn: () => fetchGiftCardTemplates(),
     enabled: open,
   });
   const templates: any[] = (templatesData as any)?.data || [];
@@ -903,7 +921,7 @@ function UsagesPanel() {
   const { t } = useTranslation();
   const { data, isLoading } = useQuery({
     queryKey: ["gift-card", "usages"],
-    queryFn: fetchGiftCardUsages,
+    queryFn: () => fetchGiftCardUsages(),
   });
   const list: any[] = data?.data || [];
 

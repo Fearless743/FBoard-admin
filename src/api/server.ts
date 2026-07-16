@@ -303,8 +303,16 @@ export interface MachineListResponse {
   last_page: number;
 }
 
-export async function fetchMachines(current = 1, pageSize = 10): Promise<MachineListResponse> {
-  return adminGet<MachineListResponse>("/server/machine/fetch", { current, pageSize });
+export async function fetchMachines(
+  current = 1,
+  pageSize = 10,
+  search = "",
+): Promise<MachineListResponse> {
+  return adminGet<MachineListResponse>("/server/machine/fetch", {
+    current,
+    pageSize,
+    ...(search ? { search } : {}),
+  });
 }
 
 export async function saveMachine(payload: Partial<Machine>) {

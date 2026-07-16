@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff, GripVertical, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -57,10 +57,16 @@ export function PaymentListPage() {
   const [deleting, setDeleting] = useState<PaymentMethod | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingList, setPendingList] = useState<PaymentMethod[] | null>(null);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["payments"],
-    queryFn: () => fetchPayments({}),
+    queryKey: ["payments", debouncedSearch],
+    queryFn: () => fetchPayments(debouncedSearch ? { search: debouncedSearch } : {}),
   });
   const list: PaymentMethod[] = data?.data || data || [];
   const displayList = pendingList ?? list;
@@ -117,6 +123,18 @@ export function PaymentListPage() {
           </div>
         }
       />
+
+      <div className="mb-4">
+        <div className="relative max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t("payment.table.toolbar.search")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
 
       <div className="rounded-lg border bg-card">
         <Table>
