@@ -1,6 +1,4 @@
 dist/
 node_modules/
-pnpm-lock.yaml
 scripts/
-bun.lock
 tsconfig.tsbuildinfo
