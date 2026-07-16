@@ -203,7 +203,7 @@ export function Dashboard() {
               value={Number(stats?.totalUsers || 0).toLocaleString()}
               footer={
                 <span>
-                  {t("dashboard.stats.activeUsers")}: {stats?.activeUsers ?? 0}
+                  {t("dashboard.stats.activeUsers", { count: stats?.activeUsers ?? 0 })}
                 </span>
               }
               icon={<Users className="h-4 w-4 text-muted-foreground" />}
