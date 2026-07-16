@@ -894,7 +894,8 @@ const translations: Translations = {
           }
         },
         "force_update": {
-          "label": "强制更新用户套餐"
+          "label": "强制更新用户套餐",
+          "description": "开启后保存时会将该套餐下用户的权限组、流量、限速与设备数强制同步到当前值，仅在编辑已有套餐时生效。"
         },
         "submit": {
           "cancel": "取消",
@@ -1294,7 +1295,8 @@ const translations: Translations = {
             }
           },
           "force_update": {
-            "label": "强制更新到用户"
+            "label": "强制更新到用户",
+            "description": "开启后保存时将该套餐下用户的权限组、流量、限速与设备数强制同步到当前值。"
           },
           "submit": {
             "submitting": "提交中...",

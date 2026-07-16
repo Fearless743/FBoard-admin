@@ -46,6 +46,7 @@ interface FormValues {
   sell: boolean;
   renew: boolean;
   content: string;
+  force_update: boolean;
 }
 
 export function PlanFormDialog({
@@ -83,6 +84,7 @@ export function PlanFormDialog({
         sell: true,
         renew: true,
         content: "",
+        force_update: false,
       },
     });
 
@@ -110,6 +112,7 @@ export function PlanFormDialog({
         sell: Number(plan?.sell) === 1,
         renew: Number(plan?.renew) === 1,
         content: plan?.content || "",
+        force_update: false,
       });
     }
   }, [open, plan, reset]);
@@ -138,7 +141,11 @@ export function PlanFormDialog({
           reset_traffic: values.reset_price !== null && values.reset_price !== undefined && !isNaN(values.reset_price) ? Number(values.reset_price) : null,
         },
       };
-      if (plan?.id) payload.id = plan.id;
+      if (plan?.id) {
+        payload.id = plan.id;
+        // 仅在编辑已有套餐时携带 force_update；后端据此决定是否覆盖该套餐下用户的部分字段
+        payload.force_update = !!values.force_update;
+      }
       await savePlan(payload);
       toast.success(plan ? t("subscribe.plan.form.submit.success.update") : t("subscribe.plan.form.submit.success.add"));
       onSaved();
@@ -279,6 +286,27 @@ export function PlanFormDialog({
             <BoolField control={control} name="sell" label={t("subscribe.plan.columns.sell")} />
             <BoolField control={control} name="renew" label={t("subscribe.plan.columns.renew")} />
           </div>
+
+          {/* 强制更新（仅编辑时显示，开启时会覆盖已有用户的部分字段） */}
+          {plan?.id && (
+            <div className="flex items-center justify-between rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-normal">
+                  {t("subscribe.plan.form.force_update.label")}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t("subscribe.plan.form.force_update.description")}
+                </p>
+              </div>
+              <Controller
+                control={control}
+                name="force_update"
+                render={({ field }) => (
+                  <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                )}
+              />
+            </div>
+          )}
           </div>
 
           <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">

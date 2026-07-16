@@ -893,7 +893,8 @@ const translations: Translations = {
           }
         },
         "force_update": {
-          "label": "Force Update User Plans"
+          "label": "Force Update User Plans",
+          "description": "When enabled, saving will overwrite this plan's users' group, transfer, speed limit and device limit with the current values. Only applies when editing an existing plan."
         },
         "submit": {
           "cancel": "Cancel",
@@ -1390,7 +1391,8 @@ const translations: Translations = {
             }
           },
           "force_update": {
-            "label": "Force Update to Users"
+            "label": "Force Update to Users",
+            "description": "When enabled, saving will sync this plan's users' group, transfer, speed limit and device limit with the current values."
           },
           "submit": {
             "submitting": "Submitting...",
