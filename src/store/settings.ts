@@ -7,7 +7,7 @@ type SidebarTheme = "light" | "dark";
 interface SettingsState {
   // 全局明暗主题
   theme: ThemeMode;
-  // 侧栏明暗（Xboard 支持独立配置 sidebar/header）
+  // 侧栏明暗（侧栏与 header 主题可独立设置）
   sidebarTheme: SidebarTheme;
   // 语言
   language: string;
@@ -33,6 +33,6 @@ export const useSettingsStore = create<SettingsState>()(
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
     }),
-    { name: "xboard-admin-settings" }
+    { name: "fboard-admin-settings" }
   )
 );

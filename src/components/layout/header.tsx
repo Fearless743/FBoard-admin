@@ -107,7 +107,7 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
                   if (language === lng) return;
                   setLanguage(lng);
                   try {
-                    localStorage.setItem("xboard-admin-lang", lng);
+                    localStorage.setItem("fboard-admin-lang", lng);
                   } catch {
                     /* ignore */
                   }

@@ -59,7 +59,7 @@
     --sidebar-border: 240 3.7% 15.9%;
   }
 
-  /* 侧边栏深色主题（Xboard 默认 header dark / sidebar 可切换） */
+  /* 侧边栏深色主题（header 固定深色，sidebar 可独立切换） */
   .sidebar-dark {
     --sidebar: 222 47% 11%;
     --sidebar-foreground: 210 20% 78%;

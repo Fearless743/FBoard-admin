@@ -1,5 +1,6 @@
-window.XBOARD_TRANSLATIONS = window.XBOARD_TRANSLATIONS || {};
-window.XBOARD_TRANSLATIONS['zh-CN'] = {
+import type { Translations } from "./global";
+
+const translations: Translations = {
   "giftCard": {
     "title": "礼品卡管理",
     "description": "在这里可以管理礼品卡模板、兑换码和使用记录等功能。",
@@ -3697,3 +3698,6 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     }
   }
 };
+
+window.FBOARD_TRANSLATIONS = window.FBOARD_TRANSLATIONS ?? {};
+window.FBOARD_TRANSLATIONS["zh-CN"] = translations;

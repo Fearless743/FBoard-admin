@@ -6,7 +6,7 @@ export interface LoginPayload {
   password: string;
 }
 
-/** 登录返回：Xboard 返回 { token, auth_data, is_admin }
+/** 登录返回：{ token, auth_data, is_admin }
  *  - token:     token 名（仅作标识）
  *  - auth_data: 完整的 Authorization 值，形如 "Bearer xxx"
  *  - is_admin:  是否管理员

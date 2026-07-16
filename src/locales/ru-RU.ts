@@ -1,5 +1,6 @@
-window.XBOARD_TRANSLATIONS = window.XBOARD_TRANSLATIONS || {};
-window.XBOARD_TRANSLATIONS['ru-RU'] = {
+import type { Translations } from "./global";
+
+const translations: Translations = {
   "giftCard": {
     "title": "Управление подарочными картами",
     "description": "Управление шаблонами подарочных карт, кодами активации и записями об использовании.",
@@ -3507,3 +3508,6 @@ window.XBOARD_TRANSLATIONS['ru-RU'] = {
     }
   }
 };
+
+window.FBOARD_TRANSLATIONS = window.FBOARD_TRANSLATIONS ?? {};
+window.FBOARD_TRANSLATIONS["ru-RU"] = translations;

@@ -51,6 +51,6 @@ export const useAuthStore = create<AuthState>()(
         set({ auth, user, isAuthenticated: !!auth });
       },
     }),
-    { name: "xboard-admin-auth-store" }
+    { name: "fboard-admin-auth-store" }
   )
 );

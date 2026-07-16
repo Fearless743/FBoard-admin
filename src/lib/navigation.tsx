@@ -31,7 +31,7 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** 主菜单结构（与 Xboard 后台 nav.* i18n 一一对应） */
+/** 主菜单结构（与后台 nav.* i18n 一一对应） */
 export const navigation: NavGroup[] = [
   {
     key: "nav.dashboard",

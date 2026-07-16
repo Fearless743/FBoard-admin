@@ -1,8 +1,8 @@
 import { toast } from "sonner";
 
 const API_PREFIX = "/api/v2";
-const STORAGE_AUTH = "xboard-admin-auth";
-const STORAGE_USER = "xboard-admin-user";
+const STORAGE_AUTH = "fboard-admin-auth";
+const STORAGE_USER = "fboard-admin-user";
 
 export function getSecurePath(): string {
   return window.settings?.secure_path || "";

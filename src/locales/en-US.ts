@@ -1,5 +1,6 @@
-window.XBOARD_TRANSLATIONS = window.XBOARD_TRANSLATIONS || {};
-window.XBOARD_TRANSLATIONS['en-US'] = {
+import type { Translations } from "./global";
+
+const translations: Translations = {
   "giftCard": {
     "title": "Gift Card Management",
     "description": "Manage gift card templates, redemption codes, and usage records.",
@@ -3705,3 +3706,6 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     }
   }
 };
+
+window.FBOARD_TRANSLATIONS = window.FBOARD_TRANSLATIONS ?? {};
+window.FBOARD_TRANSLATIONS["en-US"] = translations;

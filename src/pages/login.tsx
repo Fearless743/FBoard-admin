@@ -61,7 +61,7 @@ export default function LoginPage() {
       // auth_data 形如 "Bearer xxx"，作为真正的凭据
       setAuthData(res.auth_data, user);
       if (remember) {
-        localStorage.setItem("xboard-admin-remember", "1");
+        localStorage.setItem("fboard-admin-remember", "1");
       }
       toast.success(t("common.success"));
       navigate(adminPath("dashboard"));

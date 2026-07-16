@@ -11,7 +11,7 @@ async function detectAndLoad() {
   detector.init({
     order: ["localStorage", "navigator"],
     caches: ["localStorage"],
-    lookupLocalStorage: "xboard-admin-lang",
+    lookupLocalStorage: "fboard-admin-lang",
   });
 
   const detected = (detector.detect?.() as string) || navigator.language;
