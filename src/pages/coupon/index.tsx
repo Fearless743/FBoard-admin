@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Pagination } from "@/components/common/pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,7 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, type CouponItem } from "@/api/misc";
-import { formatDate, remainingDays } from "@/lib/utils";
+import { remainingDays } from "@/lib/utils";
 
 export function CouponListPage() {
   const { t } = useTranslation();
@@ -44,28 +45,38 @@ export function CouponListPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CouponItem | null>(null);
   const [deleting, setDeleting] = useState<CouponItem | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, typeFilter]);
+
+  const queryFilters: Array<{ id: string; value: any }> = [];
+  if (typeFilter !== "all") {
+    queryFilters.push({ id: "type", value: Number(typeFilter) });
+  }
+
   const { data, isLoading } = useQuery({
-    queryKey: ["coupons"],
-    queryFn: () => fetchCoupons({}),
+    queryKey: ["coupons", { page, pageSize, debouncedSearch, typeFilter }],
+    queryFn: () =>
+      fetchCoupons({
+        current: page,
+        pageSize,
+        search: debouncedSearch || undefined,
+        filter: queryFilters.length > 0 ? queryFilters : undefined,
+      }),
   });
   const list: CouponItem[] = data?.data || [];
-
-  const filtered = useMemo(() => {
-    return list.filter((c) => {
-      if (typeFilter !== "all" && c.type !== Number(typeFilter)) return false;
-      if (search) {
-        const s = search.toLowerCase();
-        return (
-          (c.name || "").toLowerCase().includes(s) ||
-          (c.code || "").toLowerCase().includes(s)
-        );
-      }
-      return true;
-    });
-  }, [list, search, typeFilter]);
+  const total = data?.total || 0;
 
   const handleToggleShow = async (c: CouponItem) => {
     try {
@@ -100,7 +111,12 @@ export function CouponListPage() {
             className="pl-9"
           />
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
+        <Select
+          value={typeFilter}
+          onValueChange={(v) => {
+            setTypeFilter(v);
+          }}
+        >
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder={t("coupon.table.toolbar.type")} />
           </SelectTrigger>
@@ -135,12 +151,12 @@ export function CouponListPage() {
                   ))}
                 </TableRow>
               ))
-            ) : filtered.length === 0 ? (
+            ) : list.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8}><EmptyState /></TableCell>
               </TableRow>
             ) : (
-              filtered.map((c) => (
+              list.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell><IdBadge id={c.id} /></TableCell>
                   <TableCell className="text-center">
@@ -188,6 +204,17 @@ export function CouponListPage() {
             )}
           </TableBody>
         </Table>
+
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+        />
       </div>
 
       <CouponFormDialog

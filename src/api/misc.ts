@@ -92,8 +92,25 @@ export interface CouponItem {
   [k: string]: any;
 }
 
-export async function fetchCoupons(payload?: any) {
-  return adminPost<any>("/coupon/fetch", payload || {});
+export interface CouponListResponse {
+  total: number;
+  current_page: number;
+  per_page: number;
+  last_page: number;
+  data: CouponItem[];
+}
+
+export interface CouponFilter {
+  current?: number;
+  pageSize?: number;
+  /** 名称 / 券码联合搜索 */
+  search?: string;
+  filter?: Array<{ id: string; value: any }>;
+  sort?: Array<{ id: string; desc?: boolean }>;
+}
+
+export async function fetchCoupons(payload?: CouponFilter): Promise<CouponListResponse> {
+  return adminPost<CouponListResponse>("/coupon/fetch", payload || {});
 }
 
 export async function generateCoupon(payload: any) {
