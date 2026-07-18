@@ -14,7 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, copyToClipboard, remainingDays } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -43,7 +43,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, type CouponItem } from "@/api/misc";
-import { remainingDays } from "@/lib/utils";
 
 export function CouponListPage() {
   const { t } = useTranslation();
@@ -211,7 +210,7 @@ export function CouponListPage() {
                               className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                               onClick={async () => {
                                 try {
-                                  await navigator.clipboard.writeText(c.code);
+                                  await copyToClipboard(c.code);
                                   toast.success(t("common.copy.success"));
                                 } catch {
                                   toast.error(t("common.copy.failed"));

@@ -90,7 +90,8 @@ export interface Server {
   type: string; // 协议类型标识 (e.g. 'shadowsocks', 'vmess')
   protocol_settings?: Record<string, any>;
   host: string;
-  port: number;
+  /** 连接端口：单端口数字或范围字符串（如 "10000-40000"） */
+  port: number | string;
   server_port?: number;
   listen_address?: string;
   rate: number;

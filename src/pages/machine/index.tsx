@@ -37,7 +37,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, copyToClipboard } from "@/lib/utils";
 import {
   dropMachine,
   fetchMachines,
@@ -1375,8 +1375,12 @@ function MachineDetailDialog({
                     variant="ghost"
                     className="h-7 w-7 shrink-0"
                     onClick={async () => {
-                      await navigator.clipboard.writeText(token);
-                      toast.success(t("machine.token.copied"));
+                      try {
+                        await copyToClipboard(token);
+                        toast.success(t("machine.token.copied"));
+                      } catch {
+                        toast.error(t("common.copy.failed"));
+                      }
                     }}
                   >
                     <Copy className="h-3.5 w-3.5" />
@@ -1408,10 +1412,14 @@ function MachineDetailDialog({
                     variant="ghost"
                     className="absolute right-2 top-2 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={async () => {
-                      await navigator.clipboard.writeText(installCmd);
-                      setCopied("cmd");
-                      toast.success(t("machine.install.copied"));
-                      setTimeout(() => setCopied(null), 2000);
+                      try {
+                        await copyToClipboard(installCmd);
+                        setCopied("cmd");
+                        toast.success(t("machine.install.copied"));
+                        setTimeout(() => setCopied(null), 2000);
+                      } catch {
+                        toast.error(t("common.copy.failed"));
+                      }
                     }}
                   >
                     {copied === "cmd" ? (
@@ -1432,10 +1440,14 @@ function MachineDetailDialog({
                   className="gap-1.5 font-mono text-xs"
                   onClick={async () => {
                     if (!installCmd) return;
-                    await navigator.clipboard.writeText(installCmd);
-                    setCopied("cmd");
-                    toast.success(t("machine.install.copied"));
-                    setTimeout(() => setCopied(null), 2000);
+                    try {
+                      await copyToClipboard(installCmd);
+                      setCopied("cmd");
+                      toast.success(t("machine.install.copied"));
+                      setTimeout(() => setCopied(null), 2000);
+                    } catch {
+                      toast.error(t("common.copy.failed"));
+                    }
                   }}
                 >
                   <Copy className="h-3.5 w-3.5" />
@@ -1494,8 +1506,12 @@ function MachineDetailDialog({
                     className="gap-1.5 text-xs"
                     disabled={!logLines.length}
                     onClick={async () => {
-                      await navigator.clipboard.writeText(logLines.join("\n"));
-                      toast.success(t("machine.logs.copied"));
+                      try {
+                        await copyToClipboard(logLines.join("\n"));
+                        toast.success(t("machine.logs.copied"));
+                      } catch {
+                        toast.error(t("common.copy.failed"));
+                      }
                     }}
                   >
                     <Copy className="h-3.5 w-3.5" />

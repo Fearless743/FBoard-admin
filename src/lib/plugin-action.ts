@@ -21,6 +21,8 @@
  * - download_url?: string     // 触发下载
  */
 
+import { copyToClipboard } from "@/lib/utils";
+
 export type PluginActionTarget = "_blank" | "_self";
 
 /** 后端 registerAction 暴露给前端的动作元数据 */
@@ -192,9 +194,9 @@ export function applyPluginActionResult(
     a.remove();
   }
 
-  // 3) 复制
+  // 3) 复制（Safari 需 execCommand 回退）
   if (typeof result.copy_text === "string" && result.copy_text) {
-    void navigator.clipboard?.writeText(result.copy_text).catch(() => {
+    void copyToClipboard(result.copy_text).catch(() => {
       /* ignore */
     });
   }

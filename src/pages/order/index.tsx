@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -72,7 +72,7 @@ import {
   type OrderItem,
 } from "@/api/order";
 import { usePlanOptions } from "@/hooks/use-plans";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { cn, copyToClipboard, formatCurrency, formatDate } from "@/lib/utils";
 import { adminPath } from "@/lib/paths";
 
 const COL_COUNT = 8;
@@ -191,10 +191,11 @@ export function OrderListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const userId = searchParams.get("user_id");
+  const tradeNoParam = searchParams.get("trade_no") || "";
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const { data: plans = [] } = usePlanOptions();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(tradeNoParam);
   const [typeFilter, setTypeFilter] = useState("");
   const [periodFilter, setPeriodFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -221,6 +222,14 @@ export function OrderListPage() {
   const [addAmount, setAddAmount] = useState("");
   const [addSubmitting, setAddSubmitting] = useState(false);
 
+  // 支持从其它页面带 ?trade_no= 跳转过来时同步搜索框
+  useEffect(() => {
+    if (tradeNoParam) {
+      setSearch(tradeNoParam);
+      setPage(1);
+    }
+  }, [tradeNoParam]);
+
   const hasActiveFilters = !!(
     search ||
     typeFilter ||
@@ -243,7 +252,12 @@ export function OrderListPage() {
     setStatusFilter("");
     setCommissionFilter("");
     setPage(1);
-    if (userId) clearUserFilter();
+    if (userId || tradeNoParam) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("user_id");
+      next.delete("trade_no");
+      setSearchParams(next);
+    }
   };
 
   const openDetail = async (o: OrderItem) => {
@@ -257,7 +271,7 @@ export function OrderListPage() {
 
   const copyTradeNo = async (tradeNo: string) => {
     try {
-      await navigator.clipboard.writeText(tradeNo);
+      await copyToClipboard(tradeNo);
       toast.success(t("common.copy.success"));
     } catch {
       toast.error(t("common.copy.failed"));
@@ -473,7 +487,9 @@ export function OrderListPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t("order.table.columns.tradeNo")}</TableHead>
+              <TableHead className="whitespace-nowrap">
+                {t("order.table.columns.tradeNo")}
+              </TableHead>
               <TableHead>{t("order.table.columns.type")}</TableHead>
               <TableHead>{t("order.table.columns.user")}</TableHead>
               <TableHead>{t("order.table.columns.plan")}</TableHead>
@@ -528,12 +544,12 @@ export function OrderListPage() {
                       o.status === 3 && "bg-emerald-500/[0.02]",
                     )}
                   >
-                    <TableCell>
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex min-w-0 items-center gap-1">
+                    <TableCell className="whitespace-nowrap">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            className="max-w-[180px] truncate font-mono text-xs text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-ring rounded"
+                            className="font-mono text-xs text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-ring rounded whitespace-nowrap"
                             title={o.trade_no}
                             onClick={() => openDetail(o)}
                           >

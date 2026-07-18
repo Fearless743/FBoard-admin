@@ -2182,8 +2182,8 @@ const translations: Translations = {
       },
       "port": {
         "label": "连接端口",
-        "placeholder": "用户连接端口",
-        "tooltip": "用户实际连接使用的端口号。如果使用了中转或隧道，这个端口可能与服务器实际监听的端口不同。",
+        "placeholder": "443 或 10000-40000",
+        "tooltip": "用户实际连接使用的端口。支持单端口（如 443）或随机端口范围（如 10000-40000）。若使用中转/隧道，可与服务端口不同。",
         "sync": "同步到服务端口",
         "error": "连接端口不能为空"
       },
@@ -3066,7 +3066,8 @@ const translations: Translations = {
         "closed_hint": "该工单已关闭，你仍可以继续回复，新的消息会追加到当前工单。",
         "reply_placeholder": "输入回复内容...",
         "sending": "发送中...",
-        "send": "发送"
+        "send": "发送",
+        "shortcut_hint": "Enter 发送 · Shift + Enter 换行"
       }
     },
     "list": {

@@ -43,6 +43,15 @@ type ChildPayload = {
   show?: boolean;
 };
 
+/** 子节点 API 只接受单端口数字；父节点可能是范围字符串 */
+function toSinglePort(port: string | number | null | undefined): number {
+  if (typeof port === "number" && Number.isFinite(port)) return port;
+  const raw = String(port ?? "").trim();
+  const first = raw.split("-")[0]?.trim() ?? "";
+  const n = Number(first);
+  return Number.isFinite(n) && n > 0 ? n : 443;
+}
+
 export function VirtualNodeList({
   parentId,
   enabled,
@@ -119,7 +128,7 @@ export function VirtualNodeList({
           id: node.id,
           name: node.name,
           host: node.host,
-          port: node.port,
+          port: toSinglePort(node.port),
           show: checked,
           group_ids: node.group_ids,
           tags: node.tags,
@@ -391,7 +400,7 @@ function ChildNodeDialog({
     if (editNode) {
       setName(editNode.name || "");
       setHost(editNode.host || "");
-      setPort(editNode.port ?? 443);
+      setPort(toSinglePort(editNode.port));
       setShow(!!editNode.show);
       setGroupIds((editNode.group_ids || []).map(Number));
       setTags((editNode.tags || []).filter(Boolean));

@@ -2208,8 +2208,8 @@ const translations: Translations = {
       },
       "port": {
         "label": "Connection Port",
-        "placeholder": "User connection port",
-        "tooltip": "The port that users actually connect to, this is the port number that needs to be filled in the client configuration. If using transit or tunnel, this port may be different from the port that the server actually listens on.",
+        "placeholder": "443 or 10000-40000",
+        "tooltip": "Client connection port. Supports a single port (e.g. 443) or a random range (e.g. 10000-40000). If using a relay/tunnel, this may differ from the server listen port.",
         "sync": "Sync to server port",
         "error": "Connection port is required"
       },
@@ -3067,7 +3067,8 @@ const translations: Translations = {
         "closed_hint": "This ticket is closed. You can keep replying and new messages will still be appended here.",
         "reply_placeholder": "Type your reply...",
         "sending": "Sending...",
-        "send": "Send"
+        "send": "Send",
+        "shortcut_hint": "Enter to send · Shift + Enter for a new line"
       }
     },
     "list": {

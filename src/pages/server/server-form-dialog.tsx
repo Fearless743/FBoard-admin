@@ -68,8 +68,10 @@ interface FormValues {
   name: string;
   type: string;
   host: string;
-  port: number;
-  server_port: number;
+  /** 连接端口：支持单端口或范围，如 443 / 10000-40000；新建时默认空 */
+  port: string | number;
+  /** 服务端口为单数字；新建时默认空 */
+  server_port: number | string;
   rate: number;
   traffic_limit_gb: number;
   code: string;
@@ -151,8 +153,8 @@ export function ServerFormDialog({
       name: "",
       type: "",
       host: "",
-      port: 443,
-      server_port: 443,
+      port: "",
+      server_port: "",
       rate: 1,
       traffic_limit_gb: 0,
       code: "",
@@ -232,8 +234,12 @@ export function ServerFormDialog({
         name: server?.name || "",
         type: serverType,
         host: server?.host || "",
-        port: server?.port ?? 443,
-        server_port: server?.server_port ?? server?.port ?? 443,
+        port:
+          server?.port != null && String(server.port) !== ""
+            ? String(server.port)
+            : "",
+        server_port:
+          server?.server_port != null ? server.server_port : "",
         rate: server?.rate ?? 1,
         traffic_limit_gb: server?.traffic_limit
           ? Math.round((server.traffic_limit / 1024 / 1024 / 1024) * 100) / 100
@@ -362,11 +368,14 @@ export function ServerFormDialog({
                 <div className="flex items-center gap-1.5">
                   <div className="flex-1">
                     <Input
-                      type="number"
-                      className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder={t("server.form.port.placeholder")}
                       {...register("port", {
                         required: true,
-                        valueAsNumber: true,
+                        setValueAs: (v) =>
+                          typeof v === "string" ? v.trim() : v,
                       })}
                     />
                   </div>
@@ -376,7 +385,13 @@ export function ServerFormDialog({
                     size="icon"
                     className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-foreground"
                     title={t("server.form.port.sync")}
-                    onClick={() => setValue("server_port", watch("port"))}
+                    onClick={() => {
+                      // 仅当连接端口为单数字时同步到服务端口；范围端口不同步
+                      const p = String(watch("port") ?? "").trim();
+                      if (/^\d+$/.test(p)) {
+                        setValue("server_port", Number(p));
+                      }
+                    }}
                   >
                     <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -387,7 +402,14 @@ export function ServerFormDialog({
                     <Input
                       type="number"
                       className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      {...register("server_port", { valueAsNumber: true })}
+                      placeholder={t("server.form.server_port.placeholder")}
+                      {...register("server_port", {
+                        setValueAs: (v) => {
+                          if (v === "" || v === null || v === undefined) return "";
+                          const n = Number(v);
+                          return Number.isFinite(n) ? n : "";
+                        },
+                      })}
                     />
                   </div>
                 </div>

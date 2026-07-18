@@ -72,7 +72,7 @@ import {
   type ServerGroup,
 } from "@/api/server";
 import { ServerFormDialog } from "./server-form-dialog";
-import { formatBytes, bytesToGb } from "@/lib/utils";
+import { formatBytes, bytesToGb, copyToClipboard } from "@/lib/utils";
 
 const STATUS_VARIANT: Record<
   number,
@@ -418,7 +418,7 @@ export function ServerListPage() {
                           className="h-5 w-5 shrink-0"
                           onClick={async () => {
                             try {
-                              await navigator.clipboard.writeText(`${n.host}:${n.port}`);
+                              await copyToClipboard(`${n.host}:${n.port}`);
                               toast.success(t("server.columns.actions_dropdown.copy_success"));
                             } catch { toast.error(t("common.copy.failed")); }
                           }}

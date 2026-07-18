@@ -88,6 +88,7 @@ import {
   formatDate,
   formatCurrency,
   cn,
+  copyToClipboard,
 } from "@/lib/utils";
 import { adminPath } from "@/lib/paths";
 import { UserEditDialog } from "./user-edit-dialog";
@@ -413,7 +414,7 @@ export function UserListPage() {
                                   onClick={async (e) => {
                                     e.stopPropagation();
                                     try {
-                                      await navigator.clipboard.writeText(u.email);
+                                      await copyToClipboard(u.email);
                                       toast.success(t("common.copy.success"));
                                     } catch {
                                       toast.error(t("common.copy.failed"));
@@ -655,7 +656,7 @@ export function UserListPage() {
                               onClick={async () => {
                                 try {
                                   const url = u.subscribe_url;
-                                  await navigator.clipboard.writeText(url);
+                                  await copyToClipboard(url);
                                   toast.success(t("common.copy.success"));
                                 } catch {
                                   toast.error(t("common.copy.failed"));
@@ -934,7 +935,7 @@ function CreateUserDialog({
       })
       .join("\n\n");
     try {
-      await navigator.clipboard.writeText(text);
+      await copyToClipboard(text);
       toast.success(t("common.copy.success"));
     } catch {
       toast.error(t("common.copy.failed"));
@@ -1147,7 +1148,7 @@ function CreateUserDialog({
                                 className="h-7 w-7"
                                 onClick={async () => {
                                   try {
-                                    await navigator.clipboard.writeText(u.email);
+                                    await copyToClipboard(u.email);
                                     toast.success(t("common.copy.success"));
                                   } catch {
                                     toast.error(t("common.copy.failed"));
@@ -1171,9 +1172,7 @@ function CreateUserDialog({
                                   className="h-7 w-7"
                                   onClick={async () => {
                                     try {
-                                      await navigator.clipboard.writeText(
-                                        u.subscribe_url!,
-                                      );
+                                      await copyToClipboard(u.subscribe_url!);
                                       toast.success(t("common.copy.success"));
                                     } catch {
                                       toast.error(t("common.copy.failed"));
