@@ -25,6 +25,7 @@ import {
   type PluginActionMeta,
 } from "@/lib/plugin-action";
 import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -161,7 +162,7 @@ export function PluginPage() {
         }
       />
 
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="relative max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -198,12 +199,12 @@ export function PluginPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <Puzzle className="mb-3 h-10 w-10" />
-            <p>{t("plugin.noPlugins")}</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border bg-card">
+          <EmptyState
+            icon={<Puzzle className="h-10 w-10" />}
+            message={t("plugin.noPlugins")}
+          />
+        </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((p) => {
@@ -520,7 +521,7 @@ function PluginStaticFilesDialog({
               onClick={() => setSelectedFile(null)}
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              返回列表
+              {t("plugin.staticFiles.backToList")}
             </Button>
             <DialogTitle className="text-sm">{selectedFile}</DialogTitle>
             <Button
@@ -529,7 +530,7 @@ function PluginStaticFilesDialog({
               onClick={() => window.open(selectedFile, "_blank")}
             >
               <ExternalLink className="h-3.5 w-3.5 mr-1" />
-              新标签页打开
+              {t("plugin.staticFiles.openInNewTab")}
             </Button>
           </div>
           <iframe
@@ -547,7 +548,9 @@ function PluginStaticFilesDialog({
     <Dialog open={!!code} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
-          <DialogTitle>{name || code} · HTML 静态文件</DialogTitle>
+          <DialogTitle>
+            {name || code} · {t("plugin.staticFiles.title")}
+          </DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
         {isLoading ? (
@@ -558,7 +561,7 @@ function PluginStaticFilesDialog({
           </div>
         ) : files.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">
-            暂无静态文件
+            {t("plugin.staticFiles.empty")}
           </p>
         ) : (
           <div className="space-y-1">
@@ -725,13 +728,18 @@ function PluginConfigDialog({
     try {
       // type=link 且带静态 url：可直接打开，无需等后端（任意插件通用）
       const linkOnly = buildLinkActionResult(meta);
+      const actionLabel = meta.label || t("plugin.messages.actionLabel");
       if (linkOnly) {
         applyPluginActionResult(linkOnly, meta, {
-          fallbackMessage: (meta.label || "动作") + " 执行成功",
+          fallbackMessage: t("plugin.messages.actionSuccessWithLabel", {
+            label: actionLabel,
+          }),
           defaultReload: false,
           onReload: () => qc.invalidateQueries({ queryKey: ["plugins"] }),
-          onToastSuccess: (msg) => toast.success(msg || "执行成功"),
-          onToastError: (msg) => toast.error(msg || "执行失败"),
+          onToastSuccess: (msg) =>
+            toast.success(msg || t("plugin.messages.actionSuccess")),
+          onToastError: (msg) =>
+            toast.error(msg || t("plugin.messages.actionError")),
         });
         return;
       }
@@ -739,17 +747,22 @@ function PluginConfigDialog({
       const res = await executePluginAction(code, meta.name);
       const payload = unwrapPluginActionResponse(res);
       applyPluginActionResult(payload, meta, {
-        fallbackMessage: (meta.label || "动作") + " 执行成功",
+        fallbackMessage: t("plugin.messages.actionSuccessWithLabel", {
+          label: actionLabel,
+        }),
         // 默认刷新；动作返回 reload:false 时可跳过
         defaultReload: true,
         onReload: () => qc.invalidateQueries({ queryKey: ["plugins"] }),
-        onToastSuccess: (msg) => toast.success(msg || "执行成功"),
-        onToastError: (msg) => toast.error(msg || "执行失败"),
+        onToastSuccess: (msg) =>
+          toast.success(msg || t("plugin.messages.actionSuccess")),
+        onToastError: (msg) =>
+          toast.error(msg || t("plugin.messages.actionError")),
       });
     } catch (e: any) {
+      const actionLabel = meta.label || t("plugin.messages.actionLabel");
       const msg =
         (typeof e?.message === "string" && e.message) ||
-        (meta.label || "动作") + " 执行失败";
+        t("plugin.messages.actionErrorWithLabel", { label: actionLabel });
       toast.error(msg);
     } finally {
       setActionLoading(null);

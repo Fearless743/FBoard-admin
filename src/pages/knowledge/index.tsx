@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Pagination } from "@/components/common/pagination";
 import { SortableContainer, SortableRow, DragCell } from "@/components/common/sortable-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +51,7 @@ import {
 } from "@/api/misc";
 
 const LANGS = ["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN", "ru-RU"];
+const SORT_PAGE_SIZE = 1000;
 
 export function KnowledgeListPage() {
   const { t } = useTranslation();
@@ -59,26 +61,43 @@ export function KnowledgeListPage() {
   const [deleting, setDeleting] = useState<KnowledgeItem | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingList, setPendingList] = useState<KnowledgeItem[] | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timer);
   }, [search]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, categoryFilter]);
+
+  const effectivePageSize = dragEnabled ? SORT_PAGE_SIZE : pageSize;
+  const effectivePage = dragEnabled ? 1 : page;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["knowledge", debouncedSearch],
-    queryFn: () => fetchKnowledges(debouncedSearch),
+    queryKey: ["knowledge", { page: effectivePage, pageSize: effectivePageSize, debouncedSearch, categoryFilter, dragEnabled }],
+    queryFn: () =>
+      fetchKnowledges({
+        current: effectivePage,
+        pageSize: effectivePageSize,
+        search: debouncedSearch || undefined,
+        category: categoryFilter !== "all" ? categoryFilter : undefined,
+      }),
   });
-  const list: KnowledgeItem[] = data || [];
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const displayList = pendingList
-    ?? (categoryFilter === "all" ? list : list.filter(k => k.category === categoryFilter));
+  const list: KnowledgeItem[] = data?.data || [];
+  const total = data?.total || 0;
+  const displayList = pendingList ?? list;
   const { data: categories } = useQuery({ queryKey: ["knowledge", "categories"], queryFn: fetchKnowledgeCategories });
 
+  // 拖拽只改本地顺序，点「完成排序」再提交
   const handleReorder = useCallback((ids: number[]) => {
     const fullList = pendingList ?? list;
-    const reordered = ids.map((id) => fullList.find((i) => i.id === id)!).filter(Boolean);
+    const reordered = ids
+      .map((id) => fullList.find((i) => Number(i.id) === Number(id)))
+      .filter(Boolean) as KnowledgeItem[];
     setPendingList(reordered);
   }, [list, pendingList]);
 
@@ -88,22 +107,26 @@ export function KnowledgeListPage() {
       return;
     }
     try {
-      await sortKnowledge({ ids: pendingList.map((i) => i.id) });
-      qc.invalidateQueries({ queryKey: ["knowledge"] });
+      await sortKnowledge({ ids: pendingList.map((i) => Number(i.id)) });
+      toast.success(t("common.http.success"));
       setPendingList(null);
       setDragEnabled(false);
+      await qc.invalidateQueries({ queryKey: ["knowledge"] });
     } catch (e) {}
-  }, [pendingList, qc]);
+  }, [pendingList, qc, t]);
 
   const toggleDrag = useCallback(() => {
     if (dragEnabled) {
       if (pendingList) {
-        finishSort();
+        void finishSort();
       } else {
         setDragEnabled(false);
       }
     } else {
       setPendingList(null);
+      setSearch("");
+      setDebouncedSearch("");
+      setCategoryFilter("all");
       setDragEnabled(true);
     }
   }, [dragEnabled, pendingList, finishSort]);
@@ -120,9 +143,9 @@ export function KnowledgeListPage() {
               onClick={toggleDrag}
             >
               <GripVertical className="h-4 w-4" />
-              {dragEnabled ? "完成排序" : "编辑排序"}
+              {dragEnabled ? t("common.sort.done") : t("common.sort.edit")}
             </Button>
-            <Button onClick={() => { setEditing(null); setOpen(true); }}>
+            <Button onClick={() => { setEditing(null); setOpen(true); }} disabled={dragEnabled}>
               <Plus className="h-4 w-4" />
               {t("knowledge.form.add")}
             </Button>
@@ -142,10 +165,10 @@ export function KnowledgeListPage() {
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="全部分类" />
+            <SelectValue placeholder={t("knowledge.toolbar.allCategories")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">全部分类</SelectItem>
+            <SelectItem value="all">{t("knowledge.toolbar.allCategories")}</SelectItem>
             {categories?.map((cat) => (
               <SelectItem key={cat} value={cat}>{cat}</SelectItem>
             ))}
@@ -174,9 +197,9 @@ export function KnowledgeListPage() {
                   ))}
                 </TableRow>
               ))
-            ) : list.length === 0 ? (
+            ) : displayList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={dragEnabled ? 7 : 6}>
+                <TableCell colSpan={dragEnabled ? 6 : 5}>
                   <EmptyState icon={<BookOpen className="h-10 w-10" />} />
                 </TableCell>
               </TableRow>
@@ -211,7 +234,7 @@ export function KnowledgeListPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleting(k)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -224,6 +247,18 @@ export function KnowledgeListPage() {
             )}
           </TableBody>
         </Table>
+        {!dragEnabled && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setPage(1);
+            }}
+          />
+        )}
       </div>
 
       <KnowledgeFormDialog

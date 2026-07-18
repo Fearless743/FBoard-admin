@@ -74,10 +74,18 @@ import {
 import { ServerFormDialog } from "./server-form-dialog";
 import { formatBytes, bytesToGb } from "@/lib/utils";
 
-const STATUS_MAP: Record<number, { label: string; variant: "default" | "secondary" | "destructive" | "success" }> = {
-  0: { label: "未运行", variant: "secondary" },
-  1: { label: "无人使用/异常", variant: "destructive" },
-  2: { label: "运行正常", variant: "success" },
+const STATUS_VARIANT: Record<
+  number,
+  "default" | "secondary" | "destructive" | "success"
+> = {
+  0: "secondary",
+  1: "destructive",
+  2: "success",
+};
+const STATUS_DOT: Record<number, string> = {
+  0: "bg-muted-foreground",
+  1: "bg-destructive",
+  2: "bg-emerald-500",
 };
 
 export function ServerListPage() {
@@ -92,6 +100,7 @@ export function ServerListPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dragEnabled, setDragEnabled] = useState(false);
+  const [pendingSortList, setPendingSortList] = useState<any[] | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -162,14 +171,51 @@ export function ServerListPage() {
   const nodes: Server[] = data?.data || [];
   const total = data?.total || 0;
 
-  const handleReorder = useCallback(async (ids: number[]) => {
-    try {
-      await sortServers(ids);
-      qc.invalidateQueries({ queryKey: ["servers"] });
-    } catch (e) {}
-  }, [qc]);
+  const remoteSortList: any[] = Array.isArray(sortNodes)
+    ? sortNodes
+    : (sortNodes as any)?.data || [];
+  const sortList: any[] = pendingSortList ?? remoteSortList;
 
-  const sortList: any[] = sortNodes || [];
+  // 拖拽只改本地顺序，不立刻请求接口
+  const handleReorder = useCallback((ids: number[]) => {
+    const reordered = ids
+      .map((id) => sortList.find((n: any) => Number(n.id) === Number(id)))
+      .filter(Boolean)
+      .map((n: any, index: number) => ({ ...n, sort: index + 1 }));
+    setPendingSortList(reordered);
+  }, [sortList]);
+
+  const finishSort = useCallback(async () => {
+    if (!pendingSortList) {
+      setDragEnabled(false);
+      return;
+    }
+    try {
+      await sortServers(pendingSortList.map((n: any) => Number(n.id)));
+      toast.success(t("server.toolbar.sort.success"));
+      setPendingSortList(null);
+      setDragEnabled(false);
+      await qc.invalidateQueries({ queryKey: ["servers"] });
+    } catch (e) {
+      // toast 已在请求层处理
+    }
+  }, [pendingSortList, qc, t]);
+
+  const toggleDrag = useCallback(() => {
+    if (dragEnabled) {
+      // 退出排序模式：有本地变更才保存
+      if (pendingSortList) {
+        void finishSort();
+      } else {
+        setDragEnabled(false);
+      }
+    } else {
+      setPendingSortList(null);
+      setSearch("");
+      setTypeFilter("all");
+      setDragEnabled(true);
+    }
+  }, [dragEnabled, pendingSortList, finishSort]);
 
   const getConfigUrl = (n: Server) => {
     const base = window.location.origin;
@@ -185,12 +231,12 @@ export function ServerListPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant={dragEnabled ? "default" : "outline"}
-              onClick={() => setDragEnabled(!dragEnabled)}
+              onClick={toggleDrag}
             >
               <GripVertical className="h-4 w-4" />
               {dragEnabled ? t("server.toolbar.sort.save") : t("server.toolbar.sort.edit")}
             </Button>
-            <Button onClick={() => setCreateOpen(true)}>
+            <Button onClick={() => setCreateOpen(true)} disabled={dragEnabled}>
               <Plus className="h-4 w-4" />
               {t("server.form.add_node")}
             </Button>
@@ -206,9 +252,10 @@ export function ServerListPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
+            disabled={dragEnabled}
           />
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
+        <Select value={typeFilter} onValueChange={setTypeFilter} disabled={dragEnabled}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder={t("server.toolbar.type")} />
           </SelectTrigger>
@@ -244,7 +291,6 @@ export function ServerListPage() {
                   <TableHead>{t("server.columns.groups.title")}</TableHead>
                   <TableHead className="text-right">{t("server.columns.traffic.title")}</TableHead>
                   <TableHead className="w-20 text-center">{t("server.columns.onlineUsers.title")}</TableHead>
-                  <TableHead className="w-28">{t("server.columns.version")}</TableHead>
                   <TableHead className="w-32 text-right">{t("server.columns.actions")}</TableHead>
                 </>
               )}
@@ -254,7 +300,7 @@ export function ServerListPage() {
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: dragEnabled ? 5 : 10 }).map((_, j) => (
+                  {Array.from({ length: dragEnabled ? 5 : 9 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -263,7 +309,7 @@ export function ServerListPage() {
               ))
             ) : (dragEnabled ? sortList : nodes).length === 0 ? (
               <TableRow>
-                <TableCell colSpan={dragEnabled ? 5 : 11}>
+                <TableCell colSpan={dragEnabled ? 5 : 10}>
                   <EmptyState icon={<ServerIcon className="h-10 w-10" />} />
                 </TableCell>
               </TableRow>
@@ -272,14 +318,19 @@ export function ServerListPage() {
                 {sortList.map((n) => {
                   let proto = PROTOCOL_TYPES.find((p) => p.type === n.type);
                   const isVirtual = n.type === "virtual";
+                  const rowId = Number(n.id);
                   return (
-                    <SortableRow key={n.code || n.id} id={n.code || n.id}>
+                    <SortableRow key={rowId} id={rowId}>
                       <DragCell />
-                      <TableCell><IdBadge id={(n.code || n.id) + (n.parent_id ? "->" + n.parent_id : "")} /></TableCell>
+                      <TableCell><IdBadge id={String(rowId) + (n.parent_id ? "->" + n.parent_id : "")} /></TableCell>
                       <TableCell className="font-medium">
                         <div className="space-y-0.5">
                           <p className="font-medium">{n.name}</p>
-                          <Badge variant={isVirtual ? "secondary" : "outline"}>{isVirtual ? "虚拟节点" : (proto?.name || `#${n.type}`)}</Badge>
+                          <Badge variant={isVirtual ? "secondary" : "outline"}>
+                            {isVirtual
+                              ? t("server.form.virtualNode.label")
+                              : proto?.name || `#${n.type}`}
+                          </Badge>
                         </div>
                       </TableCell>
                     </SortableRow>
@@ -290,13 +341,19 @@ export function ServerListPage() {
               <SortableContainer items={nodes} onReorder={handleReorder} enabled={false}>
                 {nodes.map((n: any) => {
                 const proto = PROTOCOL_TYPES.find((p) => p.type === n.type);
-                const status = STATUS_MAP[n.status ?? 0];
+                const statusCode = Number(n.status ?? 0);
+                const statusVariant = STATUS_VARIANT[statusCode] ?? "secondary";
                 const trafficLimit = (n as any).transfer_enable || 0;
                 const trafficUsed = ((n as any).u || 0) + ((n as any).d || 0);
-                const trafficPct = trafficLimit > 0 ? ((trafficUsed / trafficLimit) * 100).toFixed(1) : null;
+                const trafficPctNum =
+                  trafficLimit > 0
+                    ? Math.min(100, (trafficUsed / trafficLimit) * 100)
+                    : 0;
+                const trafficPct =
+                  trafficLimit > 0 ? trafficPctNum.toFixed(1) : null;
                 return (
                   <SortableRow key={n.code || n.id} id={n.code || n.id}>
-                    <TableCell><IdBadge id={(n.code || n.id) + (n.parent_id ? "->" + n.parent_id : "")} /></TableCell>
+                    <TableCell><IdBadge id={(n.code || n.id) + (n.parent_id ? "->" + n.parent_id : "")} compact /></TableCell>
                     <TableCell className="text-center">
                       <Switch
                         checked={!!n.show}
@@ -310,9 +367,22 @@ export function ServerListPage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-0.5">
-                        <p className="font-medium">{n.name}</p>
-                        <Badge variant="outline">{proto?.name || `#${n.type}`}</Badge>
+                      <div className="min-w-0 space-y-1">
+                        <p className="truncate font-medium" title={n.name}>{n.name}</p>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <Badge variant="outline" className="h-5 font-normal">
+                            {proto?.name || `#${n.type}`}
+                          </Badge>
+                          <Badge
+                            variant={statusVariant}
+                            className="h-5 gap-1 font-normal"
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[statusCode] ?? "bg-muted-foreground"}`}
+                            />
+                            {t(`server.status.${statusCode}`, String(statusCode))}
+                          </Badge>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-xs">
@@ -365,17 +435,31 @@ export function ServerListPage() {
                         </Badge>
                       )) : t("server.columns.groups.empty")}
                     </TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
-                      <div className="flex flex-col items-end gap-0.5">
-                        {trafficLimit > 0 ? (
-                          <>
-                            <span className="tabular-nums">{formatBytes(trafficUsed)} / {formatBytes(trafficLimit)}</span>
-                            {trafficPct && (
-                              <span className="text-[10px]">{trafficPct}%</span>
-                            )}
-                          </>
-                        ) : (
-                          <span>{formatBytes(trafficUsed)} / ∞</span>
+                    <TableCell className="text-right text-xs">
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="tabular-nums text-muted-foreground">
+                          {trafficLimit > 0
+                            ? `${formatBytes(trafficUsed)} / ${formatBytes(trafficLimit)}`
+                            : `${formatBytes(trafficUsed)} / ∞`}
+                        </span>
+                        {trafficLimit > 0 && (
+                          <div className="flex w-24 items-center gap-1.5">
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                              <div
+                                className={`h-full rounded-full ${
+                                  trafficPctNum >= 90
+                                    ? "bg-destructive"
+                                    : trafficPctNum >= 70
+                                      ? "bg-amber-500"
+                                      : "bg-primary"
+                                }`}
+                                style={{ width: `${Math.max(trafficPctNum, trafficPctNum > 0 ? 2 : 0)}%` }}
+                              />
+                            </div>
+                            <span className="w-8 text-right text-[10px] tabular-nums text-muted-foreground">
+                              {trafficPct}%
+                            </span>
+                          </div>
                         )}
                       </div>
                     </TableCell>
@@ -385,9 +469,6 @@ export function ServerListPage() {
                           {n.online}
                         </Badge>
                       ) : "—"}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {n.version || "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>

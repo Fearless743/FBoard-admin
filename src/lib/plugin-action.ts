@@ -146,7 +146,7 @@ export function applyPluginActionResult(
   options: ApplyPluginActionOptions = {}
 ): string {
   const {
-    fallbackMessage = "执行成功",
+    fallbackMessage = "Action executed successfully",
     defaultReload = true,
     onReload,
     onToastSuccess,
@@ -226,7 +226,7 @@ export function buildLinkActionResult(
   }
   return {
     success: true,
-    message: meta.label || "已打开",
+    message: meta.label || "Opened",
     open_url: meta.url,
     target: meta.target || "_blank",
     // 纯打开链接一般不需要刷新插件列表

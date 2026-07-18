@@ -124,7 +124,7 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
         {/* 主题切换 */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" title="主题">
+            <Button variant="ghost" size="icon" title={t("common.theme.label")}>
               {theme === "dark" ? (
                 <Moon className="h-5 w-5" />
               ) : theme === "light" ? (

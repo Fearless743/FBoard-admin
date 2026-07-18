@@ -39,7 +39,9 @@ export function Placeholder({
           <p className="text-sm font-medium">{resolvedTitle}</p>
           {pageDesc && <p className="max-w-md text-xs text-muted-foreground">{pageDesc}</p>}
         </div>
-        <p className="text-xs text-muted-foreground/60">该页面待实现</p>
+        <p className="text-xs text-muted-foreground/60">
+          {t("common.pageNotImplemented")}
+        </p>
       </div>
     </>
   );

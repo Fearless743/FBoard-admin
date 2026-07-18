@@ -17,6 +17,10 @@ import {
   Activity,
   Users,
   ShoppingCart,
+  X,
+  Infinity as InfinityIcon,
+  CheckCircle2,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -52,6 +56,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -62,7 +72,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePlanOptions } from "@/hooks/use-plans";
-import { fetchGroups, type ServerGroup } from "@/api/server";
+import { fetchGroups } from "@/api/server";
 import {
   banUser,
   destroyUser,
@@ -77,7 +87,7 @@ import {
   formatBytes,
   formatDate,
   formatCurrency,
-  bytesToGb,
+  cn,
 } from "@/lib/utils";
 import { adminPath } from "@/lib/paths";
 import { UserEditDialog } from "./user-edit-dialog";
@@ -87,6 +97,43 @@ import {
 } from "./user-related-dialogs";
 import { UserTrafficResetDialog } from "./user-traffic-reset-dialog";
 import { UserAssignOrderDialog } from "./user-assign-order-dialog";
+
+const COL_COUNT = 13;
+
+function emailInitial(email?: string) {
+  const ch = (email || "?").trim().charAt(0).toUpperCase();
+  return ch || "?";
+}
+
+function avatarTone(email?: string) {
+  const tones = [
+    "bg-primary/10 text-primary",
+    "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    "bg-sky-500/10 text-sky-700 dark:text-sky-400",
+    "bg-violet-500/10 text-violet-700 dark:text-violet-400",
+    "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+  ];
+  const s = email || "";
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h + s.charCodeAt(i) * (i + 1)) % tones.length;
+  return tones[h];
+}
+
+function trafficTone(pct: number) {
+  if (pct >= 95) return "bg-destructive";
+  if (pct >= 80) return "bg-amber-500";
+  return "bg-primary";
+}
+
+function expireMeta(expiredAt?: number | null) {
+  if (!expiredAt) return { kind: "permanent" as const, days: null as number | null };
+  const now = Date.now() / 1000;
+  const days = Math.ceil((expiredAt - now) / 86400);
+  if (days < 0) return { kind: "expired" as const, days };
+  if (days <= 7) return { kind: "soon" as const, days };
+  return { kind: "active" as const, days };
+}
 
 export function UserListPage() {
   const { t } = useTranslation();
@@ -176,22 +223,6 @@ export function UserListPage() {
         description={t("user.manage.description")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setMailOpen(true)}
-              disabled={!selected.length}
-            >
-              <Mail className="h-4 w-4" />
-              {t("user.actions.send_email")}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmBan(true)}
-              disabled={!selected.length}
-            >
-              <Ban className="h-4 w-4" />
-              {t("user.actions.batch_ban")}
-            </Button>
             <Button onClick={() => setCreateOpen(true)}>
               <UserPlus className="h-4 w-4" />
               {t("user.generate.button")}
@@ -200,8 +231,8 @@ export function UserListPage() {
         }
       />
 
-      <div className="mb-4 flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[220px] max-w-md flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("user.filter.email_search")}
@@ -213,48 +244,75 @@ export function UserListPage() {
             className="pl-9"
           />
         </div>
-        {selected.length > 0 && (
-          <Badge variant="secondary" className="h-9 px-3">
-            {t("user.filter.selected", { count: selected.length })}
-          </Badge>
-        )}
+        {selected.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5">
+            <Badge variant="secondary" className="h-7 gap-1.5 px-2.5 font-normal">
+              <Users className="h-3.5 w-3.5" />
+              {t("user.filter.selected", { count: selected.length })}
+            </Badge>
+            <div className="h-4 w-px bg-border" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7"
+              onClick={() => setMailOpen(true)}
+            >
+              <Mail className="h-3.5 w-3.5" />
+              {t("user.actions.send_email")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setConfirmBan(true)}
+            >
+              <Ban className="h-3.5 w-3.5" />
+              {t("user.actions.batch_ban")}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 px-0"
+              onClick={() => setSelected([])}
+              title={t("user.filter.clear_selection")}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : null}
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-10 sticky left-0 z-10 bg-card">
                 <Checkbox
-                  checked={users.length > 0 && selected.length === users.length}
+                  checked={
+                    users.length > 0 &&
+                    selected.length > 0 &&
+                    selected.length === users.length
+                  }
                   onCheckedChange={(c) => handleSelectAll(c === true)}
+                  aria-label="select all"
                 />
               </TableHead>
               <TableHead className="w-14">{t("user.columns.id")}</TableHead>
-              <TableHead>{t("user.columns.email")}</TableHead>
-              <TableHead className="text-center">
+              <TableHead className="min-w-[220px]">{t("user.columns.email")}</TableHead>
+              <TableHead className="w-[88px] text-center">
                 {t("user.columns.online_count")}
               </TableHead>
-              <TableHead className="text-center">
+              <TableHead className="w-[108px] text-center">
                 {t("user.columns.status")}
               </TableHead>
-              <TableHead>{t("user.columns.subscription")}</TableHead>
-              <TableHead>{t("user.columns.group")}</TableHead>
-              <TableHead className="text-right">
-                {t("user.columns.used_traffic")}
-              </TableHead>
-              <TableHead className="text-right">
-                {t("user.columns.total_traffic")}
-              </TableHead>
-              <TableHead>{t("user.columns.expire_time")}</TableHead>
-              <TableHead className="text-right">
-                {t("user.columns.balance")}
-              </TableHead>
-              <TableHead className="text-right">
-                {t("user.columns.commission")}
-              </TableHead>
-              <TableHead>{t("user.columns.register_time")}</TableHead>
-              <TableHead className="w-12 text-right">
+              <TableHead className="min-w-[120px]">{t("user.columns.subscription")}</TableHead>
+              <TableHead className="min-w-[100px]">{t("user.columns.group")}</TableHead>
+              <TableHead className="min-w-[160px]">{t("user.columns.used_traffic")}</TableHead>
+              <TableHead className="min-w-[120px]">{t("user.columns.expire_time")}</TableHead>
+              <TableHead className="text-right">{t("user.columns.balance")}</TableHead>
+              <TableHead className="text-right">{t("user.columns.commission")}</TableHead>
+              <TableHead className="min-w-[120px]">{t("user.columns.register_time")}</TableHead>
+              <TableHead className="w-20 sticky right-0 z-10 bg-card text-right">
                 {t("user.columns.actions")}
               </TableHead>
             </TableRow>
@@ -263,205 +321,392 @@ export function UserListPage() {
             {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 14 }).map((_, j) => (
+                  {Array.from({ length: COL_COUNT }).map((_, j) => (
                     <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className={cn("h-4", j === 2 ? "h-9 w-44" : "w-full")} />
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={14}>
-                  <EmptyState />
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={COL_COUNT}>
+                  <EmptyState
+                    icon={<Users className="h-10 w-10" />}
+                    message={t("common.table.noData")}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
               users.map((u) => {
                 const used = (u.u || 0) + (u.d || 0);
                 const totalBytes = u.transfer_enable || 0;
-                const pct =
-                  totalBytes > 0
-                    ? ((used / totalBytes) * 100).toFixed(1)
-                    : "0.0";
+                const pctNum =
+                  totalBytes > 0 ? Math.min(100, (used / totalBytes) * 100) : 0;
+                const pctLabel = pctNum.toFixed(1);
+                const expire = expireMeta(u.expired_at);
+                const online = Number(u.online_count || 0);
+                const selectedRow = selected.includes(u.id);
+                const planName = u.plan_id
+                  ? plansMap[u.plan_id] || `#${u.plan_id}`
+                  : null;
+                const groupName = u.group_id
+                  ? groupsMap[u.group_id] || `#${u.group_id}`
+                  : null;
+
+                const stickyBg = selectedRow
+                  ? "bg-muted"
+                  : u.banned
+                    ? "bg-destructive/[0.03]"
+                    : "bg-card";
+
                 return (
-                  <TableRow key={u.id}>
-                    <TableCell>
+                  <TableRow
+                    key={u.id}
+                    data-state={selectedRow ? "selected" : undefined}
+                    className={cn(
+                      "group",
+                      u.banned && !selectedRow && "bg-destructive/[0.03]",
+                    )}
+                  >
+                    <TableCell
+                      className={cn(
+                        "sticky left-0 z-10 group-hover:bg-muted/50",
+                        stickyBg,
+                      )}
+                    >
                       <Checkbox
-                        checked={selected.includes(u.id)}
+                        checked={selectedRow}
                         onCheckedChange={(c) => handleSelect(u.id, c === true)}
+                        aria-label={`select ${u.email}`}
                       />
                     </TableCell>
-                    <TableCell><IdBadge id={u.id} /></TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{u.email}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5"
-                          onClick={async () => {
-                            try {
-                              await navigator.clipboard.writeText(u.email);
-                              toast.success(t("common.copy.success"));
-                            } catch {
-                              toast.error(t("common.copy.failed"));
-                            }
-                          }}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        {u.is_admin && (
-                          <Badge variant="destructive">
-                            {t("user.status.admin")}
-                          </Badge>
-                        )}
-                        {!u.is_admin && u.is_staff && (
-                          <Badge variant="secondary">
-                            {t("user.status.staff")}
-                          </Badge>
-                        )}
+                      <IdBadge id={u.id} compact />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <Avatar className="h-8 w-8 shrink-0">
+                          <AvatarFallback
+                            className={cn(
+                              "text-xs font-semibold",
+                              avatarTone(u.email),
+                            )}
+                          >
+                            {emailInitial(u.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex min-w-0 items-center gap-1">
+                            <span
+                              className="truncate font-medium"
+                              title={u.email}
+                            >
+                              {u.email}
+                            </span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0 opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      await navigator.clipboard.writeText(u.email);
+                                      toast.success(t("common.copy.success"));
+                                    } catch {
+                                      toast.error(t("common.copy.failed"));
+                                    }
+                                  }}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t("user.columns.copy_email")}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1">
+                            {u.is_admin && (
+                              <Badge
+                                variant="destructive"
+                                className="h-5 px-1.5 text-[10px] font-normal"
+                              >
+                                {t("user.status.admin")}
+                              </Badge>
+                            )}
+                            {!u.is_admin && u.is_staff && (
+                              <Badge
+                                variant="secondary"
+                                className="h-5 px-1.5 text-[10px] font-normal"
+                              >
+                                {t("user.status.staff")}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center text-xs tabular-nums">
-                      <span className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        {u.online_count ?? "—"} / {u.device_limit ?? "∞"}
-                      </span>
-                    </TableCell>
                     <TableCell className="text-center">
-                      {u.banned ? (
-                        <Badge variant="destructive">
-                          {t("user.columns.status_text.banned")}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="inline-flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1 text-xs tabular-nums">
+                            <span
+                              className={cn(
+                                "h-1.5 w-1.5 rounded-full",
+                                online > 0 ? "bg-emerald-500" : "bg-muted-foreground/40",
+                              )}
+                            />
+                            <span className="font-medium text-foreground">
+                              {online}
+                            </span>
+                            <span className="text-muted-foreground">/</span>
+                            <span className="text-muted-foreground">
+                              {u.device_limit ?? "∞"}
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("user.columns.online_count")}: {online} /{" "}
+                          {u.device_limit ?? "∞"}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "h-5 shrink-0 whitespace-nowrap border-transparent px-2 font-normal",
+                          u.banned
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+                        )}
+                      >
+                        {u.banned
+                          ? t("user.columns.status_text.banned")
+                          : t("user.columns.status_text.normal")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {planName ? (
+                        <Badge
+                          variant="secondary"
+                          className="max-w-[160px] truncate font-normal"
+                          title={planName}
+                        >
+                          {planName}
                         </Badge>
                       ) : (
-                        <Badge variant="success">
-                          {t("user.columns.status_text.normal")}
-                        </Badge>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-xs font-medium">
-                      {u.plan_id ? plansMap[u.plan_id] || `#${u.plan_id}` : "—"}
+                    <TableCell>
+                      {groupName ? (
+                        <Badge
+                          variant="outline"
+                          className="max-w-[140px] truncate font-normal text-muted-foreground"
+                          title={groupName}
+                        >
+                          {groupName}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {u.group_id
-                        ? groupsMap[u.group_id] || `#${u.group_id}`
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-xs tabular-nums">
-                      <span
-                        className="cursor-pointer text-muted-foreground hover:text-foreground"
+                    <TableCell>
+                      <button
+                        type="button"
+                        className="group/traffic w-full min-w-[140px] space-y-1 text-left"
                         onClick={() => setTrafficRecordsUser(u)}
                       >
-                        {formatBytes(used)}
-                        <span className="ml-1 text-[10px]">({pct}%)</span>
-                      </span>
+                        <div className="flex items-baseline justify-between gap-2 text-xs tabular-nums">
+                          <span className="font-medium group-hover/traffic:text-primary">
+                            {formatBytes(used)}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {totalBytes > 0 ? formatBytes(totalBytes) : "∞"}
+                          </span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all",
+                              totalBytes > 0
+                                ? trafficTone(pctNum)
+                                : "bg-muted-foreground/30",
+                            )}
+                            style={{
+                              width: `${
+                                totalBytes > 0
+                                  ? Math.max(pctNum, used > 0 ? 3 : 0)
+                                  : used > 0
+                                    ? 8
+                                    : 0
+                              }%`,
+                            }}
+                          />
+                        </div>
+                        <div className="text-[10px] tabular-nums text-muted-foreground">
+                          {totalBytes > 0 ? `${pctLabel}%` : "—"}
+                        </div>
+                      </button>
                     </TableCell>
-                    <TableCell className="text-right text-xs tabular-nums">
-                      {totalBytes ? formatBytes(totalBytes) : "—"}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {u.expired_at ? (
-                        <span className="cursor-pointer hover:text-foreground">
-                          {formatDate(u.expired_at, false)}
-                        </span>
-                      ) : (
-                        <span className="text-green-600 dark:text-green-400">
+                    <TableCell>
+                      {expire.kind === "permanent" ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                          <InfinityIcon className="h-3.5 w-3.5" />
                           {t("user.columns.expire_status.permanent")}
                         </span>
+                      ) : (
+                        <div className="space-y-0.5">
+                          <p
+                            className={cn(
+                              "text-xs tabular-nums",
+                              expire.kind === "expired" &&
+                                "font-medium text-destructive",
+                              expire.kind === "soon" &&
+                                "font-medium text-amber-600 dark:text-amber-400",
+                              expire.kind === "active" && "text-muted-foreground",
+                            )}
+                          >
+                            {formatDate(u.expired_at, false)}
+                          </p>
+                          {expire.days != null && (
+                            <p
+                              className={cn(
+                                "text-[10px]",
+                                expire.kind === "expired" && "text-destructive/80",
+                                expire.kind === "soon" &&
+                                  "text-amber-600/80 dark:text-amber-400/80",
+                                expire.kind === "active" && "text-muted-foreground/80",
+                              )}
+                            >
+                              {expire.kind === "expired"
+                                ? t("user.columns.expire_status.expired", {
+                                    days: Math.abs(expire.days),
+                                  })
+                                : t("user.columns.expire_status.remaining", {
+                                    days: expire.days,
+                                  })}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-right text-xs tabular-nums">
+                    <TableCell className="text-right text-xs tabular-nums font-medium">
                       {formatCurrency(u.balance)}
                     </TableCell>
-                    <TableCell className="text-right text-xs tabular-nums">
+                    <TableCell className="text-right text-xs tabular-nums text-muted-foreground">
                       {formatCurrency(u.commission_balance)}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
+                    <TableCell className="text-xs text-muted-foreground tabular-nums">
                       {u.created_at ? formatDate(u.created_at) : "—"}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => setEditing(u)}>
-                            <Pencil className="h-4 w-4" />
+                    <TableCell
+                      className={cn(
+                        "sticky right-0 z-10 text-right group-hover:bg-muted/50",
+                        stickyBg,
+                      )}
+                    >
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setEditing(u)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
                             {t("user.columns.actions_menu.edit")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={async () => {
-                              try {
-                                await resetUserSecret(u.id);
-                                toast.success("UUID & Token 已重置");
-                                refresh();
-                              } catch (e) {}
-                            }}
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                            {t("user.columns.actions_menu.reset_secret")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={async () => {
-                              try {
-                                const url = u.subscribe_url;
-                                await navigator.clipboard.writeText(url);
-                                toast.success(t("common.copy.success"));
-                              } catch {
-                                toast.error(t("common.copy.failed"));
+                          </TooltipContent>
+                        </Tooltip>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  await resetUserSecret(u.id);
+                                  toast.success(
+                                    t("user.messages.reset_secret.success"),
+                                  );
+                                  refresh();
+                                } catch (e) {}
+                              }}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                              {t("user.columns.actions_menu.reset_secret")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  const url = u.subscribe_url;
+                                  await navigator.clipboard.writeText(url);
+                                  toast.success(t("common.copy.success"));
+                                } catch {
+                                  toast.error(t("common.copy.failed"));
+                                }
+                              }}
+                            >
+                              <Copy className="h-4 w-4" />
+                              {t("user.columns.actions_menu.copy_url")}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setTrafficResetUser(u)}
+                            >
+                              <Activity className="h-4 w-4" />
+                              {t("user.columns.actions_menu.reset_traffic")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                navigate(`${adminPath("order")}?user_id=${u.id}`)
                               }
-                            }}
-                          >
-                            <Copy className="h-4 w-4" />
-                            {t("user.columns.actions_menu.copy_url")}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setTrafficResetUser(u)}
-                          >
-                            <Activity className="h-4 w-4" />
-                            {t("user.columns.actions_menu.reset_traffic")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              navigate(`${adminPath("order")}?user_id=${u.id}`)
-                            }
-                          >
-                            <ClipboardList className="h-4 w-4" />
-                            {t("user.columns.actions_menu.orders")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setTrafficRecordsUser(u)}
-                          >
-                            <Activity className="h-4 w-4" />
-                            {t("user.columns.actions_menu.traffic_records")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setInvitesUser(u)}>
-                            <Users className="h-4 w-4" />
-                            {t("user.columns.actions_menu.invites")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setAssignOrderUser(u)}
-                          >
-                            <ShoppingCart className="h-4 w-4" />
-                            {t("user.columns.actions_menu.assign_order")}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setConfirmDelete(u)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            {t("user.columns.actions_menu.delete")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            >
+                              <ClipboardList className="h-4 w-4" />
+                              {t("user.columns.actions_menu.orders")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setTrafficRecordsUser(u)}
+                            >
+                              <Activity className="h-4 w-4" />
+                              {t("user.columns.actions_menu.traffic_records")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setInvitesUser(u)}>
+                              <Users className="h-4 w-4" />
+                              {t("user.columns.actions_menu.invites")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setAssignOrderUser(u)}
+                            >
+                              <ShoppingCart className="h-4 w-4" />
+                              {t("user.columns.actions_menu.assign_order")}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setConfirmDelete(u)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              {t("user.columns.actions_menu.delete")}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -579,6 +824,30 @@ export function UserListPage() {
   );
 }
 
+type GeneratedUser = {
+  email: string;
+  password?: string;
+  expired_at?: string | null;
+  uuid?: string;
+  created_at?: string;
+  subscribe_url?: string;
+};
+
+function normalizeGenerateResult(res: unknown): {
+  ok: boolean;
+  users: GeneratedUser[];
+} {
+  if (res === true || res === 1) return { ok: true, users: [] };
+  if (Array.isArray(res)) return { ok: true, users: res as GeneratedUser[] };
+  if (res && typeof res === "object") {
+    const obj = res as Record<string, unknown>;
+    if (Array.isArray(obj.data)) {
+      return { ok: true, users: obj.data as GeneratedUser[] };
+    }
+  }
+  return { ok: !!res, users: [] };
+}
+
 /* ---------------- 创建用户 ---------------- */
 function CreateUserDialog({
   open,
@@ -600,7 +869,25 @@ function CreateUserDialog({
     expired_at: "",
     generate_count: 1,
   });
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{
+    ok: boolean;
+    users: GeneratedUser[];
+  } | null>(null);
+
+  const resetOnClose = (v: boolean) => {
+    onOpenChange(v);
+    if (!v) {
+      setResult(null);
+      setForm({
+        email_prefix: "",
+        email_suffix: "example.com",
+        password: "",
+        plan_id: "",
+        expired_at: "",
+        generate_count: 1,
+      });
+    }
+  };
 
   const submit = async () => {
     setSubmitting(true);
@@ -616,7 +903,7 @@ function CreateUserDialog({
           : null,
         generate_count: form.email_prefix ? 1 : form.generate_count,
       });
-      setResult(res);
+      setResult(normalizeGenerateResult(res));
       toast.success(t("user.generate.form.success"));
       onSaved();
     } catch (e) {
@@ -625,31 +912,100 @@ function CreateUserDialog({
     }
   };
 
+  const copyAll = async () => {
+    if (!result?.users.length) return;
+    const text = result.users
+      .map((u) => {
+        const lines = [
+          t("user.generate.copy_line.email", { value: u.email }),
+          u.password
+            ? t("user.generate.copy_line.password", { value: u.password })
+            : null,
+          u.expired_at
+            ? t("user.generate.copy_line.expire", { value: u.expired_at })
+            : null,
+          u.subscribe_url
+            ? t("user.generate.copy_line.subscribe", {
+                value: u.subscribe_url,
+              })
+            : null,
+        ].filter(Boolean);
+        return lines.join("\n");
+      })
+      .join("\n\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(t("common.copy.success"));
+    } catch {
+      toast.error(t("common.copy.failed"));
+    }
+  };
+
+  const downloadCsv = () => {
+    if (!result?.users.length) return;
+    const header = [
+      t("user.generate.csv.email"),
+      t("user.generate.csv.password"),
+      t("user.generate.csv.expire_time"),
+      t("user.generate.csv.uuid"),
+      t("user.generate.csv.created_at"),
+      t("user.generate.csv.subscribe_url"),
+    ];
+    const rows = result.users.map((u) =>
+      [
+        u.email,
+        u.password || "",
+        u.expired_at || "",
+        u.uuid || "",
+        u.created_at || "",
+        u.subscribe_url || "",
+      ]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(","),
+    );
+    const csv = "\uFEFF" + [header.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `users-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={resetOnClose}>
       <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{t("user.generate.title")}</DialogTitle>
+          <DialogDescription>
+            {form.email_prefix
+              ? t("user.generate.description_single")
+              : t("user.generate.description_batch")}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
-          <div className="space-y-1.5">
-            <Label>{t("user.generate.form.email_prefix")}</Label>
-            <Input
-              value={form.email_prefix}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, email_prefix: e.target.value }))
-              }
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>{t("user.generate.form.email_domain")}</Label>
-            <Input
-              value={form.email_suffix}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, email_suffix: e.target.value }))
-              }
-            />
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-4 px-6 py-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-1">
+              <Label>{t("user.generate.form.email_prefix")}</Label>
+              <Input
+                value={form.email_prefix}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email_prefix: e.target.value }))
+                }
+                placeholder={t("user.generate.form.email_prefix_placeholder")}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("user.generate.form.email_domain")}</Label>
+              <Input
+                value={form.email_suffix}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email_suffix: e.target.value }))
+                }
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label>{t("user.generate.form.password")}</Label>
@@ -662,40 +1018,42 @@ function CreateUserDialog({
               }
             />
           </div>
-          <div className="space-y-1.5">
-            <Label>{t("user.generate.form.subscription")}</Label>
-            <Select
-              value={form.plan_id || "none"}
-              onValueChange={(v) =>
-                setForm((f) => ({ ...f, plan_id: v === "none" ? "" : v }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={t("user.generate.form.subscription_none")}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">
-                  {t("user.generate.form.subscription_none")}
-                </SelectItem>
-                {(plans || []).map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.name}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>{t("user.generate.form.subscription")}</Label>
+              <Select
+                value={form.plan_id || "none"}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, plan_id: v === "none" ? "" : v }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t("user.generate.form.subscription_none")}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    {t("user.generate.form.subscription_none")}
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>{t("user.generate.form.expire_time")}</Label>
-            <Input
-              type="datetime-local"
-              value={form.expired_at}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, expired_at: e.target.value }))
-              }
-            />
+                  {(plans || []).map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("user.generate.form.expire_time")}</Label>
+              <Input
+                type="datetime-local"
+                value={form.expired_at}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, expired_at: e.target.value }))
+                }
+              />
+            </div>
           </div>
           {!form.email_prefix && (
             <div className="space-y-1.5">
@@ -715,15 +1073,137 @@ function CreateUserDialog({
             </div>
           )}
 
-          {result && (
-            <pre className="max-h-40 overflow-auto rounded-md bg-muted p-3 text-xs">
-              {JSON.stringify(result, null, 2)}
-            </pre>
+          {result?.ok && (
+            <div className="space-y-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {result.users.length > 0
+                    ? t("user.generate.form.generated_count", {
+                        count: result.users.length,
+                      })
+                    : t("user.generate.form.success")}
+                </div>
+                {result.users.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7"
+                      onClick={copyAll}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {t("user.generate.form.copy_all")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7"
+                      onClick={downloadCsv}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      {t("user.generate.form.download_csv")}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {result.users.length > 0 ? (
+                <div className="max-h-56 space-y-2 overflow-y-auto pr-0.5">
+                  {result.users.map((u) => (
+                    <div
+                      key={u.email}
+                      className="rounded-md border bg-card p-2.5 text-xs shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 space-y-1">
+                          <p className="truncate font-medium text-foreground">
+                            {u.email}
+                          </p>
+                          {u.password && (
+                            <p className="text-muted-foreground">
+                              {t("user.generate.form.result_password")}{" "}
+                              <span className="font-mono text-foreground">
+                                {u.password}
+                              </span>
+                            </p>
+                          )}
+                          {u.expired_at && (
+                            <p className="text-muted-foreground">
+                              {t("user.generate.form.result_expire")}{" "}
+                              {u.expired_at}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex shrink-0 gap-0.5">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(u.email);
+                                    toast.success(t("common.copy.success"));
+                                  } catch {
+                                    toast.error(t("common.copy.failed"));
+                                  }
+                                }}
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t("user.generate.form.copy_email")}
+                            </TooltipContent>
+                          </Tooltip>
+                          {u.subscribe_url && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7"
+                                  onClick={async () => {
+                                    try {
+                                      await navigator.clipboard.writeText(
+                                        u.subscribe_url!,
+                                      );
+                                      toast.success(t("common.copy.success"));
+                                    } catch {
+                                      toast.error(t("common.copy.failed"));
+                                    }
+                                  }}
+                                >
+                                  <ClipboardList className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t("user.generate.form.copy_subscribe")}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {t("user.generate.form.single_success_hint")}
+                </p>
+              )}
+            </div>
           )}
         </div>
 
         <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => resetOnClose(false)}>
             {t("user.generate.form.cancel")}
           </Button>
           <Button onClick={submit} disabled={submitting}>

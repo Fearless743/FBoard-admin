@@ -315,10 +315,10 @@ function BanField({
         return (
           <div
             className={cn(
-              "rounded-lg border-2 p-4 transition-colors",
+              "rounded-lg border p-4 transition-colors",
               banned
                 ? "border-destructive/40 bg-destructive/5"
-                : "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20",
+                : "border-border bg-muted/30",
             )}
           >
             <div className="flex items-center justify-between">
@@ -326,13 +326,13 @@ function BanField({
                 {banned ? (
                   <Ban className="h-5 w-5 text-destructive" />
                 ) : (
-                  <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  <ShieldCheck className="h-5 w-5 text-primary" />
                 )}
                 <div>
                   <Label
                     className={cn(
                       "text-sm font-semibold",
-                      banned ? "text-destructive" : "text-emerald-700 dark:text-emerald-300",
+                      banned && "text-destructive",
                     )}
                   >
                     {label}

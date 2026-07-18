@@ -47,8 +47,79 @@ export interface NoticeItem {
   [k: string]: any;
 }
 
-export async function fetchNotices(search = ""): Promise<NoticeItem[]> {
-  return adminGet<NoticeItem[]>("/notice/fetch", search ? { search } : undefined);
+export interface PaginatedListResponse<T> {
+  total: number;
+  current_page: number;
+  per_page: number;
+  last_page: number;
+  data: T[];
+}
+
+export interface ListQuery {
+  current?: number;
+  pageSize?: number;
+  search?: string;
+}
+
+function buildListQuery(params?: ListQuery & Record<string, any>) {
+  const query: Record<string, string | number> = {};
+  if (!params) return undefined;
+  if (params.current != null) query.current = params.current;
+  if (params.pageSize != null) query.pageSize = params.pageSize;
+  if (params.search) query.search = params.search;
+  for (const [k, v] of Object.entries(params)) {
+    if (k === "current" || k === "pageSize" || k === "search") continue;
+    if (v != null && v !== "") query[k] = v as string | number;
+  }
+  return Object.keys(query).length ? query : undefined;
+}
+
+/**
+ * 兼容后端两种列表返回：
+ * 1) 分页对象 { data, total, ... }
+ * 2) 直接数组（adminGet 已解包 success.data）
+ * 数组场景在前端做分页切片，保证页面的 data?.data / total 逻辑一致。
+ */
+function normalizeListResponse<T>(
+  res: any,
+  params?: ListQuery,
+): PaginatedListResponse<T> {
+  if (Array.isArray(res)) {
+    const pageSize = Math.max(1, Number(params?.pageSize) || res.length || 20);
+    const current = Math.max(1, Number(params?.current) || 1);
+    const total = res.length;
+    const start = (current - 1) * pageSize;
+    return {
+      total,
+      current_page: current,
+      per_page: pageSize,
+      last_page: Math.max(1, Math.ceil(total / pageSize) || 1),
+      data: res.slice(start, start + pageSize),
+    };
+  }
+  if (res && typeof res === "object" && Array.isArray(res.data)) {
+    return {
+      total: Number(res.total ?? res.data.length) || 0,
+      current_page: Number(res.current_page ?? params?.current ?? 1) || 1,
+      per_page: Number(res.per_page ?? params?.pageSize ?? res.data.length) || 20,
+      last_page: Number(res.last_page ?? 1) || 1,
+      data: res.data,
+    };
+  }
+  return {
+    total: 0,
+    current_page: 1,
+    per_page: Number(params?.pageSize) || 20,
+    last_page: 1,
+    data: [],
+  };
+}
+
+export async function fetchNotices(
+  params?: ListQuery,
+): Promise<PaginatedListResponse<NoticeItem>> {
+  const res = await adminGet<any>("/notice/fetch", buildListQuery(params));
+  return normalizeListResponse<NoticeItem>(res, params);
 }
 
 export async function fetchNoticeDetail(id: number): Promise<NoticeItem> {
@@ -142,10 +213,29 @@ export interface GiftCardTemplate {
   [k: string]: any;
 }
 
-export async function fetchGiftCardTemplates(search = "") {
-  return adminGet<{ data: GiftCardTemplate[] }>(
+export interface GiftCardTemplateFilter {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  type?: number;
+  status?: number;
+}
+
+export async function fetchGiftCardTemplates(
+  params?: GiftCardTemplateFilter | string,
+): Promise<PaginatedListResponse<GiftCardTemplate>> {
+  // 兼容旧调用：fetchGiftCardTemplates("keyword")
+  const filter: GiftCardTemplateFilter =
+    typeof params === "string" ? { search: params } : params || {};
+  const query: Record<string, string | number> = {};
+  if (filter.page != null) query.page = filter.page;
+  if (filter.per_page != null) query.per_page = filter.per_page;
+  if (filter.search) query.search = filter.search;
+  if (filter.type != null) query.type = filter.type;
+  if (filter.status != null) query.status = filter.status;
+  return adminGet<PaginatedListResponse<GiftCardTemplate>>(
     "/gift-card/templates",
-    search ? { search } : undefined,
+    Object.keys(query).length ? query : undefined,
   );
 }
 
@@ -169,17 +259,80 @@ export async function generateGiftCardCodes(payload: any) {
   return adminPost<any>("/gift-card/generate-codes", payload);
 }
 
-export async function fetchGiftCardCodes(search = "") {
-  return adminGet<{ data: any[] }>(
+export interface GiftCardCodeItem {
+  id: number;
+  code: string;
+  template_id: number;
+  template?: { id: number; name: string };
+  /** 0=未使用 1=已使用 2=已过期 3=已禁用 */
+  status: 0 | 1 | 2 | 3;
+  usage_count?: number;
+  max_usage?: number;
+  batch_id?: string;
+  expires_at?: number | null;
+  created_at?: any;
+  [k: string]: any;
+}
+
+export interface GiftCardCodeListResponse {
+  total: number;
+  current_page: number;
+  per_page: number;
+  last_page: number;
+  data: GiftCardCodeItem[];
+}
+
+/** 后端礼品卡兑换码列表使用 page / per_page（与订单 current/pageSize 不同） */
+export interface GiftCardCodeFilter {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  template_id?: number;
+  batch_id?: string;
+  status?: number;
+}
+
+export async function fetchGiftCardCodes(
+  params?: GiftCardCodeFilter,
+): Promise<GiftCardCodeListResponse> {
+  // URLSearchParams 会把 undefined 编成字符串 "undefined"，需先剔除
+  const query: Record<string, string | number> = {};
+  if (params) {
+    if (params.page != null) query.page = params.page;
+    if (params.per_page != null) query.per_page = params.per_page;
+    if (params.search) query.search = params.search;
+    if (params.template_id != null) query.template_id = params.template_id;
+    if (params.batch_id) query.batch_id = params.batch_id;
+    if (params.status != null) query.status = params.status;
+  }
+  return adminGet<GiftCardCodeListResponse>(
     "/gift-card/codes",
-    search ? { search } : undefined,
+    Object.keys(query).length ? query : undefined,
   );
 }
 
-export async function fetchGiftCardUsages(search = "") {
-  return adminGet<{ data: any[] }>(
+export interface GiftCardUsageFilter {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  template_id?: number;
+  user_id?: number;
+}
+
+export async function fetchGiftCardUsages(
+  params?: GiftCardUsageFilter | string,
+): Promise<PaginatedListResponse<any>> {
+  const filter: GiftCardUsageFilter =
+    typeof params === "string" ? { search: params } : params || {};
+  const query: Record<string, string | number> = {};
+  if (filter.page != null) query.page = filter.page;
+  if (filter.per_page != null) query.per_page = filter.per_page;
+  if (filter.search) query.search = filter.search;
+  if (filter.template_id != null) query.template_id = filter.template_id;
+  if (filter.user_id != null) query.user_id = filter.user_id;
+  return adminGet<PaginatedListResponse<any>>(
     "/gift-card/usages",
-    search ? { search } : undefined,
+    Object.keys(query).length ? query : undefined,
   );
 }
 
@@ -219,9 +372,11 @@ export interface PaymentMethod {
   [k: string]: any;
 }
 
-export async function fetchPayments(payload?: any) {
-  // 兼容旧调用：fetchPayments() 不带 search 时 payload 为空对象
-  return adminGet<any>("/payment/fetch", payload || {});
+export async function fetchPayments(
+  params?: ListQuery,
+): Promise<PaginatedListResponse<PaymentMethod>> {
+  const res = await adminGet<any>("/payment/fetch", buildListQuery(params));
+  return normalizeListResponse<PaymentMethod>(res, params);
 }
 
 export async function savePayment(payload: any) {
@@ -268,8 +423,16 @@ export async function fetchKnowledgeCategories(): Promise<string[]> {
   return adminGet<string[]>("/knowledge/getCategory");
 }
 
-export async function fetchKnowledges(search = ""): Promise<KnowledgeItem[]> {
-  return adminGet<KnowledgeItem[]>("/knowledge/fetch", search ? { search } : undefined);
+export async function fetchKnowledges(
+  params?: ListQuery & { category?: string },
+): Promise<PaginatedListResponse<KnowledgeItem>> {
+  const res = await adminGet<any>("/knowledge/fetch", buildListQuery(params));
+  // 后端暂不按 category 过滤时，前端兜底
+  if (Array.isArray(res) && params?.category) {
+    const filtered = res.filter((item: any) => item?.category === params.category);
+    return normalizeListResponse<KnowledgeItem>(filtered, params);
+  }
+  return normalizeListResponse<KnowledgeItem>(res, params);
 }
 
 export async function fetchKnowledgeDetail(id: number): Promise<KnowledgeItem> {

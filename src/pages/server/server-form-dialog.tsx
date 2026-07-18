@@ -290,7 +290,7 @@ export function ServerFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-6 pb-4 shrink-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <div className="flex items-center justify-between gap-4">
             <div>
               <DialogTitle>
@@ -331,7 +331,7 @@ export function ServerFormDialog({
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col min-h-0 flex-1"
         >
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6 py-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>{t("server.form.name.label")}</Label>
@@ -394,7 +394,7 @@ export function ServerFormDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>
-                  {t("server.form.traffic_limit.label")} (GB, 0=不限制)
+                  {t("server.form.traffic_limit.label")} ({t("server.form.traffic_limit_unit")})
                 </Label>
                 <Input
                   type="number"
@@ -565,8 +565,8 @@ export function ServerFormDialog({
             </div>
 
             {selectedType && (
-              <div className="rounded-lg border p-4 space-y-3">
-                <h4 className="text-sm font-medium">协议配置</h4>
+              <div className="space-y-3 rounded-lg border bg-card p-4">
+                <h4 className="text-sm font-medium">{t("server.form.protocolSection")}</h4>
                 {currentDef ? (
                   <ProtocolConfigFields
                     fields={currentDef?.config_fields || {}}
@@ -585,7 +585,7 @@ export function ServerFormDialog({
             )}
           </div>
 
-          <DialogFooter className="shrink-0 gap-3 border-t bg-background px-6 py-4 shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.15)]">
+          <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
             <Button
               type="button"
               variant="secondary"
@@ -640,15 +640,12 @@ function ProtocolConfigFields({
     !prefix && Object.prototype.hasOwnProperty.call(fields, "network_settings");
 
   const pluginHints: Record<string, string> = {
-    "simple-obfs": "配置格式如 obfs=http;obfs-host=www.bing.com;path=/",
-    "v2ray-plugin":
-      "WebSocket模式: mode=websocket;host=mydomain.me;path=/;tls=true  |  QUIC模式: mode=quic;host=mydomain.me",
-    "gost-plugin": "配置格式如 mode=websocket;host=mydomain.me;path=/;tls=true",
-    "shadow-tls":
-      "配置格式如 host=cloud.tencent.com;password=auth_password;version=3",
-    restls:
-      "配置格式如 host=www.microsoft.com;password=auth_password;version-hint=tls13;restls-script=300?100<1,400~100",
-    kcptun: "配置格式如 key=psk;crypt=aes-128-gcm;mode=fast;mtu=1350",
+    "simple-obfs": t("server.dynamic_form.shadowsocks.plugin.obfs_hint"),
+    "v2ray-plugin": t("server.dynamic_form.shadowsocks.plugin.v2ray_hint"),
+    "gost-plugin": t("server.dynamic_form.shadowsocks.plugin.gost_hint"),
+    "shadow-tls": t("server.dynamic_form.shadowsocks.plugin.shadow_tls_hint"),
+    restls: t("server.dynamic_form.shadowsocks.plugin.restls_hint"),
+    kcptun: t("server.dynamic_form.shadowsocks.plugin.kcptun_hint"),
   };
 
   return (
@@ -756,7 +753,7 @@ function ProtocolConfigFields({
                         options={entries}
                         selected={selected}
                         onChange={(vals) => controllerField.onChange(vals)}
-                        placeholder={field.placeholder || `选择${fieldName}`}
+                        placeholder={field.placeholder || t("common.selectField", { name: fieldName })}
                       />
                     );
                   }}
@@ -781,9 +778,7 @@ function ProtocolConfigFields({
                     className="h-auto p-0 text-xs"
                     onClick={() => setNetworkSettingsOpen(true)}
                   >
-                    {t("server.network_settings.edit_protocol_config", {
-                      defaultValue: "编辑网络设置",
-                    })}
+                    {t("server.network_settings.edit_protocol_config")}
                   </Button>
                 )}
               </div>
@@ -798,7 +793,7 @@ function ProtocolConfigFields({
                   >
                     <SelectTrigger>
                       <SelectValue
-                        placeholder={field.placeholder || `选择${fieldName}`}
+                        placeholder={field.placeholder || t("common.selectField", { name: fieldName })}
                       />
                     </SelectTrigger>
                     <SelectContent>
@@ -822,7 +817,7 @@ function ProtocolConfigFields({
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
               <Input
                 type="number"
-                placeholder={field.placeholder || `输入${fieldName}`}
+                placeholder={field.placeholder || t("common.inputField", { name: fieldName })}
                 {...register(`protocol_settings.${fieldPath}`, {
                   valueAsNumber: true,
                 })}
@@ -868,7 +863,7 @@ function ProtocolConfigFields({
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
               <div className="relative">
                 <Input
-                  placeholder={field.placeholder || `输入${fieldName}`}
+                  placeholder={field.placeholder || t("common.inputField", { name: fieldName })}
                   className="pr-10"
                   {...register(`protocol_settings.${fieldPath}`)}
                 />
@@ -877,7 +872,7 @@ function ProtocolConfigFields({
                   variant="ghost"
                   size="icon"
                   className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
-                  title="生成密钥对"
+                  title={t("server.form.virtualNode.generateKeyPair")}
                   onClick={async () => {
                     try {
                       const { generateRealityKey } =
@@ -918,9 +913,11 @@ function ProtocolConfigFields({
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <Label className="text-sm font-medium">Sudoku 密钥对</Label>
+                  <Label className="text-sm font-medium">
+                    {t("server.dynamic_form.sudoku.keyPairTitle")}
+                  </Label>
                   <p className="text-xs text-muted-foreground">
-                    服务端使用 Master Public Key；Master Private Key 仅保存在面板用于派生用户密钥，不会下发到节点
+                    {t("server.dynamic_form.sudoku.keyPairDescription")}
                   </p>
                 </div>
                 <Button
@@ -943,20 +940,20 @@ function ProtocolConfigFields({
                         res.master_private_key,
                         { shouldDirty: true },
                       );
-                      toast.success("Sudoku 密钥对已生成");
+                      toast.success(t("server.dynamic_form.sudoku.generateSuccess"));
                     } catch (e) {
-                      toast.error("生成 Sudoku 密钥失败");
+                      toast.error(t("server.dynamic_form.sudoku.generateFailed"));
                     }
                   }}
                 >
                   <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                  一键生成
+                  {t("server.dynamic_form.sudoku.generate")}
                 </Button>
               </div>
               <div className="space-y-1.5">
                 <Label>Master Public Key</Label>
                 <Input
-                  placeholder="点击右上角「一键生成」自动填写"
+                  placeholder={t("server.dynamic_form.sudoku.publicPlaceholder")}
                   className="font-mono text-xs"
                   {...register("protocol_settings.master_public_key")}
                 />
@@ -964,7 +961,7 @@ function ProtocolConfigFields({
               <div className="space-y-1.5">
                 <Label>Master Private Key</Label>
                 <Input
-                  placeholder="仅面板保存，勿泄露"
+                  placeholder={t("server.dynamic_form.sudoku.privatePlaceholder")}
                   className="font-mono text-xs"
                   {...register("protocol_settings.master_private_key")}
                 />
@@ -978,7 +975,7 @@ function ProtocolConfigFields({
             <Label>{fieldName}</Label>
             {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
             <Input
-              placeholder={field.placeholder || `输入${fieldName}`}
+              placeholder={field.placeholder || t("common.inputField", { name: fieldName })}
               {...register(`protocol_settings.${fieldPath}`)}
             />
           </div>
@@ -1013,6 +1010,7 @@ function MultiSelect({
   onChange: (vals: string[]) => void;
   placeholder: string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -1072,9 +1070,9 @@ function MultiSelect({
         </PopoverTrigger>
         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
           <Command>
-            <CommandInput placeholder={`搜索...`} />
+            <CommandInput placeholder={t("common.search")} />
             <CommandList>
-              <CommandEmpty>无匹配选项</CommandEmpty>
+              <CommandEmpty>{t("common.noMatch")}</CommandEmpty>
               <CommandGroup>
                 {options.map(([value, label]) => {
                   const isSelected = selected.includes(value);

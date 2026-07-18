@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff, GripVertical, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff, GripVertical, Search, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Pagination } from "@/components/common/pagination";
 import { SortableContainer, SortableRow, DragCell } from "@/components/common/sortable-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,6 +50,8 @@ import {
   type PaymentMethod,
 } from "@/api/misc";
 
+const SORT_PAGE_SIZE = 1000;
+
 export function PaymentListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -57,22 +60,39 @@ export function PaymentListPage() {
   const [deleting, setDeleting] = useState<PaymentMethod | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingList, setPendingList] = useState<PaymentMethod[] | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timer);
   }, [search]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const effectivePageSize = dragEnabled ? SORT_PAGE_SIZE : pageSize;
+  const effectivePage = dragEnabled ? 1 : page;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["payments", debouncedSearch],
-    queryFn: () => fetchPayments(debouncedSearch ? { search: debouncedSearch } : {}),
+    queryKey: ["payments", { page: effectivePage, pageSize: effectivePageSize, debouncedSearch, dragEnabled }],
+    queryFn: () =>
+      fetchPayments({
+        current: effectivePage,
+        pageSize: effectivePageSize,
+        search: debouncedSearch || undefined,
+      }),
   });
-  const list: PaymentMethod[] = data?.data || data || [];
+  const list: PaymentMethod[] = data?.data || [];
+  const total = data?.total || 0;
   const displayList = pendingList ?? list;
 
+  // 拖拽只改本地顺序，点「完成排序」再提交
   const handleReorder = useCallback((ids: number[]) => {
-    const reordered = ids.map((id) => displayList.find((i) => i.id === id)!).filter(Boolean);
+    const reordered = ids
+      .map((id) => displayList.find((i) => Number(i.id) === Number(id)))
+      .filter(Boolean) as PaymentMethod[];
     setPendingList(reordered);
   }, [displayList]);
 
@@ -82,22 +102,25 @@ export function PaymentListPage() {
       return;
     }
     try {
-      await sortPayments(pendingList.map((i) => i.id));
-      qc.invalidateQueries({ queryKey: ["payments"] });
+      await sortPayments(pendingList.map((i) => Number(i.id)));
+      toast.success(t("common.http.success"));
       setPendingList(null);
       setDragEnabled(false);
+      await qc.invalidateQueries({ queryKey: ["payments"] });
     } catch (e) {}
-  }, [pendingList, qc]);
+  }, [pendingList, qc, t]);
 
   const toggleDrag = useCallback(() => {
     if (dragEnabled) {
       if (pendingList) {
-        finishSort();
+        void finishSort();
       } else {
         setDragEnabled(false);
       }
     } else {
       setPendingList(null);
+      setSearch("");
+      setDebouncedSearch("");
       setDragEnabled(true);
     }
   }, [dragEnabled, pendingList, finishSort]);
@@ -114,9 +137,9 @@ export function PaymentListPage() {
               onClick={toggleDrag}
             >
               <GripVertical className="h-4 w-4" />
-              {dragEnabled ? "完成排序" : "编辑排序"}
+              {dragEnabled ? t("common.sort.done") : t("common.sort.edit")}
             </Button>
-            <Button onClick={() => { setEditing(null); setOpen(true); }}>
+            <Button onClick={() => { setEditing(null); setOpen(true); }} disabled={dragEnabled}>
               <Plus className="h-4 w-4" />
               {t("payment.form.add.button")}
             </Button>
@@ -124,8 +147,8 @@ export function PaymentListPage() {
         }
       />
 
-      <div className="mb-4">
-        <div className="relative max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("payment.table.toolbar.search")}
@@ -158,8 +181,13 @@ export function PaymentListPage() {
                 </TableRow>
               ))
             ) : list.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={dragEnabled ? 6 : 5}><EmptyState /></TableCell>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={dragEnabled ? 6 : 5}>
+                  <EmptyState
+                    icon={<CreditCard className="h-10 w-10" />}
+                    message={t("common.table.noData")}
+                  />
+                </TableCell>
               </TableRow>
             ) : (
               <SortableContainer items={displayList} onReorder={handleReorder} enabled={dragEnabled}>
@@ -192,7 +220,7 @@ export function PaymentListPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleting(p)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -205,6 +233,18 @@ export function PaymentListPage() {
             )}
           </TableBody>
         </Table>
+        {!dragEnabled && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setPage(1);
+            }}
+          />
+        )}
       </div>
 
       <PaymentFormDialog

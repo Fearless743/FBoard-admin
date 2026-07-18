@@ -39,8 +39,14 @@ export interface PlanListResponse {
   last_page: number;
 }
 
-export async function fetchPlans(current = 1, pageSize = 20): Promise<PlanListResponse> {
-  return adminGet<PlanListResponse>("/plan/fetch", { current, pageSize });
+export async function fetchPlans(
+  current = 1,
+  pageSize = 20,
+  search = "",
+): Promise<PlanListResponse> {
+  const params: Record<string, string | number> = { current, pageSize };
+  if (search) params.search = search;
+  return adminGet<PlanListResponse>("/plan/fetch", params);
 }
 
 export async function savePlan(payload: Partial<Plan>) {

@@ -237,36 +237,18 @@ export function AdvancedSettingsDialog({
   const certMode = certConfig.cert_mode || "none";
   const modeDesc = useMemo(() => {
     const descMap: Record<string, string> = {
-      none: t("server.dynamic_form.cert_config.cert_mode.none_desc", {
-        defaultValue: t("server.dynamic_form.cert_config.none_desc", {
-          defaultValue: "未启用 TLS 证书配置",
-        }),
-      }),
+      none: t("server.dynamic_form.cert_config.none_desc"),
       self: t(
         "server.dynamic_form.shadowsocks.cert_config.cert_mode.self_description",
-        {
-          defaultValue:
-            "自签名模式：仅需填写域名，证书由节点后端自动生成（10年有效期）",
-        },
       ),
       http: t(
         "server.dynamic_form.shadowsocks.cert_config.cert_mode.http_description",
-        {
-          defaultValue: "HTTP-01 模式：需要 80 端口可正常访问以完成认证",
-        },
       ),
       dns: t(
         "server.dynamic_form.shadowsocks.cert_config.cert_mode.dns_description",
-        {
-          defaultValue:
-            "DNS-01 模式：通过 DNS 解析记录认证，支持申请泛域名证书",
-        },
       ),
       content: t(
         "server.dynamic_form.shadowsocks.cert_config.cert_mode.content_description",
-        {
-          defaultValue: "内容推送模式：直接将证书内容下发至节点",
-        },
       ),
     };
     return descMap[certMode] || t("server.dynamic_form.cert_config.cert_mode.description");
@@ -344,7 +326,7 @@ export function AdvancedSettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-6 pb-3 shrink-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {t("server.dynamic_form.advanced.dialog_title")}
           </DialogTitle>
@@ -353,7 +335,7 @@ export function AdvancedSettingsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-2">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           <Tabs value={tab} onValueChange={setTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
               <TabsTrigger value="tls" className="text-xs sm:text-sm">
@@ -509,10 +491,6 @@ export function AdvancedSettingsDialog({
                         <p className="text-xs text-muted-foreground">
                           {t(
                             "server.dynamic_form.cert_config.cert_content.description",
-                            {
-                              defaultValue:
-                                "粘贴完整证书 PEM 正文，不是文件路径",
-                            },
                           )}
                         </p>
                       </div>
@@ -537,10 +515,6 @@ export function AdvancedSettingsDialog({
                         <p className="text-xs text-muted-foreground">
                           {t(
                             "server.dynamic_form.cert_config.key_content.description",
-                            {
-                              defaultValue:
-                                "粘贴完整私钥 PEM 正文，不是文件路径",
-                            },
                           )}
                         </p>
                       </div>
@@ -750,7 +724,7 @@ export function AdvancedSettingsDialog({
           </Tabs>
         </div>
 
-        <DialogFooter className="gap-2 border-t px-6 py-4">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button
             type="button"
             variant="outline"

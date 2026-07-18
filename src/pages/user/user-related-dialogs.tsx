@@ -53,59 +53,61 @@ function UserRelatedTable({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {title} · {user?.email}
           </DialogTitle>
         </DialogHeader>
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((c) => (
-                  <TableHead
-                    key={c.key}
-                    className={
-                      c.align === "right" ? "text-right" : c.align === "center" ? "text-center" : ""
-                    }
-                  >
-                    {c.label}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+          <div className="rounded-lg border bg-card">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={columns.length}>
-                    <Skeleton className="h-20 w-full" />
-                  </TableCell>
+                  {columns.map((c) => (
+                    <TableHead
+                      key={c.key}
+                      className={
+                        c.align === "right" ? "text-right" : c.align === "center" ? "text-center" : ""
+                      }
+                    >
+                      {c.label}
+                    </TableHead>
+                  ))}
                 </TableRow>
-              ) : list.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length}>
-                    <EmptyState />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                list.map((row, i) => (
-                  <TableRow key={row.id ?? i}>
-                    {columns.map((c) => (
-                      <TableCell
-                        key={c.key}
-                        className={
-                          c.align === "right" ? "text-right tabular-nums" : c.align === "center" ? "text-center" : ""
-                        }
-                      >
-                        {c.render ? c.render(row) : row[c.key] ?? "—"}
-                      </TableCell>
-                    ))}
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length}>
+                      <Skeleton className="h-20 w-full" />
+                    </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : list.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length}>
+                      <EmptyState />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  list.map((row, i) => (
+                    <TableRow key={row.id ?? i}>
+                      {columns.map((c) => (
+                        <TableCell
+                          key={c.key}
+                          className={
+                            c.align === "right" ? "text-right tabular-nums" : c.align === "center" ? "text-center" : ""
+                          }
+                        >
+                          {c.render ? c.render(row) : row[c.key] ?? "—"}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -163,9 +165,9 @@ export function UserInvitesDialog({
       queryKey="user-invites"
       url="/user/inviteList"
       columns={[
-        { key: "invitee_email", label: "邀请用户" },
+        { key: "invitee_email", label: t("user.columns.invitee_email") },
         { key: "commission_balance", label: t("user.columns.commission"), align: "right", render: (r) => formatBytes(r.commission_balance ?? 0) },
-        { key: "created_at", label: "注册时间", render: (r) => formatDate(r.created_at) },
+        { key: "created_at", label: t("user.columns.register_time"), render: (r) => formatDate(r.created_at) },
       ]}
     />
   );

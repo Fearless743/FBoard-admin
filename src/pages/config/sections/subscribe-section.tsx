@@ -78,7 +78,7 @@ function SubscribeSectionBody({ data }: { data: Record<string, unknown> }) {
           </div>
         ))}
       </div>
-      <p className="text-xs text-amber-600">
+      <p className="text-xs text-amber-600 dark:text-amber-400">
         {t("settings.subscribe.subscribe_path.restart_tip")}
       </p>
     </SectionCard>

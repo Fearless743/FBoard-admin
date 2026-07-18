@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, GripVertical, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GripVertical, Search, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Pagination } from "@/components/common/pagination";
 import { SortableContainer, SortableRow, DragCell } from "@/components/common/sortable-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,8 @@ import {
 } from "@/components/ui/dialog";
 import { fetchNoticeDetail, dropNotice, fetchNotices, saveNotice, updateNotice, toggleNoticeShow, sortNotices, type NoticeItem } from "@/api/misc";
 
+const SORT_PAGE_SIZE = 1000;
+
 export function NoticeListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -40,22 +43,39 @@ export function NoticeListPage() {
   const [deleting, setDeleting] = useState<NoticeItem | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingList, setPendingList] = useState<any[] | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timer);
   }, [search]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const effectivePageSize = dragEnabled ? SORT_PAGE_SIZE : pageSize;
+  const effectivePage = dragEnabled ? 1 : page;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["notices", debouncedSearch],
-    queryFn: () => fetchNotices(debouncedSearch),
+    queryKey: ["notices", { page: effectivePage, pageSize: effectivePageSize, debouncedSearch, dragEnabled }],
+    queryFn: () =>
+      fetchNotices({
+        current: effectivePage,
+        pageSize: effectivePageSize,
+        search: debouncedSearch || undefined,
+      }),
   });
-  const list = data || [];
+  const list = data?.data || [];
+  const total = data?.total || 0;
   const displayList = pendingList ?? list;
 
+  // 拖拽只改本地顺序，点「完成排序」再提交
   const handleReorder = useCallback((ids: number[]) => {
-    const reordered = ids.map((id) => displayList.find((i: any) => i.id === id)!).filter(Boolean);
+    const reordered = ids
+      .map((id) => displayList.find((i: any) => Number(i.id) === Number(id)))
+      .filter(Boolean);
     setPendingList(reordered);
   }, [displayList]);
 
@@ -65,23 +85,26 @@ export function NoticeListPage() {
       return;
     }
     try {
-      await sortNotices(pendingList.map((i: any) => i.id));
-      qc.invalidateQueries({ queryKey: ["notices"] });
+      await sortNotices(pendingList.map((i: any) => Number(i.id)));
+      toast.success(t("common.http.success"));
       setPendingList(null);
       setDragEnabled(false);
+      await qc.invalidateQueries({ queryKey: ["notices"] });
     } catch (e) {}
-  }, [pendingList, qc]);
+  }, [pendingList, qc, t]);
 
   const toggleDrag = useCallback(() => {
     if (dragEnabled) {
       // 正在退出排序模式 → 如果有变更则保存
       if (pendingList) {
-        finishSort();
+        void finishSort();
       } else {
         setDragEnabled(false);
       }
     } else {
       setPendingList(null);
+      setSearch("");
+      setDebouncedSearch("");
       setDragEnabled(true);
     }
   }, [dragEnabled, pendingList, finishSort]);
@@ -98,9 +121,9 @@ export function NoticeListPage() {
               onClick={toggleDrag}
             >
               <GripVertical className="h-4 w-4" />
-              {dragEnabled ? "完成排序" : "编辑排序"}
+              {dragEnabled ? t("common.sort.done") : t("common.sort.edit")}
             </Button>
-            <Button onClick={() => { setEditing(null); setOpen(true); }}>
+            <Button onClick={() => { setEditing(null); setOpen(true); }} disabled={dragEnabled}>
               <Plus className="h-4 w-4" />
               {t("notice.form.add.button")}
             </Button>
@@ -108,14 +131,15 @@ export function NoticeListPage() {
         }
       />
 
-      <div className="mb-4">
-        <div className="relative max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("notice.table.toolbar.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
+            disabled={dragEnabled}
           />
         </div>
       </div>
@@ -140,9 +164,14 @@ export function NoticeListPage() {
                   ))}
                 </TableRow>
               ))
-            ) : list.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={dragEnabled ? 5 : 4}><EmptyState /></TableCell>
+            ) : displayList.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={dragEnabled ? 5 : 4}>
+                  <EmptyState
+                    icon={<Megaphone className="h-10 w-10" />}
+                    message={t("common.table.noData")}
+                  />
+                </TableCell>
               </TableRow>
             ) : (
               <SortableContainer items={displayList} onReorder={handleReorder} enabled={dragEnabled}>
@@ -172,7 +201,7 @@ export function NoticeListPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleting(n)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -185,6 +214,18 @@ export function NoticeListPage() {
             )}
           </TableBody>
         </Table>
+        {!dragEnabled && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setPage(1);
+            }}
+          />
+        )}
       </div>
 
       <NoticeFormDialog

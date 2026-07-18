@@ -1,17 +1,32 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Users, Bell,
-  Activity, Upload, Download,
-  ArrowDownToLine, BarChart3, MessagesSquare,
+  Users,
+  Bell,
+  Activity,
+  Upload,
+  Download,
+  ArrowDownToLine,
+  BarChart3,
+  MessagesSquare,
+  Gauge,
+  Timer,
+  Layers,
+  AlertTriangle,
+  Cpu,
+  Zap,
 } from "lucide-react";
 import { SimpleAreaChart } from "@/components/charts/area-chart";
 import { useNavigate } from "react-router-dom";
 import {
-  getStats, getTrafficRank, getOrder, getQueueStats,
-  getSystemStatus, getQueueWorkload,
+  getStats,
+  getTrafficRank,
+  getOrder,
+  getQueueStats,
+  getQueueWorkload,
   type OrderStatItem,
+  type QueueWorkloadItem,
 } from "@/api/stat";
 import { StatCard } from "@/components/common/stat-card";
 import { PageHeader } from "@/components/common/page-header";
@@ -21,9 +36,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { formatBytes } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 import { adminPath } from "@/lib/paths";
 
 function todayTimestamps() {
@@ -52,6 +71,20 @@ function rangeDates(daysAgo: number) {
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const start = new Date(+end - daysAgo * 86400000);
   return { start_date: formatDateStr(start), end_date: formatDateStr(end) };
+}
+
+/** 秒 → 可读等待时间 */
+function formatWait(seconds: number): string {
+  const s = Math.max(0, Math.round(Number(seconds) || 0));
+  if (s < 60) return `${s}s`;
+  if (s < 3600) {
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return r ? `${m}m ${r}s` : `${m}m`;
+  }
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return m ? `${h}h ${m}m` : `${h}h`;
 }
 
 const RANGE_MAP: Record<string, number> = {
@@ -83,7 +116,6 @@ export function Dashboard() {
     refetchInterval: 60_000,
   });
 
-  const todayTs = useMemo(() => todayTimestamps(), []);
   const trafficTs = useMemo(
     () => (trafficRange === "today" ? todayTimestamps() : rangeTimestamps(7)),
     [trafficRange],
@@ -103,22 +135,16 @@ export function Dashboard() {
     queryFn: () => getTrafficRank("user", userTrafficTs.start, userTrafficTs.end),
   });
 
-  const { data: queueStats } = useQuery({
+  const { data: queueStats, isLoading: queueStatsLoading } = useQuery({
     queryKey: ["dashboard", "queue-stats"],
     queryFn: getQueueStats,
     refetchInterval: 30_000,
   });
 
-  const { data: systemStatus } = useQuery({
-    queryKey: ["system", "status"],
-    queryFn: getSystemStatus,
-    enabled: true,
-  });
-
-  const { data: queueWorkload } = useQuery({
-    queryKey: ["system", "queue-workload"],
+  const { data: queueWorkload, isLoading: workloadLoading } = useQuery({
+    queryKey: ["dashboard", "queue-workload"],
     queryFn: getQueueWorkload,
-    enabled: true,
+    refetchInterval: 15_000,
   });
 
   const isLoading = statsLoading || orderLoading;
@@ -151,6 +177,28 @@ export function Dashboard() {
   const maxNodeValue = Math.max(...topNodeRank.map((n) => Number(n.value)), 1);
   const maxUserValue = Math.max(...topUserRank.map((u) => Number(u.value)), 1);
 
+  const workloads: QueueWorkloadItem[] = useMemo(() => {
+    if (!queueWorkload) return [];
+    return Array.isArray(queueWorkload) ? queueWorkload : [];
+  }, [queueWorkload]);
+
+  const maxQueueLength = Math.max(...workloads.map((w) => Number(w.length) || 0), 1);
+  const totalPending = workloads.reduce((s, w) => s + (Number(w.length) || 0), 0);
+  const totalQueueProcesses = workloads.reduce((s, w) => s + (Number(w.processes) || 0), 0);
+  const maxWait = Math.max(...workloads.map((w) => Number(w.wait) || 0), 0);
+
+  const waitEntries = useMemo(() => {
+    const wait = queueStats?.wait;
+    if (!wait || typeof wait !== "object") return [] as Array<{ name: string; seconds: number }>;
+    return Object.entries(wait).map(([name, seconds]) => ({
+      name,
+      seconds: Number(seconds) || 0,
+    }));
+  }, [queueStats?.wait]);
+
+  const horizonOk = !!queueStats?.status;
+  const failedCount = Number(queueStats?.failedJobs || 0);
+
   return (
     <>
       <PageHeader title={t("dashboard.title")} />
@@ -167,20 +215,20 @@ export function Dashboard() {
               value={`¥${(Number(stats?.todayIncome || 0) / 100).toFixed(2)}`}
               delta={stats?.dayIncomeGrowth}
               deltaLabel={t("dashboard.stats.vsYesterday")}
-              icon={<ArrowDownToLine className="h-4 w-4 text-emerald-500" />}
+              icon={<ArrowDownToLine className="h-4 w-4" />}
             />
             <StatCard
               title={t("dashboard.stats.monthlyIncome")}
               value={`¥${(Number(stats?.currentMonthIncome || 0) / 100).toFixed(2)}`}
               delta={stats?.monthIncomeGrowth}
               deltaLabel={t("dashboard.stats.vsLastMonth")}
-              icon={<BarChart3 className="h-4 w-4 text-blue-500" />}
+              icon={<BarChart3 className="h-4 w-4" />}
             />
             <StatCard
               title={t("dashboard.stats.pendingTickets")}
               value={Number(stats?.ticketPendingTotal || 0).toLocaleString()}
               footer={t("dashboard.stats.hasPendingTickets")}
-              icon={<MessagesSquare className="h-4 w-4 text-orange-500" />}
+              icon={<MessagesSquare className="h-4 w-4" />}
               onClick={() => navigate(adminPath("ticket"))}
               highlight={Number(stats?.ticketPendingTotal || 0) > 0}
             />
@@ -188,7 +236,7 @@ export function Dashboard() {
               title={t("dashboard.stats.pendingCommission")}
               value={Number(stats?.commissionPendingTotal || 0).toLocaleString()}
               footer={t("dashboard.stats.hasPendingCommission")}
-              icon={<Bell className="h-4 w-4 text-blue-500" />}
+              icon={<Bell className="h-4 w-4" />}
               highlight={Number(stats?.commissionPendingTotal || 0) > 0}
             />
             <StatCard
@@ -196,7 +244,7 @@ export function Dashboard() {
               value={Number(stats?.currentMonthNewUsers || 0).toLocaleString()}
               delta={stats?.userGrowth}
               deltaLabel={t("dashboard.stats.vsLastMonth")}
-              icon={<Users className="h-4 w-4 text-blue-500" />}
+              icon={<Users className="h-4 w-4" />}
             />
             <StatCard
               title={t("dashboard.stats.totalUsers")}
@@ -206,27 +254,31 @@ export function Dashboard() {
                   {t("dashboard.stats.activeUsers", { count: stats?.activeUsers ?? 0 })}
                 </span>
               }
-              icon={<Users className="h-4 w-4 text-muted-foreground" />}
+              icon={<Users className="h-4 w-4" />}
             />
             <StatCard
               title={t("dashboard.stats.monthlyUpload")}
               value={formatBytes(Number(stats?.monthTraffic?.upload || 0))}
               footer={
                 <span>
-                  今日: {formatBytes(Number(stats?.todayTraffic?.upload || 0))}
+                  {t("dashboard.stats.todayTraffic", {
+                    value: formatBytes(Number(stats?.todayTraffic?.upload || 0)),
+                  })}
                 </span>
               }
-              icon={<Upload className="h-4 w-4 text-emerald-500" />}
+              icon={<Upload className="h-4 w-4" />}
             />
             <StatCard
               title={t("dashboard.stats.monthlyDownload")}
               value={formatBytes(Number(stats?.monthTraffic?.download || 0))}
               footer={
                 <span>
-                  今日: {formatBytes(Number(stats?.todayTraffic?.download || 0))}
+                  {t("dashboard.stats.todayTraffic", {
+                    value: formatBytes(Number(stats?.todayTraffic?.download || 0)),
+                  })}
                 </span>
               }
-              icon={<Download className="h-4 w-4 text-blue-500" />}
+              icon={<Download className="h-4 w-4" />}
             />
           </>
         )}
@@ -267,7 +319,7 @@ export function Dashboard() {
               <Skeleton className="h-[300px] rounded-lg" />
             ) : chartData.length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">
-                暂无数据
+                {t("common.table.noData")}
               </p>
             ) : (
               <>
@@ -387,112 +439,317 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* 系统状态 */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+      {/* 队列状态 + 负载（合并重设计） */}
+      <div className="mt-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">系统状态</CardTitle>
-            <Badge variant={systemStatus?.status === 'healthy' ? 'success' : 'destructive'}>
-              {systemStatus?.status === 'healthy' ? '正常' : '异常'}
-            </Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <span className="text-muted-foreground">PHP 版本</span>
-              <span className="text-right font-mono">{systemStatus?.php_version || '—'}</span>
-              <span className="text-muted-foreground">Laravel 版本</span>
-              <span className="text-right font-mono">{systemStatus?.laravel_version || '—'}</span>
-              <span className="text-muted-foreground">数据库</span>
-              <span className="text-right font-mono">{systemStatus?.database || '—'}</span>
-              <span className="text-muted-foreground">缓存驱动</span>
-              <span className="text-right font-mono">{systemStatus?.cache_driver || '—'}</span>
-              <span className="text-muted-foreground">队列驱动</span>
-              <span className="text-right font-mono">{systemStatus?.queue_driver || '—'}</span>
-              <span className="text-muted-foreground">内存使用</span>
-              <span className="text-right font-mono">{systemStatus?.memory_usage || '—'}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">队列负载</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {queueWorkload ? (
-              <div className="space-y-2">
-                {(Array.isArray(queueWorkload) ? queueWorkload : []).slice(0, 5).map((w: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">{w.name || w.queue || `队列 ${i + 1}`}</span>
-                    <span className="font-mono">{w.length ?? w.jobs ?? 0} 个任务</span>
-                  </div>
-                ))}
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                <Gauge className="h-4 w-4" />
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">暂无数据</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 队列状态 + 作业详情 */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>{t("dashboard.queue.title")}</CardTitle>
-            <Badge
-              variant={queueStats?.status ? "outline" : "destructive"}
-              className="gap-1"
-            >
-              <Activity className="h-3 w-3" />
-              {queueStats?.status ? "正常" : "异常"}
-            </Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg border p-4">
-                <p className="text-xs text-muted-foreground">{t("dashboard.queue.details.recentJobs")}</p>
-                <p className="mt-1 text-2xl font-bold">{queueStats?.recentJobs?.toLocaleString() ?? "—"}</p>
-              </div>
-              <div className="rounded-lg border p-4">
-                <p className="text-xs text-muted-foreground">{t("dashboard.queue.details.jobsPerMinute")}</p>
-                <p className="mt-1 text-2xl font-bold">{queueStats?.jobsPerMinute?.toLocaleString() ?? "—"}</p>
+              <div>
+                <CardTitle className="text-base">{t("dashboard.queue.title")}</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {t("dashboard.queue.status.description")}
+                </p>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span>进程: {queueStats?.processes ?? "—"}</span>
-              <span>最长队列: {queueStats?.queueWithMaxRuntime || "—"}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>{t("dashboard.queue.jobDetails")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <span className="text-sm text-muted-foreground">{t("dashboard.queue.details.failedJobs7Days")}</span>
-              <span className="text-xl font-bold">{queueStats?.failedJobs?.toLocaleString() ?? "—"}</span>
-            </div>
-            {Number(queueStats?.failedJobs) > 0 && (
-              <div className="mt-2 flex justify-end">
+            <div className="flex items-center gap-2">
+              {failedCount > 0 && (
                 <Badge
                   variant="destructive"
                   className="cursor-pointer gap-1"
                   onClick={() => setFailedJobsOpen(true)}
                 >
+                  <AlertTriangle className="h-3 w-3" />
                   {t("dashboard.queue.details.viewFailedJobs")}
                 </Badge>
+              )}
+              <Badge
+                variant={horizonOk ? "success" : "destructive"}
+                className="gap-1.5 pl-1.5"
+              >
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    horizonOk ? "bg-emerald-500" : "bg-destructive",
+                  )}
+                />
+                <Activity className="h-3 w-3" />
+                {horizonOk
+                  ? t("dashboard.queue.status.normal")
+                  : t("dashboard.queue.status.abnormal")}
+              </Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            {/* 关键指标 */}
+            {queueStatsLoading ? (
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-[88px] rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <QueueMetric
+                  icon={<Layers className="h-3.5 w-3.5" />}
+                  label={t("dashboard.queue.details.recentJobs")}
+                  value={queueStats?.recentJobs?.toLocaleString() ?? "—"}
+                  hint={
+                    queueStats?.periods?.recentJobs
+                      ? t("dashboard.queue.details.statisticsPeriod", {
+                          hours: queueStats.periods.recentJobs,
+                        })
+                      : undefined
+                  }
+                />
+                <QueueMetric
+                  icon={<Zap className="h-3.5 w-3.5" />}
+                  label={t("dashboard.queue.details.jobsPerMinute")}
+                  value={queueStats?.jobsPerMinute?.toLocaleString() ?? "—"}
+                  hint={
+                    queueStats?.queueWithMaxThroughput
+                      ? t("dashboard.queue.details.maxThroughput", {
+                          value: queueStats.queueWithMaxThroughput,
+                        })
+                      : undefined
+                  }
+                />
+                <QueueMetric
+                  icon={<Cpu className="h-3.5 w-3.5" />}
+                  label={t("dashboard.queue.details.activeProcesses")}
+                  value={(queueStats?.processes ?? totalQueueProcesses)?.toLocaleString() ?? "—"}
+                  hint={
+                    queueStats?.queueWithMaxRuntime
+                      ? t("dashboard.queue.details.longestRunningQueue") +
+                        `: ${queueStats.queueWithMaxRuntime}`
+                      : undefined
+                  }
+                />
+                <QueueMetric
+                  icon={<AlertTriangle className="h-3.5 w-3.5" />}
+                  label={t("dashboard.queue.details.failedJobs7Days")}
+                  value={failedCount.toLocaleString()}
+                  tone={failedCount > 0 ? "danger" : "default"}
+                  onClick={failedCount > 0 ? () => setFailedJobsOpen(true) : undefined}
+                  hint={
+                    queueStats?.periods?.failedJobs
+                      ? t("dashboard.queue.details.retentionPeriod", {
+                          hours: queueStats.periods.failedJobs,
+                        })
+                      : undefined
+                  }
+                />
               </div>
             )}
+
+            {/* 等待摘要 */}
+            {(waitEntries.length > 0 || maxWait > 0 || totalPending > 0) && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded-md border bg-muted/30 px-2 py-1">
+                  <Layers className="h-3 w-3" />
+                  {t("dashboard.queue.metrics.pending", {
+                    count: totalPending,
+                  })}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md border bg-muted/30 px-2 py-1">
+                  <Timer className="h-3 w-3" />
+                  {t("dashboard.queue.metrics.maxWait", {
+                    time: formatWait(
+                      Math.max(maxWait, ...waitEntries.map((w) => w.seconds), 0),
+                    ),
+                  })}
+                </span>
+                {waitEntries.map((w) => (
+                  <span
+                    key={w.name}
+                    className="inline-flex items-center gap-1 rounded-md border bg-muted/30 px-2 py-1 font-mono"
+                  >
+                    {w.name.split(":").pop()}: {formatWait(w.seconds)}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* 各队列负载 */}
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-medium">{t("dashboard.queue.workload")}</h3>
+                <span className="text-xs text-muted-foreground">
+                  {workloads.length
+                    ? t("dashboard.queue.workloadCount", { count: workloads.length })
+                    : null}
+                </span>
+              </div>
+
+              {workloadLoading && workloads.length === 0 ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-14 rounded-lg" />
+                  ))}
+                </div>
+              ) : workloads.length === 0 ? (
+                <div className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
+                  {t("dashboard.queue.empty")}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {workloads.map((q) => {
+                    const length = Number(q.length) || 0;
+                    const processes = Number(q.processes) || 0;
+                    const wait = Number(q.wait) || 0;
+                    const ratio = Math.min(100, (length / maxQueueLength) * 100);
+                    const busy = length > 0;
+                    const overloaded = processes > 0 && length / processes > 20;
+                    return (
+                      <div
+                        key={q.name}
+                        className={cn(
+                          "rounded-xl border bg-card/50 px-3.5 py-3 transition-colors",
+                          overloaded && "border-amber-500/40 bg-amber-500/5",
+                        )}
+                      >
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "h-1.5 w-1.5 shrink-0 rounded-full",
+                                  overloaded
+                                    ? "bg-amber-500"
+                                    : busy
+                                      ? "bg-primary"
+                                      : "bg-muted-foreground/40",
+                                )}
+                              />
+                              <span className="truncate text-sm font-medium">{q.name}</span>
+                              {overloaded && (
+                                <Badge variant="warning" className="h-5 px-1.5 text-[10px]">
+                                  {t("dashboard.queue.metrics.backlog")}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all",
+                                  overloaded
+                                    ? "bg-amber-500"
+                                    : busy
+                                      ? "bg-primary"
+                                      : "bg-muted-foreground/30",
+                                )}
+                                style={{ width: `${busy ? Math.max(ratio, 2) : 0}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex shrink-0 items-center gap-4 text-xs tabular-nums">
+                            <div className="text-right">
+                              <div className="text-muted-foreground">
+                                {t("dashboard.queue.metrics.processes")}
+                              </div>
+                              <div className="font-medium">{processes}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-muted-foreground">
+                                {t("dashboard.queue.metrics.pendingLabel")}
+                              </div>
+                              <div className={cn("font-medium", busy && "text-foreground")}>
+                                {length.toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="min-w-[3.5rem] text-right">
+                              <div className="text-muted-foreground">
+                                {t("dashboard.queue.metrics.wait")}
+                              </div>
+                              <div className="font-medium">{formatWait(wait)}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {Array.isArray(q.split_queues) && q.split_queues.length > 0 && (
+                          <div className="mt-2.5 flex flex-wrap gap-1.5 border-t pt-2">
+                            {q.split_queues.map((sq) => (
+                              <span
+                                key={sq.name}
+                                className="inline-flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground"
+                              >
+                                <span className="font-medium text-foreground/80">{sq.name}</span>
+                                <span className="tabular-nums">{sq.length}</span>
+                                <span>·</span>
+                                <span className="tabular-nums">{formatWait(sq.wait)}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
-      <FailedJobsDialog
-        open={failedJobsOpen}
-        onOpenChange={setFailedJobsOpen}
-      />
+
+      <FailedJobsDialog open={failedJobsOpen} onOpenChange={setFailedJobsOpen} />
     </>
+  );
+}
+
+function QueueMetric({
+  icon,
+  label,
+  value,
+  hint,
+  tone = "default",
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "default" | "danger";
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border bg-muted/20 p-3.5 transition-colors",
+        tone === "danger" && "border-destructive/30 bg-destructive/5",
+        onClick && "cursor-pointer hover:bg-muted/40",
+      )}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span
+          className={cn(
+            "rounded-md p-1",
+            tone === "danger" ? "bg-destructive/10 text-destructive" : "bg-background text-muted-foreground",
+          )}
+        >
+          {icon}
+        </span>
+        <span className="truncate">{label}</span>
+      </div>
+      <p
+        className={cn(
+          "mt-2 text-2xl font-semibold tracking-tight tabular-nums",
+          tone === "danger" && "text-destructive",
+        )}
+      >
+        {value}
+      </p>
+      {hint && (
+        <p className="mt-1 truncate text-[11px] text-muted-foreground" title={hint}>
+          {hint}
+        </p>
+      )}
+    </div>
   );
 }

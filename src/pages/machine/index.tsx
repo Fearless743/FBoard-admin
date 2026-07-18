@@ -70,7 +70,7 @@ function usagePercent(used?: number, total?: number): number | null {
 
 function loadLevelClass(value: number | null | undefined): string {
   if (value == null) return "bg-muted-foreground/30";
-  if (value >= 90) return "bg-red-500";
+  if (value >= 90) return "bg-destructive";
   if (value >= 70) return "bg-amber-500";
   return "bg-emerald-500";
 }
@@ -311,8 +311,8 @@ export function MachineListPage() {
         }
       />
 
-      <div className="mb-4">
-        <div className="relative max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("machine.toolbar.search")}
@@ -331,6 +331,7 @@ export function MachineListPage() {
               <TableHead>{t("machine.columns.name")}</TableHead>
               <TableHead className="w-24 text-center">{t("machine.columns.status")}</TableHead>
               <TableHead className="w-24 text-right">{t("machine.columns.nodesHosted")}</TableHead>
+              <TableHead className="w-28">{t("machine.columns.version")}</TableHead>
               <TableHead className="min-w-[160px]">{t("machine.columns.load")}</TableHead>
               <TableHead className="w-40">{t("machine.columns.lastSeen")}</TableHead>
               <TableHead className="w-40 text-right">{t("machine.columns.actions")}</TableHead>
@@ -340,14 +341,14 @@ export function MachineListPage() {
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 7 }).map((_, j) => (
+                  {Array.from({ length: 8 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : list.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7}>
+                <TableCell colSpan={8}>
                   <EmptyState icon={<Server className="h-10 w-10" />} />
                 </TableCell>
               </TableRow>
@@ -366,6 +367,9 @@ export function MachineListPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{m.servers_count ?? 0}</TableCell>
+                  <TableCell className="text-xs font-mono text-muted-foreground tabular-nums">
+                    {m.version || m.load_status?.version || "—"}
+                  </TableCell>
                   <TableCell>
                     <LoadStatusCell load={m.load_status} />
                   </TableCell>
@@ -413,7 +417,7 @@ export function MachineListPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleting(m)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -689,6 +693,7 @@ function MultiSeriesChart({
   data: ChartPoint[];
   loading: boolean;
 }) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 224 });
   const [visible, setVisible] = useState<Record<string, boolean>>({
@@ -727,7 +732,7 @@ function MultiSeriesChart({
   if (!data || data.length === 0) {
     return (
       <div ref={containerRef} className="flex h-[224px] items-center justify-center text-sm text-muted-foreground">
-        暂无数据
+        {t("common.table.noData")}
       </div>
     );
   }
@@ -1160,474 +1165,489 @@ function MachineDetailDialog({
 
   return (
     <Dialog open={!!machine} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle className="flex items-center gap-2 font-mono">
             <Server className="h-5 w-5" />
-            {machine.name} <DialogDescription>
-              节点数: {machine.servers_count ?? 0} · 最后心跳:{" "}
-              {machine.last_seen_at ? formatDate(machine.last_seen_at) : "从未"}
-            </DialogDescription>
+            {machine.name}
           </DialogTitle>
-          
+          <DialogDescription>
+            {t("machine.columns.nodes")}: {machine.servers_count ?? 0} ·{" "}
+            {t("machine.columns.lastSeen")}:{" "}
+            {machine.last_seen_at
+              ? formatDate(machine.last_seen_at)
+              : t("machine.columns.never")}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[70vh] space-y-4 overflow-y-auto">
-
-        {/* ─── 卡片 1: 状态摘要 ─── */}
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className="font-mono">
-                    SID:{machine.id}
-                  </Badge>
-                  <Badge
-                    variant={!machine.is_active ? "secondary" : machine.is_online ? "success" : "destructive"}
-                    className="flex items-center gap-1"
-                  >
-                    <span
-                      className={cn(
-                        "size-2 rounded-full",
-                        !machine.is_active ? "bg-muted-foreground" : machine.is_online ? "bg-emerald-500" : "bg-red-500",
-                      )}
-                    />
-                    {!machine.is_active ? "禁用" : machine.is_online ? "在线" : "离线"}
-                  </Badge>
-                  {(() => {
-                    const cpu = machine.load_status?.cpu;
-                    if (cpu == null && !(history && history.length > 0)) return null;
-                    const value =
-                      cpu != null
-                        ? cpu
-                        : (history![history!.length - 1] as any).cpu;
-                    return (
-                      <span className="font-mono text-xs text-muted-foreground">
-                        CPU {Number(value).toFixed(0)}%
-                      </span>
-                    );
-                  })()}
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span>
-                    最后心跳:{" "}
-                    {machine.last_seen_at
-                      ? formatDate(machine.last_seen_at)
-                      : "从未"}
-                  </span>
-                  <span>•</span>
-                  <span>节点数: {machine.servers_count ?? 0}</span>
-                </div>
-                {token && (
-                  <p className="max-w-[520px] truncate text-xs text-muted-foreground font-mono">
-                    {showToken ? token : "••••••••" + token.slice(-8)}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="gap-1.5 text-xs"
-                  onClick={() => {
-                    const id = machine.id;
-                    onOpenChange(false);
-                    navigate(adminPath("server/manage") + "?createWithMachineId=" + id);
-                  }}
-                >
-                  新增节点到此服务器
-                  <ArrowRight className="size-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 text-xs"
-                  onClick={() => navigate(adminPath("server/manage"))}
-                >
-                  前往节点管理
-                  <ExternalLink className="size-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── 卡片 1.5: 当前负载 load_status ─── */}
-        <Card className="mb-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Activity className="size-4" />
-              {t("machine.columns.load")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CurrentLoadSummary load={machine.load_status} />
-          </CardContent>
-        </Card>
-
-        {/* ─── 卡片 2: 负载趋势 ─── */}
-        <Card className="mb-4">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <Activity className="size-4" />
-                负载趋势
-              </CardTitle>
-              <div className="flex gap-1">
-                {RANGES.map((r, i) => (
-                  <button
-                    key={r.hours}
-                    type="button"
-                    className={cn(
-                      "rounded px-2 py-0.5 text-xs transition-colors",
-                      i === rangeIdx
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted",
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-4 px-6 py-4">
+          {/* ─── 卡片 1: 状态摘要 ─── */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="font-mono">
+                      SID:{machine.id}
+                    </Badge>
+                    <Badge
+                      variant={!machine.is_active ? "secondary" : machine.is_online ? "success" : "destructive"}
+                      className="flex items-center gap-1"
+                    >
+                      <span
+                        className={cn(
+                          "h-2 w-2 rounded-full",
+                          !machine.is_active ? "bg-muted-foreground" : machine.is_online ? "bg-emerald-500" : "bg-destructive",
+                        )}
+                      />
+                      {!machine.is_active
+                        ? t("machine.columns.inactive")
+                        : machine.is_online
+                          ? t("machine.columns.online")
+                          : t("machine.columns.offline")}
+                    </Badge>
+                    {(() => {
+                      const cpu = machine.load_status?.cpu;
+                      if (cpu == null && !(history && history.length > 0)) return null;
+                      const value =
+                        cpu != null
+                          ? cpu
+                          : (history![history!.length - 1] as any).cpu;
+                      return (
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {t("machine.columns.cpu")} {Number(value).toFixed(0)}%
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    <span>
+                      {t("machine.columns.lastSeen")}:{" "}
+                      {machine.last_seen_at
+                        ? formatDate(machine.last_seen_at)
+                        : t("machine.columns.never")}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      {t("machine.columns.nodes")}: {machine.servers_count ?? 0}
+                    </span>
+                    {(machine.version || machine.load_status?.version) && (
+                      <>
+                        <span>•</span>
+                        <span className="font-mono">
+                          {t("machine.columns.version")}:{" "}
+                          {machine.version || machine.load_status?.version}
+                        </span>
+                      </>
                     )}
+                  </div>
+                  {token && (
+                    <p className="max-w-[520px] truncate text-xs text-muted-foreground font-mono">
+                      {showToken ? token : "••••••••" + token.slice(-8)}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="gap-1.5 text-xs"
                     onClick={() => {
-                      setRangeIdx(i);
-                      loadHistory(r.hours);
+                      const id = machine.id;
+                      onOpenChange(false);
+                      navigate(adminPath("server/manage") + "?createWithMachineId=" + id);
                     }}
                   >
-                    {r.label}
-                  </button>
-                ))}
+                    {t("machine.detail.addNodeToServer")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 text-xs"
+                    onClick={() => navigate(adminPath("server/manage"))}
+                  >
+                    {t("machine.detail.openNodeManage")}
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <MultiSeriesChart data={chartData} loading={historyLoading} />
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* ─── 卡片 3: Token ─── */}
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <EyeOff className="size-4 text-muted-foreground" />
-              服务器 Token
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              此 Token 用于 Fboard-Node 向面板认证，请妥善保管。
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 font-mono text-xs"
-                onClick={() => {
-                  if (token) {
-                    setShowToken((v) => !v);
-                  } else {
-                    loadToken().then(() => setShowToken(true));
-                  }
-                }}
-              >
-                {showToken ? (
-                  <EyeOff className="mr-1 h-3.5 w-3.5" />
-                ) : (
-                  <Eye className="mr-1 h-3.5 w-3.5" />
-                )}
-                {token && showToken
-                  ? t("machine.token.hide", "隐藏 Token")
-                  : t("machine.token.show")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 font-mono text-xs"
-                onClick={onResetToken}
-              >
-                <Loader2 className="mr-1 h-3.5 w-3.5" />
-                {t("machine.token.reset")}
-              </Button>
-            </div>
-            {showToken && token && (
-              <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-2">
-                <code className="flex-1 font-mono text-xs break-all">{token}</code>
+          {/* ─── 卡片 1.5: 当前负载 load_status ─── */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <Activity className="h-4 w-4" />
+                {t("machine.columns.load")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CurrentLoadSummary load={machine.load_status} />
+            </CardContent>
+          </Card>
+
+          {/* ─── 卡片 2: 负载趋势 ─── */}
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <Activity className="h-4 w-4" />
+                  {t("machine.detail.loadTrend")}
+                </CardTitle>
+                <div className="flex gap-1 rounded-md border bg-muted/40 p-0.5">
+                  {RANGES.map((r, i) => (
+                    <button
+                      key={r.hours}
+                      type="button"
+                      className={cn(
+                        "rounded-sm px-2 py-0.5 text-xs transition-colors",
+                        i === rangeIdx
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                      onClick={() => {
+                        setRangeIdx(i);
+                        loadHistory(r.hours);
+                      }}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <MultiSeriesChart data={chartData} loading={historyLoading} />
+            </CardContent>
+          </Card>
+
+          {/* ─── 卡片 3: Token ─── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                {t("machine.token.title")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {t("machine.token.description")}
+              </p>
+              <div className="flex gap-2">
                 <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 shrink-0"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(token);
-                    toast.success(t("machine.token.copied"));
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 font-mono text-xs"
+                  onClick={() => {
+                    if (token) {
+                      setShowToken((v) => !v);
+                    } else {
+                      loadToken().then(() => setShowToken(true));
+                    }
                   }}
                 >
-                  <Copy className="h-3.5 w-3.5" />
+                  {showToken ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
+                  {token && showToken
+                    ? t("machine.token.hide")
+                    : t("machine.token.show")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 font-mono text-xs"
+                  onClick={onResetToken}
+                >
+                  <Loader2 className="h-3.5 w-3.5" />
+                  {t("machine.token.reset")}
                 </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              {showToken && token && (
+                <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-2">
+                  <code className="flex-1 font-mono text-xs break-all">{token}</code>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(token);
+                      toast.success(t("machine.token.copied"));
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* ─── 卡片 4: 安装命令 ─── */}
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Terminal className="size-4 text-muted-foreground" />
-              安装 Fboard-Node
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              在目标服务器上执行此命令，即可用 machine mode 安装
-              Fboard-Node 并接入当前服务器记录。
-            </p>
-            <div className="group relative rounded-lg border bg-muted/50 p-3">
-              <code className="block whitespace-pre-wrap break-all pr-8 font-mono text-xs">
-                {installCmd || t("machine.install.loading", "加载中...")}
-              </code>
-              {installCmd && (
+          {/* ─── 卡片 4: 安装命令 ─── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <Terminal className="h-4 w-4 text-muted-foreground" />
+                {t("machine.install.title")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {t("machine.install.description")}
+              </p>
+              <div className="group relative rounded-lg border bg-muted/50 p-3">
+                <code className="block whitespace-pre-wrap break-all pr-8 font-mono text-xs">
+                  {installCmd || t("machine.install.loading")}
+                </code>
+                {installCmd && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute right-2 top-2 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(installCmd);
+                      setCopied("cmd");
+                      toast.success(t("machine.install.copied"));
+                      setTimeout(() => setCopied(null), 2000);
+                    }}
+                  >
+                    {copied === "cmd" ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {t("machine.install.hint")}
+                </p>
                 <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute right-2 top-2 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 font-mono text-xs"
                   onClick={async () => {
+                    if (!installCmd) return;
                     await navigator.clipboard.writeText(installCmd);
                     setCopied("cmd");
                     toast.success(t("machine.install.copied"));
                     setTimeout(() => setCopied(null), 2000);
                   }}
                 >
-                  {copied === "cmd" ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                  {t("machine.install.copy")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ─── 卡片 5: 运行日志 ─── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <ScrollText className="h-4 w-4 text-muted-foreground" />
+                  {t("machine.logs.title")}
+                </CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  {logsMeta.updated_at ? (
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {t("machine.logs.updatedAt", {
+                        time: formatDate(logsMeta.updated_at),
+                      })}
+                    </span>
+                  ) : null}
+                  <Badge variant="secondary" className="text-xs font-mono">
+                    {t("machine.logs.lineCount", { count: logLines.length })}
+                  </Badge>
+                  {logsMeta.stale ? (
+                    <Badge variant="outline" className="text-xs">
+                      {t("machine.logs.stale")}
+                    </Badge>
+                  ) : null}
+                  {logsMeta.online === false ? (
+                    <Badge variant="destructive" className="text-xs">
+                      {t("machine.logs.offline")}
+                    </Badge>
+                  ) : null}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs"
+                    disabled={logsLoading}
+                    onClick={() => loadLogs(true)}
+                  >
+                    {logsLoading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                    {t("machine.logs.refresh")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs"
+                    disabled={!logLines.length}
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(logLines.join("\n"));
+                      toast.success(t("machine.logs.copied"));
+                    }}
+                  >
                     <Copy className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
+                    {t("machine.logs.copy")}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
               <p className="text-xs text-muted-foreground">
-                需要 root 或 sudo 权限，且目标服务器需为支持 systemd 的 Linux。
+                {t("machine.logs.description")}
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 font-mono text-xs"
-                onClick={async () => {
-                  if (!installCmd) return;
-                  await navigator.clipboard.writeText(installCmd);
-                  setCopied("cmd");
-                  toast.success(t("machine.install.copied"));
-                  setTimeout(() => setCopied(null), 2000);
-                }}
-              >
-                <Copy className="h-3.5 w-3.5" />
-                {t("machine.install.copy")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              {logsMeta.message ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  {logsMeta.message}
+                </p>
+              ) : null}
+              {logsLoading && logLines.length === 0 ? (
+                <Skeleton className="h-[240px] rounded-lg" />
+              ) : (
+                <pre
+                  ref={logBoxRef}
+                  className="h-[280px] overflow-auto rounded-lg border bg-foreground p-3 font-mono text-[11px] leading-5 text-background"
+                >
+                  {logLines.length === 0
+                    ? t("machine.logs.empty")
+                    : logLines.join("\n")}
+                </pre>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* ─── 卡片 5: 运行日志 ─── */}
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <ScrollText className="size-4 text-muted-foreground" />
-                {t("machine.logs.title")}
-              </CardTitle>
-              <div className="flex flex-wrap items-center gap-2">
-                {logsMeta.updated_at ? (
-                  <span className="text-xs text-muted-foreground font-mono">
-                    {t("machine.logs.updatedAt", {
-                      time: formatDate(logsMeta.updated_at),
+          {/* ─── 卡片 6: 关联节点 ─── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle className="text-sm font-semibold">
+                  {t("machine.detail.associatedNodes")}
+                </CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="text-xs font-mono">
+                    {t("machine.detail.nodeCount", {
+                      count: (nodes || []).length,
                     })}
-                  </span>
-                ) : null}
-                <Badge variant="secondary" className="text-xs font-mono">
-                  {t("machine.logs.lineCount", { count: logLines.length })}
-                </Badge>
-                {logsMeta.stale ? (
-                  <Badge variant="outline" className="text-xs">
-                    {t("machine.logs.stale")}
                   </Badge>
-                ) : null}
-                {logsMeta.online === false ? (
-                  <Badge variant="destructive" className="text-xs">
-                    {t("machine.logs.offline")}
+                  <Badge variant="outline" className="text-xs font-mono">
+                    {t("machine.detail.nodeEnabledCount", {
+                      count: activeNodes,
+                    })}
                   </Badge>
-                ) : null}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs"
-                  disabled={logsLoading}
-                  onClick={() => loadLogs(true)}
-                >
-                  {logsLoading ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="size-3.5" />
-                  )}
-                  {t("machine.logs.refresh")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs"
-                  disabled={!logLines.length}
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(logLines.join("\n"));
-                    toast.success(t("machine.logs.copied"));
-                  }}
-                >
-                  <Copy className="size-3.5" />
-                  {t("machine.logs.copy")}
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs"
+                    onClick={() => navigate(adminPath("server/manage"))}
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    {t("machine.detail.bindExistingButton")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs"
+                    onClick={() => navigate(adminPath("server/manage"))}
+                  >
+                    {t("machine.detail.openNodeManage")}
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-xs text-muted-foreground">
-              {t("machine.logs.description")}
-            </p>
-            {logsMeta.message ? (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
-                {logsMeta.message}
-              </p>
-            ) : null}
-            {logsLoading && logLines.length === 0 ? (
-              <Skeleton className="h-[240px] rounded-lg" />
-            ) : (
-              <pre
-                ref={logBoxRef}
-                className="h-[280px] overflow-auto rounded-lg border bg-zinc-950 p-3 font-mono text-[11px] leading-5 text-zinc-100"
-              >
-                {logLines.length === 0
-                  ? t("machine.logs.empty")
-                  : logLines.join("\n")}
-              </pre>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* ─── 卡片 6: 关联节点 ─── */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-sm font-semibold">
-                关联节点
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs font-mono">
-                  {(nodes || []).length} 个节点
-                </Badge>
-                <Badge variant="outline" className="text-xs font-mono">
-                  {activeNodes} 个已激活
-                </Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1 text-xs"
-                  onClick={() => navigate(adminPath("server/manage"))}
-                >
-                  <Link2 className="size-3.5" />
-                  关联已有节点
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1 text-xs"
-                  onClick={() => navigate(adminPath("server/manage"))}
-                >
-                  前往节点管理
-                  <ArrowRight className="size-3.5" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {nodesLoading ? (
-              <Skeleton className="h-[120px] rounded-lg" />
-            ) : !nodes || nodes.length === 0 ? (
-              <div className="rounded-lg border py-8">
-                <EmptyState
-                  icon={<Server className="h-8 w-8" />}
-                />
-              </div>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full min-w-[480px] text-xs">
-                  <thead>
-                    <tr className="border-b bg-muted/30">
-                      <th className="px-3 py-2 text-left font-mono font-medium">
-                        名称
-                      </th>
-                      <th className="px-3 py-2 text-left font-mono font-medium">
-                        类型
-                      </th>
-                      <th className="px-3 py-2 text-left font-mono font-medium">
-                        地址
-                      </th>
-                      <th className="px-3 py-2 text-center font-mono font-medium">
-                        已激活
-                      </th>
-                      <th className="w-10 px-2 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {nodes.map((n: any) => (
-                      <tr key={n.id} className="border-b last:border-0">
-                        <td className="px-3 py-2 font-mono">
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-1 text-left text-primary hover:underline"
-                          >
-                            <span className="text-muted-foreground">
-                              #{n.id}
-                            </span>
-                            {n.name}
-                            <ExternalLink className="size-3 shrink-0" />
-                          </button>
-                        </td>
-                        <td className="px-3 py-2">
-                          <Badge
-                            variant="outline"
-                            className="font-mono text-[10px]"
-                          >
-                            {n.type}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-2 font-mono text-muted-foreground">
-                          {n.host}:{n.port}
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <Switch
-                            checked={n.enabled}
-                            onCheckedChange={() => {
-                              toast.info(
-                                t(
-                                  "machine.nodesStatus.toggleHint",
-                                  "在节点管理中修改状态",
-                                ),
-                              );
-                            }}
-                          />
-                        </td>
-                        <td className="px-2 py-2 text-center">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="size-7 text-muted-foreground hover:text-destructive"
-                            title="取消关联"
-                          >
-                            <Unlink className="size-3.5" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {nodesLoading ? (
+                <Skeleton className="h-[120px] rounded-lg" />
+              ) : !nodes || nodes.length === 0 ? (
+                <div className="rounded-lg border bg-muted/20 py-8">
+                  <EmptyState
+                    icon={<Server className="h-8 w-8" />}
+                  />
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="font-mono text-xs">
+                          {t("machine.detail.nodeName")}
+                        </TableHead>
+                        <TableHead className="font-mono text-xs">
+                          {t("machine.detail.nodeType")}
+                        </TableHead>
+                        <TableHead className="font-mono text-xs">
+                          {t("machine.detail.nodeHost")}
+                        </TableHead>
+                        <TableHead className="text-center font-mono text-xs">
+                          {t("machine.detail.nodeEnabled")}
+                        </TableHead>
+                        <TableHead className="w-10" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {nodes.map((n: any) => (
+                        <TableRow key={n.id}>
+                          <TableCell className="font-mono text-xs">
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 text-left text-primary hover:underline"
+                            >
+                              <span className="text-muted-foreground">
+                                #{n.id}
+                              </span>
+                              {n.name}
+                              <ExternalLink className="h-3 w-3 shrink-0" />
+                            </button>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            <Badge
+                              variant="outline"
+                              className="font-mono text-[10px]"
+                            >
+                              {n.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {n.host}:{n.port}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={n.enabled}
+                              onCheckedChange={() => {
+                                toast.info(t("machine.detail.toggleEnabledError"));
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              title={t("machine.detail.unbindNode")}
+                            >
+                              <Unlink className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </DialogContent>
     </Dialog>

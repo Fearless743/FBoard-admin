@@ -245,8 +245,36 @@ const translations: Translations = {
       "status": {
         "0": "Не использован",
         "1": "Использован",
-        "2": "Отключен",
-        "3": "Истек"
+        "2": "Истек",
+        "3": "Отключен"
+      },
+      "edit": {
+        "title": "Редактировать код",
+        "code": "Подарочный код",
+        "template": "Шаблон",
+        "templatePlaceholder": "Выберите шаблон",
+        "maxUsage": "Макс. использований",
+        "status": "Статус",
+        "expiresAt": "Истекает"
+      },
+      "messages": {
+        "enabled": "Включено",
+        "disabled": "Отключено",
+        "exportSuccess": "Экспорт выполнен",
+        "deleteConfirmTitle": "Подтвердить удаление",
+        "deleteConfirmDescription": "Удалить код {{code}}? Это действие нельзя отменить.",
+        "deleteSuccess": "Удалено",
+        "selectTemplate": "Выберите шаблон",
+        "updateSuccess": "Обновлено"
+      },
+      "generate": {
+        "count": "Количество",
+        "expires_hours": "Срок действия (часы)",
+        "max_usage": "Макс. использований",
+        "prefix": "Пользовательский префикс",
+        "submit": "Сгенерировать",
+        "template": "Выберите шаблон",
+        "title": "Генерация кодов"
       }
     },
     "usage": {
@@ -282,8 +310,57 @@ const translations: Translations = {
         "usages_count": "Записей об активации"
       },
       "daily": {
-        "title": "Использование за день"
+        "title": "Использование за день",
+        "chart": "График использования"
+      },
+      "dateRange": {
+        "end": "Дата окончания",
+        "label": "Диапазон дат",
+        "start": "Дата начала"
+      },
+      "type": {
+        "chart": "Распределение по типам",
+        "title": "Статистика по типам"
       }
+    },
+    "common": {
+      "back": "Назад",
+      "cancel": "Отмена",
+      "close": "Закрыть",
+      "confirm": "Подтвердить",
+      "disabled": "Отключено",
+      "enabled": "Включено",
+      "error": "Ошибка операции",
+      "export": "Экспорт",
+      "filter": "Фильтр",
+      "loading": "Загрузка...",
+      "noData": "Нет данных",
+      "refresh": "Обновить",
+      "reset": "Сброс",
+      "search": "Поиск подарочных карт...",
+      "success": "Успешно"
+    },
+    "messages": {
+      "codeGenerated": "Код успешно создан",
+      "codeStatusUpdated": "Статус кода обновлён",
+      "codesExported": "Коды экспортированы",
+      "codesGenerated": "Коды успешно созданы",
+      "createTemplateFailed": "Не удалось создать шаблон",
+      "deleteTemplateFailed": "Не удалось удалить шаблон",
+      "formInvalid": "Проверьте правильность заполнения формы",
+      "generateCodeFailed": "Не удалось создать коды",
+      "loadDataFailed": "Не удалось загрузить данные",
+      "templateCreated": "Шаблон создан",
+      "templateDeleted": "Шаблон удалён",
+      "templateUpdated": "Шаблон обновлён",
+      "updateCodeStatusFailed": "Не удалось обновить статус кода",
+      "updateTemplateFailed": "Не удалось обновить шаблон"
+    },
+    "types": {
+      "1": "Универсальная карта",
+      "2": "Карта тарифа",
+      "3": "Карта-сюрприз",
+      "4": "Карта задания"
     }
   },
   "user": {
@@ -306,6 +383,7 @@ const translations: Translations = {
       "balance": "Баланс",
       "commission": "Комиссия",
       "register_time": "Дата регистрации",
+      "invitee_email": "Приглашённый",
       "actions": "Действия",
       "next_reset_at": "След. сброс",
       "device_limit": {
@@ -313,8 +391,8 @@ const translations: Translations = {
         "limited": "Максимум {{count}} устройств"
       },
       "status_text": {
-        "normal": "Нормальный",
-        "banned": "Забанен"
+        "normal": "Активен",
+        "banned": "Заблокирован"
       },
       "online_status": {
         "online": "В сети",
@@ -332,6 +410,7 @@ const translations: Translations = {
         "expired": "Истекло {{days}} дн. назад",
         "remaining": "Осталось {{days}} дн."
       },
+      "copy_email": "Копировать email",
       "actions_menu": {
         "edit": "Редактировать",
         "view_details": "Просмотреть детали",
@@ -349,6 +428,7 @@ const translations: Translations = {
     },
     "filter": {
       "selected": "Выбрано {{count}}",
+      "clear_selection": "Снять выбор",
       "no_results": "Результатов не найдено.",
       "clear": "Очистить фильтры",
       "search_placeholder": "Поиск...",
@@ -404,9 +484,12 @@ const translations: Translations = {
     "generate": {
       "button": "Создать пользователя",
       "title": "Создание пользователя",
+      "description_single": "Создать один аккаунт с указанным email",
+      "description_batch": "Пакетная генерация аккаунтов со случайными email",
       "form": {
         "email": "Email",
         "email_prefix": "Префикс аккаунта (оставьте пустым для пакетной генерации)",
+        "email_prefix_placeholder": "Оставьте пустым для случайной пакетной генерации",
         "email_domain": "Домен",
         "password": "Пароль",
         "password_placeholder": "Оставьте пустым, чтобы использовать email в качестве пароля",
@@ -420,7 +503,28 @@ const translations: Translations = {
         "cancel": "Отмена",
         "submit": "Создать",
         "success": "Пользователи созданы",
-        "download_csv": "Скачать как CSV"
+        "download_csv": "Скачать как CSV",
+        "generated_count": "Создано аккаунтов: {{count}}",
+        "single_success_hint": "Аккаунт создан. Вы можете просмотреть и отредактировать его в списке пользователей.",
+        "copy_all": "Копировать всё",
+        "copy_email": "Копировать email",
+        "copy_subscribe": "Копировать подписку",
+        "result_password": "Пароль",
+        "result_expire": "Срок"
+      },
+      "copy_line": {
+        "email": "Email: {{value}}",
+        "password": "Пароль: {{value}}",
+        "expire": "Срок: {{value}}",
+        "subscribe": "Подписка: {{value}}"
+      },
+      "csv": {
+        "email": "Email",
+        "password": "Пароль",
+        "expire_time": "Срок действия",
+        "uuid": "UUID",
+        "created_at": "Дата создания",
+        "subscribe_url": "Ссылка подписки"
       }
     },
     "edit": {
@@ -510,6 +614,9 @@ const translations: Translations = {
         "success": "Email отправлен",
         "failed": "Ошибка отправки email",
         "required_fields": "Пожалуйста, заполните обязательные поля"
+      },
+      "reset_secret": {
+        "success": "UUID и Token сброшены"
       }
     },
     "traffic_reset": {
@@ -704,7 +811,8 @@ const translations: Translations = {
     "userManagement": "Пользователи",
     "trafficResetLogs": "Логи сброса трафика",
     "ticketManagement": "Тикеты",
-    "pluginApps": "Приложения плагинов"
+    "pluginApps": "Приложения плагинов",
+    "pluginMenuDemo": "Меню плагина (демо)"
   },
   "subscribe": {
     "plan": {
@@ -761,22 +869,27 @@ const translations: Translations = {
         "edit_title": "Изменить тариф",
         "name": {
           "label": "Название тарифа",
-          "placeholder": "Введите название тарифа"
+          "placeholder": "Введите название тарифа",
+          "required": "Укажите название тарифа"
         },
         "group": {
-          "label": "Группа серверов",
-          "add": "Добавить группу",
-          "placeholder": "Выберите группу серверов"
+          "label": "Группа доступа",
+          "add": "Добавить группу доступа",
+          "placeholder": "Выберите группу доступа",
+          "none": "Без группы доступа"
         },
+
         "transfer": {
           "label": "Трафик",
           "placeholder": "Введите лимит трафика",
-          "unit": "ГБ"
+          "unit": "ГБ",
+          "hint": "Квота трафика тарифа в ГБ"
         },
         "speed": {
           "label": "Ограничение скорости",
-          "placeholder": "Введите лимит скорости",
-          "unit": "Мбит/с"
+          "placeholder": "0 = без лимита",
+          "unit": "Мбит/с",
+          "hint": "Лимит скорости на пользователя; 0 или пусто — без ограничений"
         },
         "price": {
           "title": "Настройки цены",
@@ -794,13 +907,15 @@ const translations: Translations = {
         },
         "device": {
           "label": "Лимит устройств",
-          "placeholder": "Введите лимит устройств",
-          "unit": "Устройств"
+          "placeholder": "0 = без лимита",
+          "unit": "Устройств",
+          "hint": "Одновременные устройства; 0 или пусто — без ограничений"
         },
         "capacity": {
           "label": "Лимит пользователей",
-          "placeholder": "Введите лимит емкости",
-          "unit": "Пользователей"
+          "placeholder": "0 = без лимита",
+          "unit": "Пользователей",
+          "hint": "Макс. число мест; 0 или пусто — без ограничений"
         },
         "tags": {
           "label": "Теги",
@@ -833,6 +948,17 @@ const translations: Translations = {
             "tooltip": "Использовать стандартный шаблон",
             "content": "## Детали плана\n\n- Трафик: {{transfer}} ГБ\n- Скорость: {{speed}} Мбит/с\n- Устройств: {{devices}}\n\n## Информация о сервисе\n\n1. Сброс трафика: {{reset_method}}\n2. Поддержка всех платформ\n3. Техподдержка 24/7"
           }
+        },
+        "section": {
+          "basic": "Основное",
+          "limits": "Квоты и лимиты",
+          "content": "Описание",
+          "status": "Доступность"
+        },
+        "status": {
+          "show_desc": "Показывать тариф в витрине",
+          "sell_desc": "Разрешить новые покупки",
+          "renew_desc": "Разрешить продление существующим пользователям"
         },
         "force_update": {
           "label": "Принудительно обновить планы пользователей",
@@ -900,7 +1026,11 @@ const translations: Translations = {
         "description": "Пользовательский URL скрипта установки узла. Оставьте пустым, чтобы использовать URL по умолчанию из GitHub.",
         "placeholder": "Оставьте пустым для URL по умолчанию"
       },
-      "saving": "Сохранение..."
+      "saving": "Сохранение...",
+      "manage": {
+        "description": "Управление всеми узлами: добавление, удаление и редактирование.",
+        "title": "Управление узлами"
+      }
     },
     "invite": {
       "title": "Реферальная программа",
@@ -1274,7 +1404,8 @@ const translations: Translations = {
           "group": {
             "label": "Группа доступа",
             "placeholder": "Выберите группу",
-            "add": "Добавить"
+            "add": "Добавить",
+            "none": "Без группы доступа"
           },
           "transfer": {
             "label": "Трафик",
@@ -1628,6 +1759,9 @@ const translations: Translations = {
         "submit": "Отправить",
         "success": "Успешно отправлено"
       }
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить объявления"
     }
   },
   "group": {
@@ -1798,33 +1932,37 @@ const translations: Translations = {
       },
       "messages": {
         "success": "Успешно сохранено"
+      },
+      "config": {
+        "title": "Конфигурация оплаты",
+        "noConfig": "Нет настроек для этого способа оплаты"
       }
     }
   },
   "server": {
-    "title": "Конфигурация узла",
-    "description": "Настройка параметров связи и синхронизации узла, включая ключ связи, интервал опроса, балансировку нагрузки и другие расширенные параметры.",
+    "title": "Конфигурация узлов",
+    "description": "Настройка связи и синхронизации узлов: ключ, интервалы опроса, балансировка и другие параметры.",
     "server_token": {
       "title": "Ключ связи",
-      "description": "Ключ для связи между Fboard и узлами для предотвращения несанкционированного доступа к данным.",
-      "placeholder": "Пожалуйста, введите ключ связи"
+      "description": "Ключ связи между панелью и узлами для защиты данных.",
+      "placeholder": "Введите ключ связи"
     },
     "server_pull_interval": {
-      "title": "Интервал опроса Pull-действий",
-      "description": "Частота получения данных узлом из панели.",
-      "placeholder": "Пожалуйста, введите интервал получения"
+      "title": "Интервал опроса (pull)",
+      "description": "Частота получения данных узлом с панели.",
+      "placeholder": "Введите интервал получения"
     },
     "server_push_interval": {
-      "title": "Интервал опроса Push-действий",
-      "description": "Частота отправки данных узлом в панель.",
-      "placeholder": "Пожалуйста, введите интервал отправки"
+      "title": "Интервал опроса (push)",
+      "description": "Частота отправки данных узлом на панель.",
+      "placeholder": "Введите интервал отправки"
     },
     "device_limit_mode": {
       "title": "Режим ограничения устройств",
-      "description": "В мягком режиме несколько узлов с одного IP-адреса считаются за одно устройство.",
+      "description": "В мягком режиме несколько узлов с одного IP считаются одним устройством.",
       "strict": "Строгий режим",
       "relaxed": "Мягкий режим",
-      "placeholder": "Пожалуйста, выберите режим ограничения"
+      "placeholder": "Выберите режим ограничения устройств"
     },
     "saving": "Сохранение...",
     "manage": {
@@ -1875,7 +2013,15 @@ const translations: Translations = {
           "title": "Метрики",
           "uptime": "Аптайм",
           "conns": "Соединения",
-          "speed": "Скорость"
+          "speed": "Скорость",
+          "api": "Статус API",
+          "gc": "Пауза GC",
+          "goroutines": "Горутины",
+          "kernel": "Статус ядра",
+          "limit": "Пользователи с лимитом",
+          "load": "Нагрузка системы",
+          "users": "Пользователи онлайн",
+          "ws": "WebSocket"
         }
       },
       "customId": "Кастомный ID",
@@ -1917,8 +2063,15 @@ const translations: Translations = {
           "confirm": "Удалить"
         },
         "copy_success": "Скопировано успешно",
-        "delete_success": "Удалено успешно"
-      }
+        "delete_success": "Удалено успешно",
+        "reset_traffic": {
+          "confirm": "Сбросить трафик",
+          "description": "Это обнулит upload/download трафик узла и снимет блокировку. Продолжить?",
+          "title": "Подтверждение сброса трафика"
+        },
+        "reset_traffic_success": "Трафик сброшен"
+      },
+      "version": "Версия"
     },
     "toolbar": {
       "search": "Поиск узлов...",
@@ -1971,7 +2124,8 @@ const translations: Translations = {
         "confirm": "Подтвердить сброс"
       },
       "batch_reset_traffic_success": "Успешно сброшен трафик {{count}} узлов",
-      "batch_reset_traffic_error": "Ошибка пакетного сброса трафика"
+      "batch_reset_traffic_error": "Ошибка пакетного сброса трафика",
+      "virtualNode": "Виртуальный узел"
     },
     "form": {
       "add_node": "Добавить узел",
@@ -1980,7 +2134,8 @@ const translations: Translations = {
       "type": {
         "placeholder": "Выберите тип протокола",
         "select_prompt": "Сначала выберите тип протокола",
-        "select_error": "Пожалуйста, выберите тип протокола"
+        "select_error": "Пожалуйста, выберите тип протокола",
+        "configHint": "После выбора протокола можно настроить параметры"
       },
       "name": {
         "label": "Название узла",
@@ -2064,7 +2219,62 @@ const translations: Translations = {
       },
       "submit": "Отправить",
       "cancel": "Отмена",
-      "success": "Успешно отправлено"
+      "success": "Успешно отправлено",
+      "listen_address": {
+        "description": "IP-адрес прослушивания. Оставьте пустым для значения по умолчанию (0.0.0.0). Можно указать 127.0.0.1 или конкретный IP.",
+        "hide": "Скрыть адрес прослушивания",
+        "label": "Адрес прослушивания",
+        "optional": "Необязательно",
+        "placeholder": "Оставьте пустым (0.0.0.0) или введите, например, 127.0.0.1, ::1",
+        "show": "Адрес прослушивания"
+      },
+      "banned": {
+        "description": "Отключённый узел будет недоступен",
+        "label": "Отключить узел"
+      },
+      "traffic_limit": {
+        "error_gte_zero": "Лимит трафика должен быть ≥ 0",
+        "error_numeric": "Лимит трафика должен быть числом",
+        "hint": "Верхний предел трафика узла (ГБ), 0 = без лимита",
+        "label": "Лимит трафика",
+        "placeholder": "0 = без лимита"
+      },      "protocolSection": "Настройки протокола",
+      "traffic_limit_unit": "ГБ, 0=без лимита",
+
+      "virtualNode": {
+        "add": "Добавить виртуальный узел",
+        "addDialogTitle": "Добавление виртуального узла",
+        "delete": "Удалить",
+        "deleteConfirmDesc": "Удалить виртуальный узел «{{name}}»? Это действие необратимо.",
+        "deleteConfirmTitle": "Подтверждение удаления",
+        "deleteFailed": "Не удалось удалить",
+        "deleteSuccess": "Виртуальный узел удалён",
+        "description": "Виртуальный узел — дополнительная точка доступа того же сервиса",
+        "edit": "Редактировать",
+        "editDialogTitle": "Редактирование виртуального узла",
+        "empty": "Нет виртуальных узлов",
+        "generateKeyPair": "Сгенерировать ключевую пару",
+        "groupIds": "Группы доступа",
+        "hidden": "Скрыт",
+        "host": "Хост",
+        "label": "Виртуальный узел",
+        "namePlaceholder": "Имя виртуального узла",
+        "port": "Порт",
+        "save": "Сохранить виртуальный узел",
+        "saveFailed": "Не удалось сохранить виртуальный узел",
+        "saveSuccess": "Виртуальный узел сохранён",
+        "show": "Показать",
+        "tags": "Теги",
+        "tagsPlaceholder": "Введите и нажмите Enter",
+        "toggleFailed": "Не удалось обновить видимость",
+        "visible": "Видимый"
+      }
+    },
+    "networkTemplate": {
+      "title": "Сетевые шаблоны",
+      "empty": "Для этого протокола нет доступных шаблонов",
+      "description": "Выберите предустановленный сетевой шаблон, чтобы заполнить настройки протокола",
+      "use": "Применить"
     },
     "dynamic_form": {
       "multiplex": {
@@ -2217,10 +2427,14 @@ const translations: Translations = {
             "description_short": "One KEY=VALUE per line"
           },
           "cert_content": {
-            "label": "Public Key content"
+            "label": "Public Key content",
+            "description": "Вставьте полный PEM сертификата, не путь к файлу",
+            "placeholder": "-----BEGIN CERTIFICATE----- ... -----END CERTIFICATE-----"
           },
           "key_content": {
-            "label": "Private Key content"
+            "label": "Private Key content",
+            "description": "Вставьте полный PEM приватного ключа, не путь к файлу",
+            "placeholder": "-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----"
           },
           "none_desc": "TLS config disabled"
         }
@@ -2446,8 +2660,15 @@ const translations: Translations = {
           "placeholder": "Select transport protocol"
         }
       },
-            "sudoku": {
+      "sudoku": {
         "name": "Sudoku",
+        "keyPairTitle": "Пара ключей Sudoku",
+        "keyPairDescription": "Сервер использует Master Public Key; Master Private Key хранится только в панели для генерации ключей пользователей и не передаётся на узлы",
+        "generate": "Сгенерировать",
+        "generateSuccess": "Пара ключей Sudoku создана",
+        "generateFailed": "Не удалось сгенерировать ключи Sudoku",
+        "publicPlaceholder": "Нажмите «Сгенерировать» выше, чтобы заполнить",
+        "privatePlaceholder": "Только в панели — не раскрывайте",
         "master_public_key": "Master Public Key",
         "master_private_key": "Master Private Key",
         "aead_method": "AEAD",
@@ -2519,6 +2740,53 @@ const translations: Translations = {
         "tls_tab": "TLS",
         "route_tab": "Маршрутизация",
         "multiplex_tab": "Мультиплексирование"
+      },
+      "cert_config": {
+        "cert_content": {
+          "description": "Вставьте полный PEM сертификата, не путь к файлу",
+          "label": "Содержимое сертификата (PEM)",
+          "placeholder": "-----BEGIN CERTIFICATE----- ... -----END CERTIFICATE-----"
+        },
+        "cert_mode": {
+          "description": "Способ получения сертификата (зависит от бэкенда узла)",
+          "label": "Режим сертификата",
+          "none_desc": "TLS-сертификат не настроен"
+        },
+        "dns_env": {
+          "description_short": "По одному KEY=VALUE в строке",
+          "label": "Переменные окружения (API-ключи)"
+        },
+        "dns_provider": {
+          "doc_link": "Руководство по DNS-провайдерам",
+          "label": "DNS-провайдер"
+        },
+        "domain": {
+          "label": "Домен сертификата"
+        },
+        "email": {
+          "label": "Email уведомлений"
+        },
+        "http_port": {
+          "description": "Порт ACME challenge (по умолчанию 80)",
+          "label": "Порт challenge"
+        },
+        "key_content": {
+          "description": "Вставьте полный PEM приватного ключа, не путь к файлу",
+          "label": "Приватный ключ (PEM)",
+          "placeholder": "-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----"
+        },
+        "none_desc": "TLS-сертификат не настроен",
+        "tab": "TLS-сертификат"
+      },
+      "routing": {
+        "error": {
+          "invalid_json": "Некорректный JSON",
+          "must_be_array": "Должен быть JSON-массив []"
+        },
+        "outbounds": "Пользовательские Outbounds (JSON)",
+        "outbounds_tab": "Outbounds",
+        "routes": "Пользовательские Routes (JSON)",
+        "routes_tab": "Routes"
       }
     },
     "network_settings": {
@@ -2529,15 +2797,40 @@ const translations: Translations = {
       "json_config_placeholder_with_template": "Please enter JSON configuration or select template above",
       "validation": {
         "must_be_object": "Configuration must be a JSON object",
-        "invalid_json": "Invalid JSON format"
+        "invalid_json": "Invalid JSON format",
+        "must_be_array": "Конфигурация должна быть JSON-массивом"
       },
       "errors": {
         "save_failed": "Error occurred while saving"
-      }
+      },
+      "edit_padding_scheme": "Редактировать схему padding",
+      "builtin": "Встроенный",
+      "delete_template": "Удалить шаблон",
+      "json_label": "Сетевые настройки (JSON)",
+      "save_as_template": "Сохранить как шаблон",
+      "save_template": "Сохранить шаблон",
+      "template_applied": "Применён шаблон: {{name}}",
+      "template_custom_desc": "Пользовательский шаблон сетевых настроек",
+      "template_delete_failed": "Не удалось удалить шаблон",
+      "template_deleted": "Шаблон удалён",
+      "template_empty": "Конфигурация пуста, нельзя сохранить как шаблон",
+      "template_from_current": "Из текущей конфигурации {{network}}",
+      "template_name_placeholder": "Имя шаблона, напр. WS custom path",
+      "template_name_required": "Введите имя шаблона",
+      "template_save_failed": "Не удалось сохранить шаблон",
+      "template_saved": "Шаблон сохранён",
+      "templates": "Шаблоны",
+      "templates_builtin": "Встроенные шаблоны",
+      "templates_custom": "Мои шаблоны",
+      "templates_empty": "Нет шаблонов — сохраните текущую конфигурацию",
+      "use_template_btn": "Использовать"
     },
     "common": {
       "cancel": "Cancel",
       "confirm": "Confirm"
+    },
+    "messages": {
+      "saveFailed": "Не удалось сохранить"
     }
   },
   "coupon": {
@@ -2737,7 +3030,8 @@ const translations: Translations = {
       "closed": "Закрыт",
       "replied": "Отвечен",
       "pending": "Ожидание",
-      "processing": "В обработке"
+      "processing": "В обработке",
+      "unreplied": "Без ответа"
     },
     "level": {
       "low": "Низкий",
@@ -2751,6 +3045,7 @@ const translations: Translations = {
       "clear": "Очистить фильтры"
     },
     "actions": {
+      "reply_success": "Ответ отправлен",
       "view_details": "Детали",
       "close_ticket": "Закрыть тикет",
       "close_confirm_title": "Подтверждение закрытия",
@@ -2798,6 +3093,7 @@ const translations: Translations = {
       "nodesIdle": "нет узлов",
       "load": "Нагрузка",
       "lastSeen": "Последний отклик",
+      "version": "Версия",
       "actions": "Действия",
       "online": "Онлайн",
       "offline": "Оффлайн",
@@ -2814,7 +3110,7 @@ const translations: Translations = {
       "status": "Статус",
       "nodes": "Узлы",
       "nodesHosted": "Узлы",
-      "nodesIdle": "нет узлов",
+      "nodesIdle": "простой",
       "with_nodes": "С размещёнными узлами",
       "idle_nodes": "Свободные серверы",
       "high_load": "Высокая нагрузка",
@@ -2950,6 +3246,25 @@ const translations: Translations = {
       "machineIdNone": "Автономное развёртывание",
       "enabled": "Активен на сервере",
       "enabledDescription": "Запускать ли узел на привязанном сервере"
+    },
+    "nodesStatus": {
+      "toggleHint": "Измените статус в управлении узлами"
+    },
+    "logs": {
+      "autoScroll": "Автопрокрутка вниз",
+      "copied": "Лог скопирован",
+      "copy": "Копировать лог",
+      "description": "Недавние логи процесса Fboard-Node в памяти (до ~1000 строк).",
+      "empty": "Нет логов",
+      "fetchFailed": "Не удалось получить логи",
+      "lineCount": "{{count}} строк",
+      "loading": "Загрузка логов...",
+      "offline": "Сервер офлайн, нельзя получить логи в реальном времени",
+      "refresh": "Обновить лог",
+      "stale": "Показан кэш логов (может быть устаревшим)",
+      "timeout": "Таймаут ожидания ответа узла",
+      "title": "Журнал работы",
+      "updatedAt": "Обновлено {{time}}"
     }
   },
   "search": {
@@ -3007,6 +3322,8 @@ const translations: Translations = {
       "sortModeHint": "Перетаскивайте элементы для сортировки, затем нажмите сохранить",
       "editSort": "Изменить порядок",
       "saveSort": "Сохранить порядок"
+    ,
+      "allCategories": "Все категории"
     }
   },
   "common": {
@@ -3028,10 +3345,15 @@ const translations: Translations = {
     "toggleSidebar": "Переключить боковую панель",
     "search": "Поиск...",
     "theme": {
+      "label": "Тема",
       "light": "Светлая",
       "dark": "Темная",
       "system": "Системная"
     },
+    "noMatch": "Нет совпадений",
+    "selectField": "Выберите {{name}}",
+    "inputField": "Введите {{name}}",
+    "pageNotImplemented": "Страница ещё не реализована",
     "user": "Пользователь",
     "defaultEmail": "user@example.com",
     "settings": "Настройки",
@@ -3051,6 +3373,7 @@ const translations: Translations = {
         "itemsPerPage": "На странице",
         "page": "Страница",
         "pageOf": "Страница {{page}} / {{total}}",
+        "range": "{{from}}–{{to}} из {{total}}",
         "firstPage": "На первую страницу",
         "previousPage": "Предыдущая страница",
         "nextPage": "Следующая страница",
@@ -3082,13 +3405,29 @@ const translations: Translations = {
       "yuan": "Yuan"
     },
     "http": {
-      "notLoggedIn": "Not logged in",
-      "unknownError": "Unknown error",
-      "loginExpired": "Login expired",
-      "noPermission": "No permission",
-      "notFound": "Resource or API not found",
-      "unknownException": "Unknown exception"
-    }
+      "notLoggedIn": "Не выполнен вход",
+      "unknownError": "Неизвестная ошибка",
+      "loginExpired": "Сессия истекла",
+      "loginExpiredRelogin": "Сессия истекла, войдите снова",
+      "unauthorized": "Нет доступа, войдите снова",
+      "invalidCredentials": "Неверный email или пароль",
+      "invalidData": "Некорректные данные, проверьте ввод",
+      "requestFailed": "Ошибка запроса",
+      "networkError": "Ошибка сети",
+      "noPermission": "Нет прав",
+      "notFound": "Ресурс или API не найден",
+      "unknownException": "Неизвестное исключение",
+      "success": "Успешно"
+    },
+    "add": "Добавить",
+    "refresh": "Обновить",
+    "sort": {
+      "edit": "Изменить порядок",
+      "done": "Завершить сортировку"
+    },
+    "actions": "Действия",
+    "start": "С",
+    "end": "По"
   },
   "sidebar": {
     "dashboard": "Панель управления",
@@ -3106,7 +3445,8 @@ const translations: Translations = {
     "orderManagement": "Заказы",
     "couponManagement": "Купоны",
     "userManagement": "Пользователи",
-    "ticketManagement": "Тикеты"
+    "ticketManagement": "Тикеты",
+    "pluginManagement": "Управление плагинами"
   },
   "plugin": {
     "title": "Управление плагинами",
@@ -3175,7 +3515,10 @@ const translations: Translations = {
       "description": "Изменение настроек плагина",
       "save": "Сохранить",
       "cancel": "Отмена",
-      "noConfigs": "У этого плагина нет настраиваемых параметров"
+      "noConfigs": "У этого плагина нет настраиваемых параметров",
+      "actions": "Действия",
+      "noPlan": "Без тарифа",
+      "selectPlan": "Выберите тариф"
     },
     "readme": {
       "title": "Документация плагина",
@@ -3199,9 +3542,24 @@ const translations: Translations = {
       "uploadSuccess": "Плагин загружен",
       "uploadError": "Ошибка загрузки плагина",
       "deleteSuccess": "Плагин удален",
-      "deleteError": "Ошибка удаления плагина"
+      "deleteError": "Ошибка удаления плагина",
+      "actionError": "Ошибка выполнения",
+      "actionSuccess": "Выполнено успешно",
+      "actionLabel": "Действие",
+      "actionSuccessWithLabel": "{{label}} выполнено успешно",
+      "actionErrorWithLabel": "{{label}} не выполнено",
+      "invalidJson": "{{field}} не является корректным JSON"
     },
-    "noPlugins": "Нет плагинов"
+    "staticFiles": {
+      "title": "HTML статические файлы",
+      "backToList": "Назад к списку",
+      "openInNewTab": "Открыть в новой вкладке",
+      "empty": "Нет статических файлов"
+    },
+    "noPlugins": "Нет плагинов",
+    "toolbar": {
+      "search": "Поиск плагинов..."
+    }
   },
   "dashboard": {
     "title": "Панель управления",
@@ -3277,16 +3635,26 @@ const translations: Translations = {
     },
     "traffic": {
       "title": "Рейтинг трафика",
-      "rank": "Место",
+      "rank": "Рейтинг",
       "domain": "Домен",
-      "todayTraffic": "Трафик сегодня",
-      "monthlyTraffic": "Трафик за месяц"
+      "todayTraffic": "Трафик за сегодня",
+      "monthlyTraffic": "Месячный трафик"
     },
     "queue": {
       "title": "Очереди",
+      "metrics": {
+        "pending": "В очереди {{count}}",
+        "maxWait": "Макс. ожидание {{time}}",
+        "backlog": "Затор",
+        "processes": "Процессы",
+        "pendingLabel": "В очереди",
+        "wait": "Ожидание"
+      },
       "jobDetails": "Детали задачи",
+      "workload": "Нагрузка очередей",
+      "workloadCount": "Очередей: {{count}}",
       "status": {
-        "description": "Текущий статус выполнения очередей",
+        "description": "Статус Horizon и накопление по очередям",
         "running": "Статус",
         "normal": "Норма",
         "abnormal": "Ошибка",
@@ -3326,6 +3694,7 @@ const translations: Translations = {
         "queue": "Очередь",
         "name": "Имя задачи",
         "exception": "Исключение",
+        "noException": "Нет информации об ошибке",
         "noFailedJobs": "Ошибок не найдено",
         "connection": "Соединение",
         "payload": "Payload",
@@ -3349,8 +3718,8 @@ const translations: Translations = {
     },
     "search": {
       "placeholder": "Поиск меню и функций...",
-      "title": "Навигация",
-      "noResults": "Ничего не найдено",
+      "title": "Навигация по меню",
+      "noResults": "Результаты не найдены",
       "loading": "Поиск..."
     }
   },
@@ -3361,13 +3730,15 @@ const translations: Translations = {
       "columns": {
         "tradeNo": "№ Заказа",
         "type": "Тип",
+        "user": "Пользователь",
         "plan": "Тарифный план",
         "period": "Период",
         "amount": "Сумма оплаты",
         "status": "Статус заказа",
-        "commission": "Сумма комиссии",
+        "commission": "Комиссия",
         "commissionStatus": "Статус комиссии",
-        "createdAt": "Создан"
+        "createdAt": "Создан",
+        "actions": "Действия"
       }
     },
     "type": {
@@ -3384,7 +3755,15 @@ const translations: Translations = {
       "two_year_price": "Раз в 2 года",
       "three_year_price": "Раз в 3 года",
       "onetime_price": "Единоразово",
-      "reset_price": "Пакет сброса"
+      "reset_price": "Пакет сброса",
+      "half_yearly": "Раз в полгода",
+      "monthly": "Ежемесячно",
+      "onetime": "Единоразово",
+      "quarterly": "Ежеквартально",
+      "reset_traffic": "Сброс трафика",
+      "three_yearly": "Раз в 3 года",
+      "two_yearly": "Раз в 2 года",
+      "yearly": "Ежегодно"
     },
     "status": {
       "PENDING": "Ожидание",
@@ -3400,6 +3779,15 @@ const translations: Translations = {
       "VALID": "Действительна",
       "INVALID": "Недействительна"
     },
+    "filter": {
+      "allTypes": "Все типы",
+      "allPeriods": "Все периоды",
+      "allStatuses": "Все статусы",
+      "allCommissions": "Все статусы комиссии",
+      "userId": "ID пользователя",
+      "clear": "Очистить",
+      "clearAll": "Сбросить фильтры"
+    },
     "actions": {
       "view": "Подробности",
       "markAsPaid": "Пометить как оплаченный",
@@ -3407,10 +3795,11 @@ const translations: Translations = {
       "issue": "Выдать комиссию",
       "invalid": "Отменить комиссию",
       "openMenu": "Открыть меню",
-      "reset": "Сбросить"
+      "reset": "Сбросить",
+      "copyTradeNo": "Копировать № заказа"
     },
     "search": {
-      "placeholder": "Поиск заказов..."
+      "placeholder": "Поиск по № заказа..."
     },
     "dialog": {
       "title": "Информация о заказе",
@@ -3476,6 +3865,7 @@ const translations: Translations = {
       "clickText": "нажмите для выбора",
       "supportText": "Поддерживаются пакеты тем в формате .zip",
       "uploading": "Загрузка...",
+      "success": "Загрузка выполнена",
       "error": {
         "format": "Поддерживаются только файлы тем в формате ZIP"
       }
@@ -3488,6 +3878,7 @@ const translations: Translations = {
       "version": "Версия: {{version}}",
       "currentTheme": "Текущая тема",
       "activateTheme": "Активировать тему",
+      "activateSuccess": "Тема активирована",
       "configureTheme": "Настройки темы",
       "preview": "Предпросмотр",
       "delete": {

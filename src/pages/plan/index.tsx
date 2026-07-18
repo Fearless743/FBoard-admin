@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, Search, Info, Users, UserCheck, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Users, UserCheck, GripVertical, Package } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ import { SortableContainer, SortableRow, DragCell } from "@/components/common/so
 import { dropPlan, fetchPlans, sortPlans, updatePlan, type Plan } from "@/api/plan";
 import { PlanFormDialog } from "./plan-form-dialog";
 
+const SORT_PAGE_SIZE = 1000;
+
 export function PlanListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -34,29 +36,69 @@ export function PlanListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [toggleLoading, setToggleLoading] = useState<Record<string, boolean>>({});
   const [dragEnabled, setDragEnabled] = useState(false);
+  const [pendingList, setPendingList] = useState<Plan[] | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const effectivePageSize = dragEnabled ? SORT_PAGE_SIZE : pageSize;
+  const effectivePage = dragEnabled ? 1 : page;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["plans", { page, pageSize }],
-    queryFn: () => fetchPlans(page, pageSize),
+    queryKey: ["plans", { page: effectivePage, pageSize: effectivePageSize, debouncedSearch, dragEnabled }],
+    queryFn: () => fetchPlans(effectivePage, effectivePageSize, debouncedSearch),
   });
 
   const plans = useMemo(() => {
-    const list = (data?.data || []).sort((a: Plan, b: Plan) => (a.sort || 0) - (b.sort || 0));
-    if (!search) return list;
-    return list.filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [data, search]);
+    return (data?.data || []).slice().sort((a: Plan, b: Plan) => (a.sort || 0) - (b.sort || 0));
+  }, [data]);
   const total = data?.total || 0;
+  const displayList = pendingList ?? plans;
 
-  const handleReorder = useCallback(async (ids: number[]) => {
+  // 拖拽只改本地顺序，点「完成排序」再提交
+  const handleReorder = useCallback((ids: number[]) => {
+    const reordered = ids
+      .map((id) => displayList.find((i) => Number(i.id) === Number(id)))
+      .filter(Boolean) as Plan[];
+    setPendingList(reordered);
+  }, [displayList]);
+
+  const finishSort = useCallback(async () => {
+    if (!pendingList) {
+      setDragEnabled(false);
+      return;
+    }
     try {
-      await sortPlans(ids);
-      qc.invalidateQueries({ queryKey: ["plans"] });
+      await sortPlans(pendingList.map((i) => Number(i.id)));
+      toast.success(t("common.http.success"));
+      setPendingList(null);
+      setDragEnabled(false);
+      await qc.invalidateQueries({ queryKey: ["plans"] });
     } catch (e) {}
-  }, [qc]);
+  }, [pendingList, qc, t]);
+
+  const toggleDrag = useCallback(() => {
+    if (dragEnabled) {
+      if (pendingList) {
+        void finishSort();
+      } else {
+        setDragEnabled(false);
+      }
+    } else {
+      setPendingList(null);
+      setSearch("");
+      setDebouncedSearch("");
+      setDragEnabled(true);
+    }
+  }, [dragEnabled, pendingList, finishSort]);
 
   return (
     <>
@@ -67,12 +109,12 @@ export function PlanListPage() {
           <div className="flex items-center gap-2">
             <Button
               variant={dragEnabled ? "default" : "outline"}
-              onClick={() => setDragEnabled(!dragEnabled)}
+              onClick={toggleDrag}
             >
               <GripVertical className="h-4 w-4" />
-              {dragEnabled ? "完成排序" : "编辑排序"}
+              {dragEnabled ? t("common.sort.done") : t("common.sort.edit")}
             </Button>
-            <Button onClick={() => setCreateOpen(true)}>
+            <Button onClick={() => setCreateOpen(true)} disabled={dragEnabled}>
               <Plus className="h-4 w-4" />
               {t("subscribe.plan.add")}
             </Button>
@@ -80,14 +122,15 @@ export function PlanListPage() {
         }
       />
 
-      <div className="mb-4">
-        <div className="relative max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("subscribe.plan.search")}
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
+            disabled={dragEnabled}
           />
         </div>
       </div>
@@ -97,7 +140,6 @@ export function PlanListPage() {
           <TableHeader>
             <TableRow>
               {dragEnabled && <TableHead className="w-10"></TableHead>}
-              <TableHead className="w-10"></TableHead>
               <TableHead className="w-14">{t("subscribe.plan.columns.id")}</TableHead>
               <TableHead className="w-16 text-center">{t("subscribe.plan.columns.show")}</TableHead>
               <TableHead className="w-16 text-center">{t("subscribe.plan.columns.sell")}</TableHead>
@@ -106,7 +148,6 @@ export function PlanListPage() {
               <TableHead className="text-center w-16">{t("subscribe.plan.columns.stats")}</TableHead>
               <TableHead className="text-right">{t("subscribe.plan.columns.price")}</TableHead>
               <TableHead className="text-right">{t("subscribe.plan.form.transfer.label")}</TableHead>
-              <TableHead>{t("subscribe.plan.columns.group")}</TableHead>
               <TableHead className="w-20 text-right">{t("subscribe.plan.columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -114,22 +155,25 @@ export function PlanListPage() {
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: dragEnabled ? 12 : 11 }).map((_, j) => (
+                  {Array.from({ length: dragEnabled ? 11 : 10 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
                   ))}
                 </TableRow>
               ))
-            ) : plans.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={dragEnabled ? 12 : 11}>
-                  <EmptyState />
+            ) : displayList.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={dragEnabled ? 11 : 10}>
+                  <EmptyState
+                    icon={<Package className="h-10 w-10" />}
+                    message={t("common.table.noData")}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
-              <SortableContainer items={plans} onReorder={handleReorder} enabled={dragEnabled}>
-                {plans.map((p) => (
+              <SortableContainer items={displayList} onReorder={handleReorder} enabled={dragEnabled}>
+                {displayList.map((p) => (
                   <SortableRow key={p.id} id={p.id}>
                     <DragCell />
                     <TableCell><IdBadge id={p.id} /></TableCell>
@@ -181,14 +225,21 @@ export function PlanListPage() {
                         }}
                       />
                     </TableCell>
-                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>
+                      <div className="min-w-0 space-y-0.5">
+                        <p className="truncate font-medium" title={p.name}>{p.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {p.group?.name || (p.group_id ? `#${p.group_id}` : "—")}
+                        </p>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        <Badge variant="secondary" className="gap-1 select-none" title={t("subscribe.plan.columns.users")}>
+                        <Badge variant="secondary" className="h-5 gap-1 select-none font-normal" title={t("subscribe.plan.columns.users")}>
                           <Users className="h-3 w-3" />
                           {p.users_count ?? 0}
                         </Badge>
-                        <Badge variant="outline" className="gap-1 select-none border-sky-500 text-sky-600" title={t("subscribe.plan.columns.active_users")}>
+                        <Badge variant="outline" className="h-5 gap-1 select-none font-normal text-primary" title={t("subscribe.plan.columns.active_users")}>
                           <UserCheck className="h-3 w-3" />
                           {p.active_users_count ?? 0}
                         </Badge>
@@ -220,13 +271,13 @@ export function PlanListPage() {
                             ¥{Number(p.prices.yearly).toFixed(2)}
                           </span>
                         ) : null}
+                        {!p.prices?.monthly && !p.prices?.quarterly && !p.prices?.half_yearly && !p.prices?.yearly ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : null}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">
+                    <TableCell className="text-right tabular-nums text-sm font-medium">
                       {p.transfer_enable ? `${p.transfer_enable} GB` : "∞"}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {p.group?.name || (p.group_id ? `#${p.group_id}` : "—")}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -241,7 +292,7 @@ export function PlanListPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8 text-destructive"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
                           onClick={() => setDeleting(p)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -254,13 +305,15 @@ export function PlanListPage() {
             )}
           </TableBody>
         </Table>
-        <Pagination
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          onPageChange={setPage}
-          onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
-        />
+        {!dragEnabled && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+          />
+        )}
       </div>
 
       <PlanFormDialog

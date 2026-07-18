@@ -123,7 +123,9 @@ export function UserAssignOrderDialog({ open, onOpenChange, user, onDone }: Prop
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>{t("order.dialog.fields.paymentAmount")} (元)</Label>
+            <Label>
+              {t("order.dialog.fields.paymentAmount")} ({t("common.currency.yuan")})
+            </Label>
             <Input
               type="number"
               step="0.01"

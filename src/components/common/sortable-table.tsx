@@ -42,17 +42,18 @@ export function SortableContainer({ items, onReorder, enabled, children }: Sorta
       collisionDetection={closestCenter}
       onDragEnd={(event: DragEndEvent) => {
         const { active, over } = event;
-        if (!over || active.id === over.id) return;
-        const oldIdx = items.findIndex((i) => i.id === active.id);
-        const newIdx = items.findIndex((i) => i.id === over.id);
+        if (!over || String(active.id) === String(over.id)) return;
+        // dnd-kit 的 UniqueIdentifier 可能是 number 或 string，统一比较避免匹配失败回弹
+        const oldIdx = items.findIndex((i) => String(i.id) === String(active.id));
+        const newIdx = items.findIndex((i) => String(i.id) === String(over.id));
         if (oldIdx === -1 || newIdx === -1) return;
         const reordered = [...items];
         const [moved] = reordered.splice(oldIdx, 1);
         reordered.splice(newIdx, 0, moved);
-        onReorder(reordered.map((i) => i.id));
+        onReorder(reordered.map((i) => Number(i.id)));
       }}
     >
-      <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={items.map((i) => Number(i.id))} strategy={verticalListSortingStrategy}>
         <DragEnabledContext.Provider value={true}>{children}</DragEnabledContext.Provider>
       </SortableContext>
     </DndContext>

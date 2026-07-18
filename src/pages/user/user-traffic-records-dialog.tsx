@@ -40,13 +40,13 @@ export function UserTrafficRecordsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {t("traffic.trafficRecord.title")} · {user?.email}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto -mx-6 px-6">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           <div className="rounded-lg border bg-card">
             <Table>
               <TableHeader>
@@ -87,12 +87,15 @@ export function UserTrafficRecordsDialog({
           </div>
         </div>
         {total > pageSize && (
-          <Pagination
-            page={page}
-            pageSize={pageSize}
-            total={total}
-            onPageChange={setPage}
-          />
+          <div className="border-t px-6 py-3 shrink-0">
+            <Pagination
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              compact
+            />
+          </div>
         )}
       </DialogContent>
     </Dialog>

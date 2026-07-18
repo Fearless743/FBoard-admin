@@ -254,8 +254,27 @@ const translations: Translations = {
       "status": {
         "0": "Unused",
         "1": "Used",
-        "2": "Disabled",
-        "3": "Expired"
+        "2": "Expired",
+        "3": "Disabled"
+      },
+      "edit": {
+        "title": "Edit gift code",
+        "code": "Gift code",
+        "template": "Template",
+        "templatePlaceholder": "Select a template",
+        "maxUsage": "Max usage",
+        "status": "Status",
+        "expiresAt": "Expires at"
+      },
+      "messages": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "exportSuccess": "Export successful",
+        "deleteConfirmTitle": "Confirm delete",
+        "deleteConfirmDescription": "Delete gift code {{code}}? This cannot be undone.",
+        "deleteSuccess": "Deleted",
+        "selectTemplate": "Please select a template",
+        "updateSuccess": "Updated"
       }
     },
     "usage": {
@@ -364,6 +383,7 @@ const translations: Translations = {
       "balance": "Balance",
       "commission": "Commission",
       "register_time": "Register Time",
+      "invitee_email": "Invitee",
       "actions": "Actions",
       "next_reset_at": "Next Reset At",
       "device_limit": {
@@ -371,7 +391,7 @@ const translations: Translations = {
         "limited": "Maximum {{count}} devices allowed"
       },
       "status_text": {
-        "normal": "Normal",
+        "normal": "Active",
         "banned": "Banned"
       },
       "online_status": {
@@ -390,6 +410,7 @@ const translations: Translations = {
         "expired": "Expired {{days}} days ago",
         "remaining": "{{days}} days remaining"
       },
+      "copy_email": "Copy email",
       "actions_menu": {
         "edit": "Edit",
         "view_details": "View Details",
@@ -407,6 +428,7 @@ const translations: Translations = {
     },
     "filter": {
       "selected": "{{count}} selected",
+      "clear_selection": "Clear selection",
       "no_results": "No results found.",
       "clear": "Clear filters",
       "search_placeholder": "Search...",
@@ -462,9 +484,12 @@ const translations: Translations = {
     "generate": {
       "button": "Create User",
       "title": "Create User",
+      "description_single": "Create a single account with a specified email",
+      "description_batch": "Batch generate accounts with random emails",
       "form": {
         "email": "Email",
         "email_prefix": "Account (leave empty for batch generation)",
+        "email_prefix_placeholder": "Leave empty for random batch generation",
         "email_domain": "Domain",
         "password": "Password",
         "password_placeholder": "Leave empty to use email as password",
@@ -478,7 +503,28 @@ const translations: Translations = {
         "cancel": "Cancel",
         "submit": "Generate",
         "success": "Generated successfully",
-        "download_csv": "Export as CSV file"
+        "download_csv": "Export as CSV file",
+        "generated_count": "{{count}} accounts generated",
+        "single_success_hint": "Account created. You can view and edit it in the user list.",
+        "copy_all": "Copy all",
+        "copy_email": "Copy email",
+        "copy_subscribe": "Copy subscription",
+        "result_password": "Password",
+        "result_expire": "Expires"
+      },
+      "copy_line": {
+        "email": "Email: {{value}}",
+        "password": "Password: {{value}}",
+        "expire": "Expires: {{value}}",
+        "subscribe": "Subscription: {{value}}"
+      },
+      "csv": {
+        "email": "Email",
+        "password": "Password",
+        "expire_time": "Expire Time",
+        "uuid": "UUID",
+        "created_at": "Created At",
+        "subscribe_url": "Subscribe URL"
       }
     },
     "edit": {
@@ -568,6 +614,9 @@ const translations: Translations = {
         "success": "Email sent successfully",
         "failed": "Failed to send email",
         "required_fields": "Please fill in all required fields"
+      },
+      "reset_secret": {
+        "success": "UUID & Token reset"
       }
     },
     "traffic_reset": {
@@ -762,7 +811,8 @@ const translations: Translations = {
     "userManagement": "User Management",
     "trafficResetLogs": "Traffic Reset Logs",
     "ticketManagement": "Ticket Management",
-    "pluginApps": "Plugin Apps"
+    "pluginApps": "Plugin Apps",
+    "pluginMenuDemo": "Plugin Menu (Demo)"
   },
   "subscribe": {
     "plan": {
@@ -819,22 +869,27 @@ const translations: Translations = {
         "edit_title": "Edit Plan",
         "name": {
           "label": "Plan Name",
-          "placeholder": "Enter plan name"
+          "placeholder": "Enter plan name",
+          "required": "Plan name is required"
         },
         "group": {
-          "label": "Server Group",
-          "add": "Add Group",
-          "placeholder": "Select server group"
+          "label": "Permission Group",
+          "add": "Add permission group",
+          "placeholder": "Select a permission group",
+          "none": "No permission group"
         },
+
         "transfer": {
           "label": "Traffic",
           "placeholder": "Enter traffic limit",
-          "unit": "GB"
+          "unit": "GB",
+          "hint": "Included traffic quota in GB"
         },
         "speed": {
           "label": "Speed Limit",
-          "placeholder": "Enter speed limit",
-          "unit": "Mbps"
+          "placeholder": "0 = unlimited",
+          "unit": "Mbps",
+          "hint": "Per-user speed limit; 0 or empty means unlimited"
         },
         "price": {
           "title": "Price Settings",
@@ -852,13 +907,15 @@ const translations: Translations = {
         },
         "device": {
           "label": "Device Limit",
-          "placeholder": "Enter device limit",
-          "unit": "Devices"
+          "placeholder": "0 = unlimited",
+          "unit": "Devices",
+          "hint": "Concurrent devices; 0 or empty means unlimited"
         },
         "capacity": {
           "label": "Capacity Limit",
-          "placeholder": "Enter capacity limit",
-          "unit": "Users"
+          "placeholder": "0 = unlimited",
+          "unit": "Users",
+          "hint": "Max seats for sale; 0 or empty means unlimited"
         },
         "tags": {
           "label": "Tags",
@@ -891,6 +948,17 @@ const translations: Translations = {
             "tooltip": "Use default template",
             "content": "## Plan Details\n\n- Data: {{transfer}} GB\n- Speed Limit: {{speed}} Mbps\n- Concurrent Devices: {{devices}}\n\n## Service Information\n\n1. Data {{reset_method}}\n2. Multi-platform Support\n3. 24/7 Technical Support"
           }
+        },
+        "section": {
+          "basic": "Basic info",
+          "limits": "Quota & limits",
+          "content": "Description",
+          "status": "Availability"
+        },
+        "status": {
+          "show_desc": "Show this plan on the storefront",
+          "sell_desc": "Allow new purchases of this plan",
+          "renew_desc": "Allow existing users to renew"
         },
         "force_update": {
           "label": "Force Update User Plans",
@@ -958,7 +1026,11 @@ const translations: Translations = {
         "description": "Custom URL for the node installation script. Leave empty to use the default GitHub URL.",
         "placeholder": "Leave empty to use default URL"
       },
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "manage": {
+        "description": "Manage all nodes, including add, delete, and edit operations.",
+        "title": "Node Management"
+      }
     },
     "invite": {
       "title": "Invitation & Commission Settings",
@@ -1332,7 +1404,8 @@ const translations: Translations = {
           "group": {
             "label": "Permission Group",
             "placeholder": "Select permission group",
-            "add": "Add Group"
+            "add": "Add Group",
+            "none": "No permission group"
           },
           "transfer": {
             "label": "Traffic",
@@ -1686,6 +1759,9 @@ const translations: Translations = {
         "submit": "Submit",
         "success": "Successfully submitted"
       }
+    },
+    "messages": {
+      "loadError": "Failed to load notices"
     }
   },
   "group": {
@@ -1856,6 +1932,10 @@ const translations: Translations = {
       },
       "messages": {
         "success": "Saved successfully"
+      },
+      "config": {
+        "title": "Payment Configuration",
+        "noConfig": "No configuration for this payment method"
       }
     }
   },
@@ -1933,7 +2013,15 @@ const translations: Translations = {
           "title": "Metrics",
           "uptime": "Uptime",
           "conns": "Connections",
-          "speed": "Speed"
+          "speed": "Speed",
+          "api": "API Status",
+          "gc": "GC Pause",
+          "goroutines": "Goroutines",
+          "kernel": "Kernel Status",
+          "limit": "Limited Users",
+          "load": "System Load",
+          "users": "Online Users",
+          "ws": "WebSocket"
         }
       },
       "version": "Version",
@@ -2068,7 +2156,9 @@ const translations: Translations = {
         "hint": "Set node traffic limit (unit: GB), 0 means no limit",
         "error_numeric": "Traffic limit must be a number",
         "error_gte_zero": "Traffic limit must be greater than or equal to 0"
-      },
+      },      "protocolSection": "Protocol Settings",
+      "traffic_limit_unit": "GB, 0=unlimited",
+
       "banned": {
         "label": "Disable Node",
         "description": "Node will be unavailable when disabled"
@@ -2170,7 +2260,21 @@ const translations: Translations = {
       },
       "submit": "Submit",
       "cancel": "Cancel",
-      "success": "Submitted successfully"
+      "success": "Submitted successfully",
+      "listen_address": {
+        "description": "Specify the IP address the server listens on. Leave empty for default (0.0.0.0) to listen on all interfaces. Can be set to 127.0.0.1 (local only) or a specific IP.",
+        "hide": "Hide listen address",
+        "label": "Listen Address",
+        "optional": "Optional",
+        "placeholder": "Leave empty for default (0.0.0.0), or enter e.g. 127.0.0.1, ::1",
+        "show": "Listen Address"
+      }
+    },
+    "networkTemplate": {
+      "title": "Network Templates",
+      "empty": "No templates available for this protocol",
+      "description": "Pick a preset network template to fill protocol settings",
+      "use": "Apply"
     },
     "dynamic_form": {
       "multiplex": {
@@ -2556,8 +2660,15 @@ const translations: Translations = {
           "placeholder": "Select transport protocol"
         }
       },
-            "sudoku": {
+      "sudoku": {
         "name": "Sudoku",
+        "keyPairTitle": "Sudoku Key Pair",
+        "keyPairDescription": "The server uses the Master Public Key; the Master Private Key stays on the panel to derive user keys and is never sent to nodes",
+        "generate": "Generate",
+        "generateSuccess": "Sudoku key pair generated",
+        "generateFailed": "Failed to generate Sudoku keys",
+        "publicPlaceholder": "Click Generate above to fill automatically",
+        "privatePlaceholder": "Panel only — do not leak",
         "master_public_key": "Master Public Key",
         "master_private_key": "Master Private Key",
         "aead_method": "AEAD",
@@ -2706,15 +2817,20 @@ const translations: Translations = {
       "template_applied": "Applied template: {{name}}",
       "validation": {
         "must_be_object": "Configuration must be a JSON object",
-        "invalid_json": "Invalid JSON format"
+        "invalid_json": "Invalid JSON format",
+        "must_be_array": "Config must be a JSON array"
       },
       "errors": {
         "save_failed": "Error occurred while saving"
-      }
+      },
+      "edit_padding_scheme": "Edit Padding Scheme"
     },
     "common": {
       "cancel": "Cancel",
       "confirm": "Confirm"
+    },
+    "messages": {
+      "saveFailed": "Save failed"
     }
   },
   "coupon": {
@@ -2914,7 +3030,8 @@ const translations: Translations = {
       "closed": "Closed",
       "replied": "Replied",
       "pending": "Pending",
-      "processing": "Processing"
+      "processing": "Processing",
+      "unreplied": "Unreplied"
     },
     "level": {
       "low": "Low Priority",
@@ -2928,6 +3045,7 @@ const translations: Translations = {
       "clear": "Clear filters"
     },
     "actions": {
+      "reply_success": "Replied",
       "view_details": "View Details",
       "close_ticket": "Close Ticket",
       "close_confirm_title": "Confirm Close Ticket",
@@ -2975,6 +3093,7 @@ const translations: Translations = {
       "nodesIdle": "idle",
       "load": "Load",
       "lastSeen": "Last Seen",
+      "version": "Version",
       "actions": "Actions",
       "online": "Online",
       "offline": "Offline",
@@ -3143,6 +3262,9 @@ const translations: Translations = {
       "machineIdNone": "Standalone deployment",
       "enabled": "Enabled on Server",
       "enabledDescription": "Whether the node is activated on the selected server"
+    },
+    "nodesStatus": {
+      "toggleHint": "Change status in node management"
     }
   },
   "search": {
@@ -3199,7 +3321,8 @@ const translations: Translations = {
       "reset": "Reset",
       "sortModeHint": "Drag knowledge items to sort, click save when done",
       "editSort": "Edit Sort",
-      "saveSort": "Save Sort"
+      "saveSort": "Save Sort",
+      "allCategories": "All categories"
     }
   },
   "common": {
@@ -3221,10 +3344,15 @@ const translations: Translations = {
     "toggleSidebar": "Toggle Sidebar",
     "search": "Search...",
     "theme": {
+      "label": "Theme",
       "light": "Light",
       "dark": "Dark",
       "system": "System"
     },
+    "noMatch": "No matching options",
+    "selectField": "Select {{name}}",
+    "inputField": "Enter {{name}}",
+    "pageNotImplemented": "This page is not implemented yet",
     "user": "User",
     "defaultEmail": "user@example.com",
     "settings": "Settings",
@@ -3244,6 +3372,7 @@ const translations: Translations = {
         "itemsPerPage": "Per page",
         "page": "Page",
         "pageOf": "Page {{page}} / {{total}}",
+        "range": "{{from}}–{{to}} of {{total}}",
         "firstPage": "Go to first page",
         "previousPage": "Previous page",
         "nextPage": "Next page",
@@ -3278,10 +3407,26 @@ const translations: Translations = {
       "notLoggedIn": "Not logged in",
       "unknownError": "Unknown error",
       "loginExpired": "Login expired",
+      "loginExpiredRelogin": "Login expired, please sign in again",
+      "unauthorized": "Unauthorized, please sign in again",
+      "invalidCredentials": "Incorrect email or password",
+      "invalidData": "Invalid data, please check your input",
+      "requestFailed": "Request failed",
+      "networkError": "Network error",
       "noPermission": "No permission",
       "notFound": "Resource or API not found",
-      "unknownException": "Unknown exception"
-    }
+      "unknownException": "Unknown exception",
+      "success": "Operation successful"
+    },
+    "add": "Add",
+    "refresh": "Refresh",
+    "sort": {
+      "edit": "Edit sort",
+      "done": "Done sorting"
+    },
+    "actions": "Actions",
+    "start": "From",
+    "end": "To"
   },
   "sidebar": {
     "dashboard": "Dashboard",
@@ -3299,7 +3444,8 @@ const translations: Translations = {
     "orderManagement": "Order Management",
     "couponManagement": "Coupon Management",
     "userManagement": "User Management",
-    "ticketManagement": "Ticket Management"
+    "ticketManagement": "Ticket Management",
+    "pluginManagement": "Plugin Management"
   },
   "plugin": {
     "title": "Plugin Management",
@@ -3398,9 +3544,21 @@ const translations: Translations = {
       "deleteError": "Failed to delete plugin",
       "actionSuccess": "Action executed successfully",
       "actionError": "Failed to execute action",
+      "actionLabel": "Action",
+      "actionSuccessWithLabel": "{{label}} executed successfully",
+      "actionErrorWithLabel": "{{label}} failed",
       "invalidJson": "{{field}} is not valid JSON"
     },
-    "noPlugins": "No plugins"
+    "staticFiles": {
+      "title": "HTML static files",
+      "backToList": "Back to list",
+      "openInNewTab": "Open in new tab",
+      "empty": "No static files"
+    },
+    "noPlugins": "No plugins",
+    "toolbar": {
+      "search": "Search plugins..."
+    }
   },
   "dashboard": {
     "title": "Dashboard",
@@ -3483,9 +3641,19 @@ const translations: Translations = {
     },
     "queue": {
       "title": "Queue Status",
+      "metrics": {
+        "pending": "Pending {{count}}",
+        "maxWait": "Max wait {{time}}",
+        "backlog": "Backlog",
+        "processes": "Processes",
+        "pendingLabel": "Pending",
+        "wait": "Wait"
+      },
       "jobDetails": "Job Details",
+      "workload": "Queue Workload",
+      "workloadCount": "{{count}} queues",
       "status": {
-        "description": "Current queue running status",
+        "description": "Horizon status and per-queue backlog",
         "running": "Running Status",
         "normal": "Normal",
         "abnormal": "Abnormal",
@@ -3525,6 +3693,7 @@ const translations: Translations = {
         "queue": "Queue",
         "name": "Job Name",
         "exception": "Exception",
+        "noException": "No exception info",
         "noFailedJobs": "No failed jobs",
         "connection": "Connection",
         "payload": "Job Payload",
@@ -3560,13 +3729,15 @@ const translations: Translations = {
       "columns": {
         "tradeNo": "Order No.",
         "type": "Type",
+        "user": "User",
         "plan": "Subscription Plan",
         "period": "Period",
         "amount": "Payment Amount",
         "status": "Order Status",
-        "commission": "Commission Amount",
+        "commission": "Commission",
         "commissionStatus": "Commission Status",
-        "createdAt": "Created At"
+        "createdAt": "Created At",
+        "actions": "Actions"
       }
     },
     "type": {
@@ -3583,7 +3754,15 @@ const translations: Translations = {
       "two_year_price": "2 Years",
       "three_year_price": "3 Years",
       "onetime_price": "One-time",
-      "reset_price": "Reset Package"
+      "reset_price": "Reset Package",
+      "half_yearly": "Semi-annually",
+      "monthly": "Monthly",
+      "onetime": "One-time",
+      "quarterly": "Quarterly",
+      "reset_traffic": "Reset Traffic",
+      "three_yearly": "3 Years",
+      "two_yearly": "2 Years",
+      "yearly": "Annually"
     },
     "status": {
       "PENDING": "Pending",
@@ -3599,6 +3778,15 @@ const translations: Translations = {
       "VALID": "Valid",
       "INVALID": "Invalid"
     },
+    "filter": {
+      "allTypes": "All types",
+      "allPeriods": "All periods",
+      "allStatuses": "All statuses",
+      "allCommissions": "All commission statuses",
+      "userId": "User ID",
+      "clear": "Clear",
+      "clearAll": "Clear filters"
+    },
     "actions": {
       "view": "View Details",
       "markAsPaid": "Mark as Paid",
@@ -3606,10 +3794,11 @@ const translations: Translations = {
       "issue": "Issue Commission",
       "invalid": "Mark Commission Invalid",
       "openMenu": "Open Menu",
-      "reset": "Reset"
+      "reset": "Reset",
+      "copyTradeNo": "Copy order no."
     },
     "search": {
-      "placeholder": "Search orders..."
+      "placeholder": "Search order no...."
     },
     "dialog": {
       "title": "Order Information",
@@ -3650,7 +3839,8 @@ const translations: Translations = {
         "confirm": "Confirm"
       },
       "messages": {
-        "addSuccess": "Added successfully"
+        "addSuccess": "Added successfully",
+        "addOrder": "Add Order"
       }
     },
     "messages": {
@@ -3674,6 +3864,7 @@ const translations: Translations = {
       "clickText": "click to select",
       "supportText": "Supports .zip format theme packages",
       "uploading": "Uploading...",
+      "success": "Upload successful",
       "error": {
         "format": "Only ZIP format theme files are supported"
       }
@@ -3686,6 +3877,7 @@ const translations: Translations = {
       "version": "Version: {{version}}",
       "currentTheme": "Current Theme",
       "activateTheme": "Activate Theme",
+      "activateSuccess": "Theme activated",
       "configureTheme": "Theme Settings",
       "preview": "Preview",
       "delete": {

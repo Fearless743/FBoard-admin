@@ -73,7 +73,7 @@ export function UserTrafficResetDialog({ open, onOpenChange, user, onDone }: Pro
             <TabsTrigger value="history">{t("user.traffic_reset.tabs.history")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="reset" className="space-y-4">
+          <TabsContent value="reset" className="mt-4 space-y-4">
             <div className="rounded-md border bg-muted/30 p-3">
               <p className="mb-2 text-sm font-medium">{t("user.traffic_reset.user_info")}</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -114,7 +114,7 @@ export function UserTrafficResetDialog({ open, onOpenChange, user, onDone }: Pro
             </div>
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-3">
+          <TabsContent value="history" className="mt-4 space-y-3">
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("user.traffic_reset.history.reset_count")}</span>

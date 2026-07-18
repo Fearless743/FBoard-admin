@@ -62,18 +62,14 @@ function parseSettingsObject(
     if (typeof parsed !== "object" || Array.isArray(parsed)) {
       return {
         ok: false,
-        error: t("server.network_settings.validation.must_be_object", {
-          defaultValue: "配置必须是一个JSON对象",
-        }),
+        error: t("server.network_settings.validation.must_be_object"),
       };
     }
     return { ok: true, value: parsed };
   } catch {
     return {
       ok: false,
-      error: t("server.network_settings.validation.invalid_json", {
-        defaultValue: "无效的JSON格式",
-      }),
+      error: t("server.network_settings.validation.invalid_json"),
     };
   }
 }
@@ -135,7 +131,6 @@ export function NetworkSettingsDialog({
       setError("");
       toast.success(
         t("server.network_settings.template_applied", {
-          defaultValue: "已应用模板：{{name}}",
           name: "name" in tmpl ? tmpl.name : (tmpl as any).label,
         }),
       );
@@ -151,18 +146,14 @@ export function NetworkSettingsDialog({
     }
     if (!parsed.value || Object.keys(parsed.value).length === 0) {
       setError(
-        t("server.network_settings.template_empty", {
-          defaultValue: "当前配置为空，无法保存为模板",
-        }),
+        t("server.network_settings.template_empty"),
       );
       return;
     }
     const name = saveName.trim();
     if (!name) {
       toast.error(
-        t("server.network_settings.template_name_required", {
-          defaultValue: "请输入模板名称",
-        }),
+        t("server.network_settings.template_name_required"),
       );
       return;
     }
@@ -173,12 +164,9 @@ export function NetworkSettingsDialog({
         name,
         description: network
           ? t("server.network_settings.template_from_current", {
-              defaultValue: "来自当前 {{network}} 配置",
               network,
             })
-          : t("server.network_settings.template_custom_desc", {
-              defaultValue: "自定义网络设置模板",
-            }),
+          : t("server.network_settings.template_custom_desc"),
         network: network || null,
         settings: parsed.value,
       });
@@ -189,15 +177,11 @@ export function NetworkSettingsDialog({
       });
       await refetch();
       toast.success(
-        t("server.network_settings.template_saved", {
-          defaultValue: "模板已保存",
-        }),
+        t("server.network_settings.template_saved"),
       );
     } catch {
       toast.error(
-        t("server.network_settings.template_save_failed", {
-          defaultValue: "保存模板失败",
-        }),
+        t("server.network_settings.template_save_failed"),
       );
     } finally {
       setSaving(false);
@@ -213,15 +197,11 @@ export function NetworkSettingsDialog({
       });
       await refetch();
       toast.success(
-        t("server.network_settings.template_deleted", {
-          defaultValue: "模板已删除",
-        }),
+        t("server.network_settings.template_deleted"),
       );
     } catch {
       toast.error(
-        t("server.network_settings.template_delete_failed", {
-          defaultValue: "删除模板失败",
-        }),
+        t("server.network_settings.template_delete_failed"),
       );
     } finally {
       setDeletingId(null);
@@ -244,7 +224,7 @@ export function NetworkSettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-6 pb-3 shrink-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <div className="flex items-center gap-2">
             <DialogTitle>
               {t("server.network_settings.edit_protocol_config")}
@@ -260,14 +240,12 @@ export function NetworkSettingsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 space-y-4 pb-2">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-4 px-6 py-4">
           {/* 模板列表 */}
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <Label className="text-sm font-medium">
-                {t("server.network_settings.templates", {
-                  defaultValue: "模板列表",
-                })}
+                {t("server.network_settings.templates")}
               </Label>
               <Button
                 type="button"
@@ -277,9 +255,7 @@ export function NetworkSettingsDialog({
                 onClick={() => setShowSaveForm((v) => !v)}
               >
                 <BookmarkPlus className="h-3.5 w-3.5" />
-                {t("server.network_settings.save_as_template", {
-                  defaultValue: "保存当前为模板",
-                })}
+                {t("server.network_settings.save_as_template")}
               </Button>
             </div>
 
@@ -289,7 +265,6 @@ export function NetworkSettingsDialog({
                   className="flex-1"
                   placeholder={t(
                     "server.network_settings.template_name_placeholder",
-                    { defaultValue: "模板名称，例如：WS 自定义路径" },
                   )}
                   value={saveName}
                   onChange={(e) => setSaveName(e.target.value)}
@@ -320,9 +295,7 @@ export function NetworkSettingsDialog({
                     onClick={() => void handleSaveAsTemplate()}
                   >
                     {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    {t("server.network_settings.save_template", {
-                      defaultValue: "保存模板",
-                    })}
+                    {t("server.network_settings.save_template")}
                   </Button>
                 </div>
               </div>
@@ -331,22 +304,18 @@ export function NetworkSettingsDialog({
             {templatesLoading ? (
               <div className="flex items-center justify-center gap-2 rounded-md border border-dashed px-3 py-6 text-xs text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {t("common.loading", { defaultValue: "加载中..." })}
+                {t("common.loading")}
               </div>
             ) : customTemplates.length === 0 && builtinTemplates.length === 0 ? (
               <p className="text-xs text-muted-foreground rounded-md border border-dashed px-3 py-4 text-center">
-                {t("server.network_settings.templates_empty", {
-                  defaultValue: "暂无可用模板，可将当前配置保存为模板",
-                })}
+                {t("server.network_settings.templates_empty")}
               </p>
             ) : (
               <div className="space-y-3">
                 {customTemplates.length > 0 && (
                   <div className="space-y-1.5">
                     <p className="text-[11px] font-medium text-muted-foreground">
-                      {t("server.network_settings.templates_custom", {
-                        defaultValue: "我的模板",
-                      })}
+                      {t("server.network_settings.templates_custom")}
                     </p>
                     <div className="space-y-1.5">
                       {customTemplates.map((tmpl) => (
@@ -370,9 +339,7 @@ export function NetworkSettingsDialog({
                 {builtinTemplates.length > 0 && (
                   <div className="space-y-1.5">
                     <p className="text-[11px] font-medium text-muted-foreground">
-                      {t("server.network_settings.templates_builtin", {
-                        defaultValue: "内置模板",
-                      })}
+                      {t("server.network_settings.templates_builtin")}
                     </p>
                     <div className="space-y-1.5">
                       {builtinTemplates.map((tmpl) => (
@@ -396,9 +363,7 @@ export function NetworkSettingsDialog({
           {/* JSON 编辑 */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">
-              {t("server.network_settings.json_label", {
-                defaultValue: "网络设置 (JSON)",
-              })}
+              {t("server.network_settings.json_label")}
             </Label>
             <Textarea
               className={cn(
@@ -412,9 +377,6 @@ export function NetworkSettingsDialog({
               }}
               placeholder={t(
                 "server.network_settings.json_config_placeholder_with_template",
-                {
-                  defaultValue: "请输入JSON配置",
-                },
               )}
             />
             {error ? (
@@ -427,7 +389,7 @@ export function NetworkSettingsDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 border-t px-6 py-4">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button
             type="button"
             variant="outline"
@@ -475,7 +437,7 @@ function TemplateRow({
           ) : null}
           {builtin ? (
             <Badge variant="secondary" className="text-[10px]">
-              {t("server.network_settings.builtin", { defaultValue: "内置" })}
+              {t("server.network_settings.builtin")}
             </Badge>
           ) : null}
         </div>
@@ -493,9 +455,7 @@ function TemplateRow({
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-destructive"
             disabled={deleting}
-            title={t("server.network_settings.delete_template", {
-              defaultValue: "删除模板",
-            })}
+            title={t("server.network_settings.delete_template")}
             onClick={onDelete}
           >
             {deleting ? (
@@ -513,9 +473,7 @@ function TemplateRow({
           onClick={onApply}
         >
           <Check className="h-3.5 w-3.5" />
-          {t("server.network_settings.use_template_btn", {
-            defaultValue: "使用",
-          })}
+          {t("server.network_settings.use_template_btn")}
         </Button>
       </div>
     </div>

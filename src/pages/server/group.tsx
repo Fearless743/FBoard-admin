@@ -94,7 +94,7 @@ export function GroupListPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleting(g)}
                       >
                         <Trash2 className="h-4 w-4" />

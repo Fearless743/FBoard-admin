@@ -21,11 +21,10 @@ import { login } from "@/api/auth";
 import { useAuthStore } from "@/store/auth";
 import { adminPath } from "@/lib/paths";
 
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1, "请输入密码"),
-});
-type FormValues = z.infer<typeof schema>;
+type FormValues = {
+  email: string;
+  password: string;
+};
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -35,6 +34,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [remember, setRemember] = useState(true);
+
+  const schema = z.object({
+    email: z
+      .string()
+      .min(1, t("auth.signIn.validation.emailRequired"))
+      .email(t("auth.signIn.validation.emailInvalid")),
+    password: z.string().min(1, t("auth.signIn.validation.passwordRequired")),
+  });
 
   const {
     register,
@@ -85,9 +92,9 @@ export default function LoginPage() {
 
       <div className="relative grid w-full max-w-5xl overflow-hidden rounded-2xl border bg-card shadow-xl md:grid-cols-2">
         {/* 左侧品牌区 */}
-        <div className="relative hidden flex-col justify-between bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 p-10 text-white md:flex">
+        <div className="sidebar-dark relative hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground md:flex">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur ring-1 ring-white/20">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sidebar-accent ring-1 ring-sidebar-border">
               {logo ? (
                 <img src={logo} alt="logo" className="h-8 w-8 object-contain" />
               ) : (
@@ -96,7 +103,7 @@ export default function LoginPage() {
             </div>
             <div>
               <div className="text-xl font-semibold tracking-tight">{siteName}</div>
-              <div className="text-sm text-white/60">Admin Console</div>
+              <div className="text-sm text-sidebar-foreground/60">Admin Console</div>
             </div>
           </div>
 
@@ -104,12 +111,12 @@ export default function LoginPage() {
             <h1 className="text-3xl font-semibold leading-tight">
               {t("auth.signIn.title")}
             </h1>
-            <p className="text-sm leading-relaxed text-white/60">
+            <p className="text-sm leading-relaxed text-sidebar-foreground/60">
               {t("auth.signIn.description")}
             </p>
           </div>
 
-          <div className="text-xs text-white/40">
+          <div className="text-xs text-sidebar-foreground/40">
             © {new Date().getFullYear()} {siteName}. All rights reserved.
           </div>
         </div>
@@ -223,16 +230,18 @@ export default function LoginPage() {
 
       {/* 忘记密码弹窗：展示重置命令 */}
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
             <DialogTitle>{t("auth.signIn.resetPassword.title")}</DialogTitle>
             <DialogDescription>
               {t("auth.signIn.resetPassword.description")}
             </DialogDescription>
           </DialogHeader>
-          <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
-            <code>{t("auth.signIn.resetPassword.command")}</code>
-          </pre>
+          <div className="px-6 py-4">
+            <pre className="overflow-x-auto rounded-md border bg-muted p-3 text-xs">
+              <code>{t("auth.signIn.resetPassword.command")}</code>
+            </pre>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

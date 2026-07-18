@@ -280,6 +280,8 @@ export interface MachineLoadStatus {
     in_speed?: number;
     out_speed?: number;
   };
+  /** fboard-node 二进制版本（机器心跳上报） */
+  version?: string | null;
   updated_at?: number;
 }
 
@@ -291,6 +293,8 @@ export interface Machine {
   notes?: string;
   last_seen_at?: number | null;
   servers_count?: number;
+  /** fboard-node 版本，来自 load_status.version */
+  version?: string | null;
   load_status?: MachineLoadStatus | null;
   [k: string]: any;
 }

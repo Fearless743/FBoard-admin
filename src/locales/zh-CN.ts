@@ -254,8 +254,27 @@ const translations: Translations = {
       "status": {
         "0": "未使用",
         "1": "已使用",
-        "2": "已禁用",
-        "3": "已过期"
+        "2": "已过期",
+        "3": "已禁用"
+      },
+      "edit": {
+        "title": "编辑礼品码",
+        "code": "礼品码",
+        "template": "模板",
+        "templatePlaceholder": "请选择模板",
+        "maxUsage": "最大使用次数",
+        "status": "状态",
+        "expiresAt": "过期时间"
+      },
+      "messages": {
+        "enabled": "已启用",
+        "disabled": "已禁用",
+        "exportSuccess": "导出成功",
+        "deleteConfirmTitle": "确认删除",
+        "deleteConfirmDescription": "确定要删除礼品码 {{code}} 吗？此操作不可撤销。",
+        "deleteSuccess": "删除成功",
+        "selectTemplate": "请选择模板",
+        "updateSuccess": "更新成功"
       }
     },
     "usage": {
@@ -364,6 +383,7 @@ const translations: Translations = {
       "balance": "余额",
       "commission": "佣金",
       "register_time": "注册时间",
+      "invitee_email": "邀请用户",
       "actions": "操作",
       "next_reset_at": "下次重置时间",
       "device_limit": {
@@ -372,7 +392,7 @@ const translations: Translations = {
       },
       "status_text": {
         "normal": "正常",
-        "banned": "封禁"
+        "banned": "已封禁"
       },
       "online_status": {
         "online": "当前在线",
@@ -390,6 +410,7 @@ const translations: Translations = {
         "expired": "已过期 {{days}} 天",
         "remaining": "剩余 {{days}} 天"
       },
+      "copy_email": "复制邮箱",
       "actions_menu": {
         "edit": "编辑",
         "view_details": "查看详情",
@@ -407,6 +428,7 @@ const translations: Translations = {
     },
     "filter": {
       "selected": "已选择 {{count}} 项",
+      "clear_selection": "取消选择",
       "no_results": "未找到结果",
       "clear": "清除筛选",
       "search_placeholder": "搜索...",
@@ -462,9 +484,12 @@ const translations: Translations = {
     "generate": {
       "button": "创建用户",
       "title": "创建用户",
+      "description_single": "创建单个指定邮箱账号",
+      "description_batch": "批量生成随机邮箱账号",
       "form": {
         "email": "邮箱",
         "email_prefix": "帐号(批量生成请留空)",
+        "email_prefix_placeholder": "留空则批量随机",
         "email_domain": "域",
         "password": "密码",
         "password_placeholder": "留空则密码与邮件相同",
@@ -478,7 +503,28 @@ const translations: Translations = {
         "cancel": "取消",
         "submit": "生成",
         "success": "生成成功",
-        "download_csv": "导出为 CSV 文件"
+        "download_csv": "导出为 CSV 文件",
+        "generated_count": "已生成 {{count}} 个账号",
+        "single_success_hint": "账号已创建，可在用户列表中查看与编辑。",
+        "copy_all": "复制全部",
+        "copy_email": "复制邮箱",
+        "copy_subscribe": "复制订阅",
+        "result_password": "密码",
+        "result_expire": "到期"
+      },
+      "copy_line": {
+        "email": "邮箱: {{value}}",
+        "password": "密码: {{value}}",
+        "expire": "到期: {{value}}",
+        "subscribe": "订阅: {{value}}"
+      },
+      "csv": {
+        "email": "邮箱",
+        "password": "密码",
+        "expire_time": "到期时间",
+        "uuid": "UUID",
+        "created_at": "创建时间",
+        "subscribe_url": "订阅地址"
       }
     },
     "edit": {
@@ -679,6 +725,9 @@ const translations: Translations = {
         "success": "邮件发送成功",
         "failed": "邮件发送失败",
         "required_fields": "请填写所有必填字段"
+      },
+      "reset_secret": {
+        "success": "UUID & Token 已重置"
       }
     },
     "send_mail": {
@@ -820,22 +869,26 @@ const translations: Translations = {
         "edit_title": "编辑套餐",
         "name": {
           "label": "套餐名称",
-          "placeholder": "请输入套餐名称"
+          "placeholder": "请输入套餐名称",
+          "required": "请输入套餐名称"
         },
         "group": {
-          "label": "服务器分组",
-          "add": "添加分组",
-          "placeholder": "请选择服务器分组"
+          "label": "权限组",
+          "add": "添加权限组",
+          "placeholder": "请选择权限组",
+          "none": "不绑定权限组"
         },
         "transfer": {
           "label": "流量",
           "placeholder": "请输入流量限制",
-          "unit": "GB"
+          "unit": "GB",
+          "hint": "套餐包含的流量配额，单位为 GB"
         },
         "speed": {
           "label": "速度限制",
-          "placeholder": "请输入速度限制",
-          "unit": "Mbps"
+          "placeholder": "0 表示不限制",
+          "unit": "Mbps",
+          "hint": "单用户限速，0 或留空表示不限制"
         },
         "price": {
           "title": "价格设置",
@@ -853,13 +906,15 @@ const translations: Translations = {
         },
         "device": {
           "label": "设备限制",
-          "placeholder": "请输入设备限制",
-          "unit": "台"
+          "placeholder": "0 表示不限制",
+          "unit": "台",
+          "hint": "同时在线设备数，0 或留空表示不限制"
         },
         "capacity": {
           "label": "容量限制",
-          "placeholder": "请输入容量限制",
-          "unit": "人"
+          "placeholder": "0 表示不限制",
+          "unit": "人",
+          "hint": "可售卖名额上限，0 或留空表示不限制"
         },
         "tags": {
           "label": "标签",
@@ -892,6 +947,17 @@ const translations: Translations = {
             "tooltip": "使用默认模板",
             "content": "## 套餐详情\n\n- 流量：{{transfer}} GB\n- 速度限制：{{speed}} Mbps\n- 同时在线设备：{{devices}} 台\n\n## 服务说明\n\n1. 流量{{reset_method}}重置\n2. 支持多平台使用\n3. 7×24小时技术支持"
           }
+        },
+        "section": {
+          "basic": "基本信息",
+          "limits": "配额与限制",
+          "content": "套餐说明",
+          "status": "上架状态"
+        },
+        "status": {
+          "show_desc": "在前台套餐列表中展示",
+          "sell_desc": "允许新用户购买此套餐",
+          "renew_desc": "允许已有用户续费此套餐"
         },
         "force_update": {
           "label": "强制更新用户套餐",
@@ -1236,7 +1302,8 @@ const translations: Translations = {
           "group": {
             "label": "权限组",
             "placeholder": "选择权限组",
-            "add": "添加权限组"
+            "add": "添加权限组",
+            "none": "不绑定权限组"
           },
           "transfer": {
             "label": "流量",
@@ -1691,6 +1758,9 @@ const translations: Translations = {
         "submit": "提交",
         "success": "提交成功"
       }
+    },
+    "messages": {
+      "loadError": "加载公告失败"
     }
   },
   "group": {
@@ -1861,6 +1931,10 @@ const translations: Translations = {
       },
       "messages": {
         "success": "保存成功"
+      },
+      "config": {
+        "title": "支付配置",
+        "noConfig": "该支付方式暂无配置项"
       }
     }
   },
@@ -2057,6 +2131,8 @@ const translations: Translations = {
         "error_numeric": "流量限制必须是数字",
         "error_gte_zero": "流量限制必须大于或等于0"
       },
+      "protocolSection": "协议配置",
+      "traffic_limit_unit": "GB, 0=不限制",
       "banned": {
         "label": "禁用节点",
         "description": "禁用后节点将不可用"
@@ -2115,7 +2191,8 @@ const translations: Translations = {
         "label": "服务端口",
         "placeholder": "请输入服务端口",
         "error": "服务端口不能为空",
-        "tooltip": "服务器上的实际监听端口。"
+        "tooltip": "服务器上的实际监听端口。",
+        "sync": "同步到服务端口"
       },
       "listen_address": {
         "label": "监听地址",
@@ -2166,6 +2243,12 @@ const translations: Translations = {
       "submit": "提交",
       "cancel": "取消",
       "success": "提交成功"
+    },
+    "networkTemplate": {
+      "title": "网络模板",
+      "empty": "当前协议暂无可用模板",
+      "description": "选择一个预设网络模板，一键填充协议配置",
+      "use": "使用"
     },
     "dynamic_form": {
       "multiplex": {
@@ -2551,8 +2634,15 @@ const translations: Translations = {
           "placeholder": "选择传输协议"
         }
       },
-            "sudoku": {
+      "sudoku": {
         "name": "Sudoku",
+        "keyPairTitle": "Sudoku 密钥对",
+        "keyPairDescription": "服务端使用 Master Public Key；Master Private Key 仅保存在面板用于派生用户密钥，不会下发到节点",
+        "generate": "一键生成",
+        "generateSuccess": "Sudoku 密钥对已生成",
+        "generateFailed": "生成 Sudoku 密钥失败",
+        "publicPlaceholder": "点击右上角「一键生成」自动填写",
+        "privatePlaceholder": "仅面板保存，勿泄露",
         "master_public_key": "Master 公钥",
         "master_private_key": "Master 私钥",
         "aead_method": "AEAD 算法",
@@ -2712,6 +2802,34 @@ const translations: Translations = {
     "common": {
       "cancel": "取消",
       "confirm": "确定"
+    },
+    "description": "配置节点通信与同步设置，包括通信密钥、轮询间隔、负载均衡等高级选项。",
+    "device_limit_mode": {
+      "description": "宽松模式下，同一 IP 地址的多个节点计为 1 台设备。",
+      "placeholder": "请选择设备限制模式",
+      "relaxed": "宽松模式",
+      "strict": "严格模式",
+      "title": "设备限制模式"
+    },
+    "saving": "保存中...",
+    "server_pull_interval": {
+      "description": "节点从面板拉取数据的频率。",
+      "placeholder": "请输入拉取间隔",
+      "title": "节点拉取轮询间隔"
+    },
+    "server_push_interval": {
+      "description": "节点向面板推送数据的频率。",
+      "placeholder": "请输入推送间隔",
+      "title": "节点推送轮询间隔"
+    },
+    "server_token": {
+      "description": "面板与节点通信的密钥，用于防止未授权访问。",
+      "placeholder": "请输入通信密钥",
+      "title": "通信密钥"
+    },
+    "title": "节点配置",
+    "messages": {
+      "saveFailed": "保存失败"
     }
   },
   "coupon": {
@@ -2926,6 +3044,7 @@ const translations: Translations = {
       "clear": "清除筛选"
     },
     "actions": {
+      "reply_success": "已回复",
       "view_details": "查看详情",
       "close_ticket": "关闭工单",
       "close_confirm_title": "确认关闭工单",
@@ -2973,6 +3092,7 @@ const translations: Translations = {
       "nodesIdle": "暂无承载",
       "load": "负载",
       "lastSeen": "最后心跳",
+      "version": "版本",
       "actions": "操作",
       "online": "在线",
       "offline": "离线",
@@ -2994,7 +3114,9 @@ const translations: Translations = {
       "online_ratio": "在线",
       "high_load_count": "高负载",
       "tip": "适合集中查看服务器在线情况、承载节点数量与资源压力。",
-      "reset": "重置"
+      "reset": "重置",
+      "nodesHosted": "节点",
+      "nodesIdle": "空闲"
     },
     "operations": {
       "upgrade": "升级 Fboard-Node",
@@ -3139,6 +3261,9 @@ const translations: Translations = {
       "machineIdNone": "独立部署",
       "enabled": "在服务器上激活",
       "enabledDescription": "节点是否在所选服务器上启用运行"
+    },
+    "nodesStatus": {
+      "toggleHint": "在节点管理中修改状态"
     }
   },
   "search": {
@@ -3195,7 +3320,8 @@ const translations: Translations = {
       "reset": "重置",
       "sortModeHint": "拖拽知识条目进行排序，完成后点击保存",
       "editSort": "编辑排序",
-      "saveSort": "保存排序"
+      "saveSort": "保存排序",
+      "allCategories": "全部分类"
     }
   },
   "common": {
@@ -3216,7 +3342,12 @@ const translations: Translations = {
     "toggleNavigation": "切换导航",
     "toggleSidebar": "切换侧边栏",
     "search": "搜索...",
+    "noMatch": "无匹配选项",
+    "selectField": "选择{{name}}",
+    "inputField": "输入{{name}}",
+    "pageNotImplemented": "该页面待实现",
     "theme": {
+      "label": "主题",
       "light": "浅色",
       "dark": "深色",
       "system": "跟随系统"
@@ -3237,9 +3368,10 @@ const translations: Translations = {
       "noData": "暂无数据",
       "pagination": {
         "selected": "已选择 {{selected}} 项，共 {{total}} 项",
-        "itemsPerPage": "每页显示",
+        "itemsPerPage": "每页",
         "page": "第",
         "pageOf": "第 {{page}}/{{total}} 页",
+        "range": "第 {{from}}–{{to}} 条，共 {{total}} 条",
         "firstPage": "跳转到第一页",
         "previousPage": "上一页",
         "nextPage": "下一页",
@@ -3274,10 +3406,26 @@ const translations: Translations = {
       "notLoggedIn": "未登录",
       "unknownError": "未知错误",
       "loginExpired": "登录已过期",
+      "loginExpiredRelogin": "登录已过期，请重新登录",
+      "unauthorized": "未授权，请重新登录",
+      "invalidCredentials": "邮箱或密码错误",
+      "invalidData": "提交的数据有误，请检查输入",
+      "requestFailed": "请求失败",
+      "networkError": "网络错误",
       "noPermission": "没有权限",
       "notFound": "资源或接口不存在",
-      "unknownException": "未知异常"
-    }
+      "unknownException": "未知异常",
+      "success": "操作成功"
+    },
+    "add": "添加",
+    "refresh": "刷新",
+    "sort": {
+      "edit": "编辑排序",
+      "done": "完成排序"
+    },
+    "actions": "操作",
+    "start": "起",
+    "end": "止"
   },
   "sidebar": {
     "dashboard": "仪表盘",
@@ -3395,9 +3543,21 @@ const translations: Translations = {
       "deleteError": "插件删除失败",
       "actionSuccess": "执行成功",
       "actionError": "执行失败",
+      "actionLabel": "动作",
+      "actionSuccessWithLabel": "{{label}} 执行成功",
+      "actionErrorWithLabel": "{{label}} 执行失败",
       "invalidJson": "{{field}} 不是有效的 JSON"
     },
-    "noPlugins": "暂无插件"
+    "staticFiles": {
+      "title": "HTML 静态文件",
+      "backToList": "返回列表",
+      "openInNewTab": "新标签页打开",
+      "empty": "暂无静态文件"
+    },
+    "noPlugins": "暂无插件",
+    "toolbar": {
+      "search": "搜索插件..."
+    }
   },
   "dashboard": {
     "title": "仪表盘",
@@ -3473,9 +3633,19 @@ const translations: Translations = {
     },
     "queue": {
       "title": "队列状态",
+      "metrics": {
+        "pending": "待处理 {{count}}",
+        "maxWait": "最长等待 {{time}}",
+        "backlog": "积压",
+        "processes": "进程",
+        "pendingLabel": "待处理",
+        "wait": "等待"
+      },
       "jobDetails": "作业详情",
+      "workload": "队列负载",
+      "workloadCount": "共 {{count}} 个队列",
       "status": {
-        "description": "当前队列运行状态",
+        "description": "Horizon 运行状态与各队列积压",
         "running": "运行状态",
         "normal": "正常",
         "abnormal": "异常",
@@ -3515,6 +3685,7 @@ const translations: Translations = {
         "queue": "队列",
         "name": "任务名称",
         "exception": "异常信息",
+        "noException": "暂无异常信息",
         "noFailedJobs": "暂无失败任务",
         "connection": "连接类型",
         "payload": "任务数据",
@@ -3535,6 +3706,19 @@ const translations: Translations = {
       "refresh": "刷新",
       "close": "关闭",
       "pagination": "第 {{current}}/{{total}} 页，共 {{count}} 条"
+    },
+    "search": {
+      "loading": "搜索中...",
+      "noResults": "未找到结果",
+      "placeholder": "搜索菜单和功能...",
+      "title": "菜单导航"
+    },
+    "traffic": {
+      "domain": "域名",
+      "monthlyTraffic": "月流量",
+      "rank": "排名",
+      "title": "流量排行",
+      "todayTraffic": "今日流量"
     }
   },
   "order": {
@@ -3544,13 +3728,15 @@ const translations: Translations = {
       "columns": {
         "tradeNo": "订单号",
         "type": "类型",
+        "user": "用户",
         "plan": "订阅计划",
         "period": "周期",
         "amount": "支付金额",
         "status": "订单状态",
-        "commission": "佣金金额",
+        "commission": "佣金",
         "commissionStatus": "佣金状态",
-        "createdAt": "创建时间"
+        "createdAt": "创建时间",
+        "actions": "操作"
       }
     },
     "type": {
@@ -3591,6 +3777,15 @@ const translations: Translations = {
       "VALID": "有效",
       "INVALID": "无效"
     },
+    "filter": {
+      "allTypes": "全部类型",
+      "allPeriods": "全部周期",
+      "allStatuses": "全部状态",
+      "allCommissions": "全部佣金状态",
+      "userId": "用户 ID",
+      "clear": "清除",
+      "clearAll": "清除筛选"
+    },
     "actions": {
       "view": "查看详情",
       "markAsPaid": "标记为已支付",
@@ -3598,10 +3793,11 @@ const translations: Translations = {
       "issue": "发放佣金",
       "invalid": "无效佣金",
       "openMenu": "打开菜单",
-      "reset": "重置"
+      "reset": "重置",
+      "copyTradeNo": "复制订单号"
     },
     "search": {
-      "placeholder": "搜索订单..."
+      "placeholder": "搜索订单号..."
     },
     "dialog": {
       "title": "订单信息",
@@ -3642,7 +3838,8 @@ const translations: Translations = {
         "confirm": "确定"
       },
       "messages": {
-        "addSuccess": "添加成功"
+        "addSuccess": "添加成功",
+        "addOrder": "添加订单"
       }
     },
     "messages": {
@@ -3666,6 +3863,7 @@ const translations: Translations = {
       "clickText": "点击选择",
       "supportText": "支持 .zip 格式的主题包",
       "uploading": "正在上传...",
+      "success": "上传成功",
       "error": {
         "format": "只支持上传 ZIP 格式的主题文件"
       }
@@ -3678,6 +3876,7 @@ const translations: Translations = {
       "version": "版本: {{version}}",
       "currentTheme": "当前主题",
       "activateTheme": "激活主题",
+      "activateSuccess": "已激活",
       "configureTheme": "主题设置",
       "preview": "预览",
       "delete": {

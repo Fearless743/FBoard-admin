@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Pagination } from "@/components/common/pagination";
 import { SortableContainer, SortableRow, DragCell } from "@/components/common/sortable-table";
 import {
   Dialog,
@@ -51,8 +52,11 @@ import {
   deleteGiftCardCode,
   exportGiftCardCodes,
   updateGiftCardTemplate,
+  type GiftCardCodeItem,
   type GiftCardTemplate,
 } from "@/api/misc";
+
+const SORT_PAGE_SIZE = 1000;
 
 export function GiftCardPage() {
   const { t } = useTranslation();
@@ -68,13 +72,13 @@ export function GiftCardPage() {
           <TabsTrigger value="codes">{t("giftCard.tabs.codes")}</TabsTrigger>
           <TabsTrigger value="usages">{t("giftCard.tabs.usages")}</TabsTrigger>
         </TabsList>
-        <TabsContent value="templates">
+        <TabsContent value="templates" className="mt-4">
           <TemplatesPanel />
         </TabsContent>
-        <TabsContent value="codes">
+        <TabsContent value="codes" className="mt-4">
           <CodesPanel />
         </TabsContent>
-        <TabsContent value="usages">
+        <TabsContent value="usages" className="mt-4">
           <UsagesPanel />
         </TabsContent>
       </Tabs>
@@ -89,27 +93,71 @@ function TemplatesPanel() {
   const [editing, setEditing] = useState<GiftCardTemplate | null>(null);
   const [deleting, setDeleting] = useState<GiftCardTemplate | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
+  const [pendingList, setPendingList] = useState<GiftCardTemplate[] | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timer);
   }, [search]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const effectivePerPage = dragEnabled ? SORT_PAGE_SIZE : pageSize;
+  const effectivePage = dragEnabled ? 1 : page;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["gift-card", "templates", debouncedSearch],
-    queryFn: () => fetchGiftCardTemplates(debouncedSearch),
+    queryKey: ["gift-card", "templates", { page: effectivePage, pageSize: effectivePerPage, debouncedSearch, dragEnabled }],
+    queryFn: () =>
+      fetchGiftCardTemplates({
+        page: effectivePage,
+        per_page: effectivePerPage,
+        search: debouncedSearch || undefined,
+      }),
   });
   const list: GiftCardTemplate[] = data?.data || [];
-  // 后端已过滤；filtered 仅作为渲染源
-  const filtered = list;
+  const total = data?.total || 0;
+  const displayList = pendingList ?? list;
 
-  const handleReorder = useCallback(async (ids: number[]) => {
+  // 拖拽只改本地顺序，点「完成排序」再提交
+  const handleReorder = useCallback((ids: number[]) => {
+    const reordered = ids
+      .map((id) => displayList.find((i) => Number(i.id) === Number(id)))
+      .filter(Boolean) as GiftCardTemplate[];
+    setPendingList(reordered);
+  }, [displayList]);
+
+  const finishSort = useCallback(async () => {
+    if (!pendingList) {
+      setDragEnabled(false);
+      return;
+    }
     try {
-      await sortGiftCardTemplates(ids);
-      qc.invalidateQueries({ queryKey: ["gift-card", "templates"] });
+      await sortGiftCardTemplates(pendingList.map((i) => Number(i.id)));
+      toast.success(t("common.http.success"));
+      setPendingList(null);
+      setDragEnabled(false);
+      await qc.invalidateQueries({ queryKey: ["gift-card", "templates"] });
     } catch (e) {}
-  }, [qc]);
+  }, [pendingList, qc, t]);
+
+  const toggleDrag = useCallback(() => {
+    if (dragEnabled) {
+      if (pendingList) {
+        void finishSort();
+      } else {
+        setDragEnabled(false);
+      }
+    } else {
+      setPendingList(null);
+      setSearch("");
+      setDebouncedSearch("");
+      setDragEnabled(true);
+    }
+  }, [dragEnabled, pendingList, finishSort]);
 
   return (
     <>
@@ -119,19 +167,19 @@ function TemplatesPanel() {
           <Input
             placeholder={t("giftCard.common.search")}
             value={search}
-            onChange={(e) => { setSearch(e.target.value); if (dragEnabled) setDragEnabled(false); }}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
+            disabled={dragEnabled}
           />
         </div>
         <Button
           variant={dragEnabled ? "default" : "outline"}
-          onClick={() => setDragEnabled(!dragEnabled)}
-          disabled={!!search}
+          onClick={toggleDrag}
         >
           <GripVertical className="h-4 w-4" />
-          {dragEnabled ? "完成排序" : "编辑排序"}
+          {dragEnabled ? t("common.sort.done") : t("common.sort.edit")}
         </Button>
-        <Button onClick={() => { setEditing(null); setOpen(true); }}>
+        <Button onClick={() => { setEditing(null); setOpen(true); }} disabled={dragEnabled}>
           <Plus className="h-4 w-4" />
           {t("giftCard.template.form.add")}
         </Button>
@@ -152,15 +200,15 @@ function TemplatesPanel() {
               <TableRow>
                 <TableCell colSpan={dragEnabled ? 5 : 4}><Skeleton className="h-20 w-full" /></TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : displayList.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={dragEnabled ? 5 : 4}>
                   <EmptyState icon={<Gift className="h-10 w-10" />} />
                 </TableCell>
               </TableRow>
             ) : (
-              <SortableContainer items={list} onReorder={handleReorder} enabled={dragEnabled}>
-                {filtered.map((g) => (
+              <SortableContainer items={displayList} onReorder={handleReorder} enabled={dragEnabled}>
+                {displayList.map((g) => (
                   <SortableRow key={g.id} id={g.id}>
                     <DragCell />
                     <TableCell>
@@ -195,7 +243,7 @@ function TemplatesPanel() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8 text-destructive"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
                           onClick={() => setDeleting(g)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -208,6 +256,18 @@ function TemplatesPanel() {
             )}
           </TableBody>
         </Table>
+        {!dragEnabled && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setPage(1);
+            }}
+          />
+        )}
       </div>
 
       <TemplateFormDialog
@@ -247,7 +307,7 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen ?? true);
   return (
-    <div className="rounded-lg border">
+    <div className="rounded-lg border bg-card">
       <button
         type="button"
         className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-muted/50"
@@ -420,7 +480,7 @@ function TemplateFormDialog({
   };
 
   const submit = async () => {
-    if (!name) { toast.error(t("giftCard.template.form.name.required") || "请输入名称"); return; }
+    if (!name) { toast.error(t("giftCard.template.form.name.required")); return; }
     setSubmitting(true);
     try {
       const payload = buildPayload();
@@ -603,54 +663,100 @@ function CodesPanel() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [editCode, setEditCode] = useState<any>(null);
-  const [deleteCode, setDeleteCode] = useState<any>(null);
-  const { data, isLoading } = useQuery({
-    queryKey: ["gift-card", "codes"],
-    queryFn: () => fetchGiftCardCodes(),
-  });
-  const list: any[] = data?.data || [];
+  const [editCode, setEditCode] = useState<GiftCardCodeItem | null>(null);
+  const [deleteCode, setDeleteCode] = useState<GiftCardCodeItem | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const handleToggle = async (c: any) => {
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["gift-card", "codes", { page, pageSize, debouncedSearch, statusFilter }],
+    queryFn: () =>
+      fetchGiftCardCodes({
+        page,
+        per_page: pageSize,
+        search: debouncedSearch || undefined,
+        status: statusFilter !== "all" ? Number(statusFilter) : undefined,
+      }),
+  });
+  const list: GiftCardCodeItem[] = data?.data || [];
+  const total = data?.total || 0;
+
+  const handleToggle = async (c: GiftCardCodeItem) => {
     try {
       const action = c.status === 3 ? "enable" : "disable";
       await toggleGiftCardCode({ id: c.id, action });
-      toast.success(action === "enable" ? "已启用" : "已禁用");
+      toast.success(action === "enable" ? t("giftCard.code.messages.enabled") : t("giftCard.code.messages.disabled"));
       qc.invalidateQueries({ queryKey: ["gift-card", "codes"] });
     } catch (e) {}
   };
 
   return (
     <>
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t("giftCard.common.search")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder={t("giftCard.code.table.columns.status")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("common.all")}</SelectItem>
+            <SelectItem value="0">{t("giftCard.code.status.0")}</SelectItem>
+            <SelectItem value="1">{t("giftCard.code.status.1")}</SelectItem>
+            <SelectItem value="2">{t("giftCard.code.status.2")}</SelectItem>
+            <SelectItem value="3">{t("giftCard.code.status.3")}</SelectItem>
+          </SelectContent>
+        </Select>
         <Button onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4" />
           {t("giftCard.code.form.generate")}
         </Button>
-        <Button variant="outline" onClick={async () => {
-          try {
-            const res = await exportGiftCardCodes();
-            if (res && typeof res === 'object' && (res as any).url) {
-              window.open((res as any).url, '_blank');
-            } else {
-              toast.success('导出成功');
-            }
-          } catch (e) {}
-        }}>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            try {
+              const res = await exportGiftCardCodes();
+              if (res && typeof res === "object" && (res as any).url) {
+                window.open((res as any).url, "_blank");
+              } else {
+                toast.success(t("giftCard.code.messages.exportSuccess"));
+              }
+            } catch (e) {}
+          }}
+        >
           <Download className="h-4 w-4" />
-          导出
+          {t("giftCard.code.actions.export")}
         </Button>
       </div>
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-16">ID</TableHead>
+              <TableHead className="w-16">{t("giftCard.code.table.columns.id")}</TableHead>
               <TableHead>{t("giftCard.code.table.columns.code")}</TableHead>
               <TableHead>{t("giftCard.code.table.columns.template_name")}</TableHead>
               <TableHead className="text-right">{t("giftCard.code.table.columns.usage_count")}</TableHead>
               <TableHead>{t("giftCard.code.table.columns.created_at")}</TableHead>
-              <TableHead className="w-24 text-right">操作</TableHead>
+              <TableHead className="w-24 text-right">{t("common.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -660,7 +766,7 @@ function CodesPanel() {
               </TableRow>
             ) : list.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6}><EmptyState /></TableCell>
+                <TableCell colSpan={6}><EmptyState icon={<Gift className="h-10 w-10" />} message={t("common.table.noData")} /></TableCell>
               </TableRow>
             ) : (
               list.map((c) => (
@@ -701,7 +807,7 @@ function CodesPanel() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleteCode(c)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -713,8 +819,23 @@ function CodesPanel() {
             )}
           </TableBody>
         </Table>
+
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+        />
       </div>
-      <GenerateCodesDialog open={open} onOpenChange={setOpen} />
+      <GenerateCodesDialog
+        open={open}
+        onOpenChange={setOpen}
+        onGenerated={() => qc.invalidateQueries({ queryKey: ["gift-card", "codes"] })}
+      />
       <EditCodeDialog
         code={editCode}
         onOpenChange={(v) => { if (!v) setEditCode(null); }}
@@ -723,13 +844,13 @@ function CodesPanel() {
       <ConfirmDialog
         open={!!deleteCode}
         onOpenChange={(v) => !v && setDeleteCode(null)}
-        title="确认删除"
-        description={`确定要删除礼品码 ${deleteCode?.code} 吗？此操作不可撤销。`}
+        title={t("giftCard.code.messages.deleteConfirmTitle")}
+        description={t("giftCard.code.messages.deleteConfirmDescription", { code: deleteCode?.code })}
         onConfirm={async () => {
           if (!deleteCode) return;
           try {
             await deleteGiftCardCode(deleteCode.id);
-            toast.success('删除成功');
+            toast.success(t("giftCard.code.messages.deleteSuccess"));
             qc.invalidateQueries({ queryKey: ["gift-card", "codes"] });
             setDeleteCode(null);
           } catch (e) {}
@@ -739,7 +860,15 @@ function CodesPanel() {
   );
 }
 
-function GenerateCodesDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+function GenerateCodesDialog({
+  open,
+  onOpenChange,
+  onGenerated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onGenerated?: () => void;
+}) {
   const { t } = useTranslation();
   const [templateId, setTemplateId] = useState("");
   const [count, setCount] = useState("10");
@@ -747,16 +876,17 @@ function GenerateCodesDialog({ open, onOpenChange }: { open: boolean; onOpenChan
 
   const submit = async () => {
     if (!templateId) {
-      toast.error("请选择模板");
+      toast.error(t("giftCard.code.messages.selectTemplate"));
       return;
     }
     setSubmitting(true);
     try {
-      const res = await generateGiftCardCodes({
+      await generateGiftCardCodes({
         template_id: Number(templateId),
         count: Number(count) || 1,
       });
       toast.success(t("giftCard.messages.codesGenerated"));
+      onGenerated?.();
       onOpenChange(false);
     } catch (e) {
     } finally {
@@ -808,7 +938,7 @@ function EditCodeDialog({
   onOpenChange,
   onSaved,
 }: {
-  code: any;
+  code: GiftCardCodeItem | null;
   onOpenChange: (v: boolean) => void;
   onSaved: () => void;
 }) {
@@ -822,8 +952,8 @@ function EditCodeDialog({
   const [submitting, setSubmitting] = useState(false);
 
   const { data: templatesData } = useQuery({
-    queryKey: ["gift-card", "templates"],
-    queryFn: () => fetchGiftCardTemplates(),
+    queryKey: ["gift-card", "templates", "options"],
+    queryFn: () => fetchGiftCardTemplates({ page: 1, per_page: 1000 }),
     enabled: open,
   });
   const templates: any[] = (templatesData as any)?.data || [];
@@ -852,7 +982,7 @@ function EditCodeDialog({
       else payload.expires_at = null;
       if (editStatus !== code.status) payload.status = editStatus;
       await updateGiftCardCode(payload);
-      toast.success("更新成功");
+      toast.success(t("giftCard.code.messages.updateSuccess"));
       onSaved();
     } catch (e) {
     } finally {
@@ -864,17 +994,17 @@ function EditCodeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
-          <DialogTitle>编辑礼品码</DialogTitle>
+          <DialogTitle>{t("giftCard.code.edit.title")}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
           <div className="space-y-1.5">
-            <Label>礼品码</Label>
+            <Label>{t("giftCard.code.edit.code")}</Label>
             <Input value={codeVal} onChange={(e) => setCodeVal(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label>模板</Label>
+            <Label>{t("giftCard.code.edit.template")}</Label>
             <Select value={templateId} onValueChange={setTemplateId}>
-              <SelectTrigger><SelectValue placeholder={code?.template?.name || "请选择模板"} /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={code?.template?.name || t("giftCard.code.edit.templatePlaceholder")} /></SelectTrigger>
               <SelectContent>
                 {templates.map((tpl: any) => (
                   <SelectItem key={tpl.id} value={String(tpl.id)}>{tpl.name}</SelectItem>
@@ -884,24 +1014,24 @@ function EditCodeDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>最大使用次数</Label>
+              <Label>{t("giftCard.code.edit.maxUsage")}</Label>
               <Input type="number" min={1} max={1000} value={maxUsage} onChange={(e) => setMaxUsage(Number(e.target.value))} />
             </div>
             <div className="space-y-1.5">
-              <Label>状态</Label>
+              <Label>{t("giftCard.code.edit.status")}</Label>
               <Select value={String(editStatus)} onValueChange={(v) => setEditStatus(Number(v))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">未使用</SelectItem>
-                  <SelectItem value="1">已使用</SelectItem>
-                  <SelectItem value="2">已过期</SelectItem>
-                  <SelectItem value="3">已禁用</SelectItem>
+                  <SelectItem value="0">{t("giftCard.code.status.0")}</SelectItem>
+                  <SelectItem value="1">{t("giftCard.code.status.1")}</SelectItem>
+                  <SelectItem value="2">{t("giftCard.code.status.2")}</SelectItem>
+                  <SelectItem value="3">{t("giftCard.code.status.3")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>过期时间</Label>
+            <Label>{t("giftCard.code.edit.expiresAt")}</Label>
             <Input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
           </div>
         </div>
@@ -909,7 +1039,7 @@ function EditCodeDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
           <Button onClick={submit} disabled={submitting}>
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            保存
+            {t("common.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -919,50 +1049,91 @@ function EditCodeDialog({
 
 function UsagesPanel() {
   const { t } = useTranslation();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["gift-card", "usages"],
-    queryFn: () => fetchGiftCardUsages(),
+    queryKey: ["gift-card", "usages", { page, pageSize, debouncedSearch }],
+    queryFn: () =>
+      fetchGiftCardUsages({
+        page,
+        per_page: pageSize,
+        search: debouncedSearch || undefined,
+      }),
   });
   const list: any[] = data?.data || [];
+  const total = data?.total || 0;
 
   return (
-    <div className="rounded-lg border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-16">ID</TableHead>
-            <TableHead>{t("giftCard.usage.table.columns.code")}</TableHead>
-            <TableHead>{t("giftCard.usage.table.columns.user_email")}</TableHead>
-            <TableHead>{t("giftCard.usage.table.columns.rewards_given")}</TableHead>
-            <TableHead>{t("giftCard.usage.table.columns.ip_address")}</TableHead>
-            <TableHead>{t("giftCard.usage.table.columns.created_at")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
+    <>
+      <div className="mb-4">
+        <div className="relative max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t("giftCard.common.search")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6}><Skeleton className="h-20 w-full" /></TableCell>
+              <TableHead className="w-16">ID</TableHead>
+              <TableHead>{t("giftCard.usage.table.columns.code")}</TableHead>
+              <TableHead>{t("giftCard.usage.table.columns.user_email")}</TableHead>
+              <TableHead>{t("giftCard.usage.table.columns.rewards_given")}</TableHead>
+              <TableHead>{t("giftCard.usage.table.columns.ip_address")}</TableHead>
+              <TableHead>{t("giftCard.usage.table.columns.created_at")}</TableHead>
             </TableRow>
-          ) : list.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6}><EmptyState /></TableCell>
-            </TableRow>
-          ) : (
-            list.map((u) => (
-              <TableRow key={u.id}>
-                <TableCell><IdBadge id={u.id} /></TableCell>
-                <TableCell className="font-mono text-xs">{u.code}</TableCell>
-                <TableCell>{u.user_email}</TableCell>
-                <TableCell className="text-xs">
-                  {u.rewards_given ? JSON.stringify(u.rewards_given) : "—"}
-                </TableCell>
-                <TableCell className="text-xs">{u.ip_address}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{u.created_at}</TableCell>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6}><Skeleton className="h-20 w-full" /></TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            ) : list.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6}><EmptyState icon={<Gift className="h-10 w-10" />} message={t("common.table.noData")} /></TableCell>
+              </TableRow>
+            ) : (
+              list.map((u) => (
+                <TableRow key={u.id}>
+                  <TableCell><IdBadge id={u.id} /></TableCell>
+                  <TableCell className="font-mono text-xs">{u.code}</TableCell>
+                  <TableCell>{u.user_email}</TableCell>
+                  <TableCell className="text-xs">
+                    {u.rewards_given ? JSON.stringify(u.rewards_given) : "—"}
+                  </TableCell>
+                  <TableCell className="text-xs">{u.ip_address}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{u.created_at}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+        />
+      </div>
+    </>
   );
 }

@@ -120,12 +120,25 @@ export interface QueueStats {
   wait: Record<string, number>;
 }
 
+/** Horizon 单队列负载 */
+export interface QueueWorkloadItem {
+  name: string;
+  length: number;
+  wait: number;
+  processes: number;
+  split_queues?: Array<{ name: string; length: number; wait: number }> | null;
+}
+
 export async function getSystemStatus() {
-  return adminGet<any>("/system/getSystemStatus");
+  return adminGet<{
+    schedule: boolean;
+    horizon: boolean;
+    schedule_last_runtime?: number | null;
+  }>("/system/getSystemStatus");
 }
 
 export async function getQueueWorkload() {
-  return adminGet<any>("/system/getQueueWorkload");
+  return adminGet<QueueWorkloadItem[]>("/system/getQueueWorkload");
 }
 
 export async function getQueueMasters() {

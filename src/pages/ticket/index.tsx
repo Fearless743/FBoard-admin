@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Eye, X, Loader2, User, Activity, ClipboardList } from "lucide-react";
+import { Search, Eye, X, Loader2, User, Activity, ClipboardList, MessageSquare } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -97,7 +98,7 @@ export function TicketListPage() {
     setReplying(true);
     try {
       await replyTicket({ id: viewing.id, message: reply });
-      toast.success("已回复");
+      toast.success(t("ticket.actions.reply_success"));
       setReply("");
       const d = await getTicketDetail(viewing.id);
       setDetailData(d);
@@ -129,8 +130,8 @@ export function TicketListPage() {
         </TabsList>
       </Tabs>
 
-      <div className="mb-4">
-        <div className="relative max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("ticket.list.search_placeholder")}
@@ -174,71 +175,105 @@ export function TicketListPage() {
                 </TableRow>
               ))
             ) : list.length === 0 ? (
-              <TableRow>
+              <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={6}>
-                  <EmptyState />
+                  <EmptyState
+                    icon={<MessageSquare className="h-10 w-10" />}
+                    message={t("common.table.noData")}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
               list.map((tk) => (
-                <TableRow key={tk.id}>
-                  <TableCell><IdBadge id={tk.id} /></TableCell>
+                <TableRow
+                  key={tk.id}
+                  className={cn(
+                    tk.status !== 1 && tk.reply_status !== 1 && "bg-destructive/[0.02]",
+                  )}
+                >
+                  <TableCell><IdBadge id={tk.id} compact /></TableCell>
                   <TableCell className="font-medium">{tk.subject}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "h-5 font-normal",
+                        tk.level === 2 &&
+                          "border-destructive/30 bg-destructive/10 text-destructive",
+                        tk.level === 1 &&
+                          "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                        tk.level === 0 &&
+                          "border-muted-foreground/20 bg-muted text-muted-foreground",
+                      )}
+                    >
                       {t(`ticket.level.${levelKey[tk.level] ?? tk.level}`)}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {tk.status === 1 ? (
-                      <Badge variant="secondary">
-                        {t("ticket.status.closed")}
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant={
-                          tk.reply_status === 1 ? "success" : "destructive"
-                        }
-                      >
-                        {tk.reply_status === 1
-                          ? t("ticket.status.replied")
-                          : t("ticket.status.unreplied")}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "h-1.5 w-1.5 shrink-0 rounded-full",
+                          tk.status === 1
+                            ? "bg-muted-foreground"
+                            : tk.reply_status === 1
+                              ? "bg-emerald-500"
+                              : "bg-destructive",
+                        )}
+                      />
+                      {tk.status === 1 ? (
+                        <Badge variant="secondary" className="h-5 font-normal">
+                          {t("ticket.status.closed")}
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant={
+                            tk.reply_status === 1 ? "success" : "destructive"
+                          }
+                          className="h-5 font-normal"
+                        >
+                          {tk.reply_status === 1
+                            ? t("ticket.status.replied")
+                            : t("ticket.status.unreplied")}
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground tabular-nums">
                     {formatDate(tk.updated_at)}
                   </TableCell>
-                  <TableCell className="text-right flex gap-1 justify-end">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={async () => {
-                        setViewing(tk);
-                        setDetailLoading(true);
-                        try {
-                          const d = await getTicketDetail(tk.id);
-                          setDetailData(d);
-                        } catch {
-                          setDetailData(null);
-                        } finally {
-                          setDetailLoading(false);
-                        }
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    {tk.status !== 1 && (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setClosing(tk)}
+                        className="h-8 w-8"
+                        onClick={async () => {
+                          setViewing(tk);
+                          setDetailLoading(true);
+                          try {
+                            const d = await getTicketDetail(tk.id);
+                            setDetailData(d);
+                          } catch {
+                            setDetailData(null);
+                          } finally {
+                            setDetailLoading(false);
+                          }
+                        }}
                       >
-                        <X className="h-4 w-4" />
+                        <Eye className="h-4 w-4" />
                       </Button>
-                    )}
+                      {tk.status !== 1 && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => setClosing(tk)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -339,7 +374,7 @@ export function TicketListPage() {
                   <span>·</span>
                   <span>{t(`ticket.status.${statusKey[viewing?.status ?? 0] ?? viewing?.status}`)}</span>
                   <span className="ml-1 flex items-center gap-0.5">
-                    <Button size="icon" variant="ghost" className="h-6 w-6" title="用户信息" onClick={() => setShowUserInfo(true)}>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" title={t("ticket.detail.user_info")} onClick={() => setShowUserInfo(true)}>
                       <User className="h-3.5 w-3.5" />
                     </Button>
                     <Button size="icon" variant="ghost" className="h-6 w-6" title={t("ticket.detail.traffic_records")} onClick={() => setShowTrafficRecords(true)}>
@@ -369,7 +404,7 @@ export function TicketListPage() {
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
                           msg.is_from_bot
-                            ? "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-tr-sm"
+                            ? "rounded-tr-sm border border-primary/20 bg-primary/5"
                             : msg.is_from_admin
                               ? "bg-primary text-primary-foreground rounded-tr-sm"
                               : "bg-muted rounded-tl-sm"
@@ -377,7 +412,7 @@ export function TicketListPage() {
                       >
                         <div className="flex items-center gap-1.5 mb-0.5">
                           {msg.is_from_bot && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400">
+                            <Badge variant="outline" className="h-4 px-1.5 py-0 text-[10px] text-primary">
                               Bot
                             </Badge>
                           )}
@@ -442,21 +477,25 @@ export function TicketListPage() {
 
       {/* 流量记录弹窗 */}
       <Dialog open={showTrafficRecords} onOpenChange={setShowTrafficRecords}>
-        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
             <DialogTitle>{t("ticket.detail.traffic_records")}</DialogTitle>
           </DialogHeader>
-          <TrafficRecordsView userId={detailData?.user?.id || viewing?.user_id} />
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+            <TrafficRecordsView userId={detailData?.user?.id || viewing?.user_id} />
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* 订单记录弹窗 */}
       <Dialog open={showOrders} onOpenChange={setShowOrders}>
-        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
             <DialogTitle>{t("ticket.detail.order_records")}</DialogTitle>
           </DialogHeader>
-          <OrderRecordsView userId={viewing?.user_id} />
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+            <OrderRecordsView userId={viewing?.user_id} />
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -490,7 +529,7 @@ function TrafficRecordsView({ userId }: { userId?: number }) {
   });
   const list = data?.data || [];
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
       {isLoading ? (
         <Skeleton className="h-20 w-full rounded-lg" />
       ) : list.length === 0 ? (
@@ -536,7 +575,7 @@ function OrderRecordsView({ userId }: { userId?: number }) {
   const statusKey: any = { 0: "PENDING", 1: "PROCESSING", 2: "CANCELLED", 3: "COMPLETED", 4: "DISCOUNTED" };
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
       {isLoading ? (
         <Skeleton className="h-20 w-full rounded-lg" />
       ) : list.length === 0 ? (

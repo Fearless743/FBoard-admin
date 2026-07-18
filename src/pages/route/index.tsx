@@ -97,7 +97,20 @@ export function RouteListPage() {
                   <TableCell><IdBadge id={r.id} /></TableCell>
                   <TableCell className="font-medium">{r.remarks}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{t(`route.actions.${r.action}`)}</Badge>
+                    <Badge
+                      variant="outline"
+                      className={
+                        r.action === "block"
+                          ? "h-5 border-destructive/30 bg-destructive/10 font-normal text-destructive"
+                          : r.action === "direct"
+                            ? "h-5 border-emerald-500/30 bg-emerald-500/10 font-normal text-emerald-700 dark:text-emerald-300"
+                            : r.action === "dns"
+                              ? "h-5 border-sky-500/30 bg-sky-500/10 font-normal text-sky-700 dark:text-sky-300"
+                              : "h-5 border-violet-500/30 bg-violet-500/10 font-normal text-violet-700 dark:text-violet-300"
+                      }
+                    >
+                      {t(`route.actions.${r.action}`)}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {t("route.columns.matchRules", { count: (r.match || []).length })}
@@ -115,7 +128,7 @@ export function RouteListPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleting(r)}
                       >
                         <Trash2 className="h-4 w-4" />

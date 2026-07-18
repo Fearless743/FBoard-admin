@@ -39,7 +39,7 @@ export function StatCard({ title, value, delta, deltaLabel, icon, className, foo
         <div
           className={cn(
             "mt-2 flex items-center gap-1 text-xs",
-            up ? "text-emerald-600" : "text-red-500"
+            up ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
           )}
         >
           {up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}

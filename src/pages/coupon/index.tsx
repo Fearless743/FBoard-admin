@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Search, TicketPercent, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { IdBadge } from "@/components/common/id-badge";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -135,7 +141,7 @@ export function CouponListPage() {
               <TableHead className="w-16">{t("coupon.table.columns.id")}</TableHead>
               <TableHead className="w-16 text-center">{t("coupon.table.columns.show")}</TableHead>
               <TableHead>{t("coupon.table.columns.name")}</TableHead>
-              <TableHead className="w-24">{t("coupon.table.columns.type")}</TableHead>
+              <TableHead className="min-w-[9.5rem]">{t("coupon.table.columns.type")}</TableHead>
               <TableHead className="w-40">{t("coupon.table.columns.code")}</TableHead>
               <TableHead className="w-24 text-right">{t("coupon.table.columns.limitUse")}</TableHead>
               <TableHead className="w-40">{t("coupon.table.columns.validity")}</TableHead>
@@ -152,13 +158,20 @@ export function CouponListPage() {
                 </TableRow>
               ))
             ) : list.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8}><EmptyState /></TableCell>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={8}>
+                  <EmptyState
+                    icon={<TicketPercent className="h-10 w-10" />}
+                    message={t("common.table.noData")}
+                  />
+                </TableCell>
               </TableRow>
             ) : (
-              list.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell><IdBadge id={c.id} /></TableCell>
+              list.map((c) => {
+                const validity = validityMeta(t, c);
+                return (
+                <TableRow key={c.id} className="group">
+                  <TableCell><IdBadge id={c.id} compact /></TableCell>
                   <TableCell className="text-center">
                     <Switch
                       checked={!!c.show}
@@ -167,17 +180,59 @@ export function CouponListPage() {
                   </TableCell>
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {t(`coupon.table.toolbar.types.${c.type}`)}
-                      {c.type === 1 ? ` ${c.value / 100}` : ` ${c.value}%`}
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "max-w-full whitespace-nowrap font-normal px-2 py-0.5 leading-5",
+                        c.type === 1
+                          ? "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300"
+                          : "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300",
+                      )}
+                    >
+                      <span className="truncate">
+                        {t(`coupon.table.toolbar.types.${c.type}`)}
+                      </span>
+                      <span className="ml-1 shrink-0 tabular-nums">
+                        {c.type === 1
+                          ? `¥${(c.value / 100).toFixed(0)}`
+                          : `${c.value}%`}
+                      </span>
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{c.code}</TableCell>
+                  <TableCell>
+                    <div className="flex min-w-0 items-center gap-1">
+                      <span className="truncate font-mono text-xs" title={c.code}>{c.code}</span>
+                      {c.code && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(c.code);
+                                  toast.success(t("common.copy.success"));
+                                } catch {
+                                  toast.error(t("common.copy.failed"));
+                                }
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t("common.copy.success")}</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {c.limit_use ?? "∞"}
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatValidity(t, c)}
+                  <TableCell>
+                    <span className={cn("text-xs", validity.className)}>
+                      {validity.label}
+                    </span>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -192,7 +247,7 @@ export function CouponListPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleting(c)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -200,7 +255,8 @@ export function CouponListPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+              );
+              })
             )}
           </TableBody>
         </Table>
@@ -243,21 +299,33 @@ export function CouponListPage() {
   );
 }
 
-function formatValidity(t: (k: string, p?: any) => string, c: CouponItem) {
+function validityMeta(t: (k: string, p?: any) => string, c: CouponItem) {
   const now = Math.floor(Date.now() / 1000);
   if (c.ended_at && c.ended_at < now) {
     const d = remainingDays(c.ended_at);
-    return t("coupon.table.validity.expired", { days: Math.abs(d || 0) });
+    return {
+      label: t("coupon.table.validity.expired", { days: Math.abs(d || 0) }),
+      className: "text-destructive",
+    };
   }
   if (c.started_at && c.started_at > now) {
     const d = remainingDays(c.started_at);
-    return t("coupon.table.validity.notStarted", { days: d });
+    return {
+      label: t("coupon.table.validity.notStarted", { days: d }),
+      className: "text-amber-600 dark:text-amber-400",
+    };
   }
   if (c.ended_at) {
     const d = remainingDays(c.ended_at);
-    return t("coupon.table.validity.remaining", { days: d });
+    return {
+      label: t("coupon.table.validity.remaining", { days: d }),
+      className: (d ?? 99) <= 3 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground",
+    };
   }
-  return t("coupon.table.validity.unlimited");
+  return {
+    label: t("coupon.table.validity.unlimited"),
+    className: "text-muted-foreground",
+  };
 }
 
 function CouponFormDialog({
@@ -359,7 +427,7 @@ function CouponFormDialog({
                 type="number"
                 value={value}
                 onChange={(e) => setValue(Number(e.target.value))}
-                placeholder={type === 1 ? "元" : "%"}
+                placeholder={type === 1 ? t("common.currency.yuan") : "%"}
               />
             </div>
           </div>
@@ -379,11 +447,15 @@ function CouponFormDialog({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
-              <Label>{t("coupon.form.validity.label")} (起)</Label>
+              <Label>
+                {t("coupon.form.validity.label")} ({t("common.start")})
+              </Label>
               <Input type="datetime-local" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("coupon.form.validity.label")} (止)</Label>
+              <Label>
+                {t("coupon.form.validity.label")} ({t("common.end")})
+              </Label>
               <Input type="datetime-local" value={endedAt} onChange={(e) => setEndedAt(e.target.value)} />
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import i18n from "@/lib/i18n";
 
 const API_PREFIX = "/api/v2";
 const STORAGE_AUTH = "fboard-admin-auth";
@@ -34,15 +35,33 @@ export function getAuthUser(): any | null {
   }
 }
 
+function tt(key: string, fallback: string): string {
+  const value = i18n.t(key);
+  return !value || value === key ? fallback : value;
+}
+
 function translateErrorMsg(msg: string): string {
   const map: Record<string, string> = {
-    Unauthorized: "未授权，请重新登录",
-    "email or password is incorrect": "邮箱或密码错误",
-    "Email or password is incorrect": "邮箱或密码错误",
-    "The given data was invalid": "提交的数据有误，请检查输入",
-    "操作成功": "操作成功",
+    Unauthorized: tt("common.http.unauthorized", "未授权，请重新登录"),
+    "email or password is incorrect": tt(
+      "common.http.invalidCredentials",
+      "邮箱或密码错误",
+    ),
+    "Email or password is incorrect": tt(
+      "common.http.invalidCredentials",
+      "邮箱或密码错误",
+    ),
+    "The given data was invalid": tt(
+      "common.http.invalidData",
+      "提交的数据有误，请检查输入",
+    ),
+    操作成功: tt("common.http.success", "操作成功"),
   };
   return map[msg] || msg;
+}
+
+function loginExpiredMsg(): string {
+  return tt("common.http.loginExpiredRelogin", "登录已过期，请重新登录");
 }
 
 async function request<T = any>(method: string, url: string, body?: any, params?: any): Promise<T> {
@@ -73,7 +92,7 @@ async function request<T = any>(method: string, url: string, body?: any, params?
         clearAuth();
         const path = getSecurePath();
         if (!location.pathname.includes(`/${path}/login`)) {
-          toast.error("登录已过期，请重新登录");
+          toast.error(loginExpiredMsg());
           setTimeout(() => { location.href = `/${path}/login`; }, 500);
         }
       } else if (res.status !== 404 && res.status !== 422) {
@@ -85,7 +104,7 @@ async function request<T = any>(method: string, url: string, body?: any, params?
     // Compat: passport-style { status: "success", data, message }
     if (typeof json === "object" && "status" in json && "data" in json) {
       if (json.status !== "success") {
-        const msg = json.message || "请求失败";
+        const msg = json.message || tt("common.http.requestFailed", "请求失败");
         toast.error(translateErrorMsg(msg));
         throw new Error(msg);
       }
@@ -100,8 +119,9 @@ async function request<T = any>(method: string, url: string, body?: any, params?
     return json as T;
   } catch (err: any) {
     if (err.name !== "Error" || !err.message.startsWith("HTTP")) {
-      const msg = err.message || "网络错误";
-      if (msg !== "登录已过期，请重新登录") {
+      const expired = loginExpiredMsg();
+      const msg = err.message || tt("common.http.networkError", "网络错误");
+      if (msg !== expired) {
         toast.error(translateErrorMsg(msg));
       }
     }
@@ -146,7 +166,7 @@ export async function upload<T = any>(url: string, formData: FormData): Promise<
         clearAuth();
         const path = getSecurePath();
         if (!location.pathname.includes(`/${path}/login`)) {
-          toast.error("登录已过期，请重新登录");
+          toast.error(loginExpiredMsg());
           setTimeout(() => { location.href = `/${path}/login`; }, 500);
         }
       } else if (res.status !== 404 && res.status !== 422) {
@@ -157,7 +177,7 @@ export async function upload<T = any>(url: string, formData: FormData): Promise<
 
     if (typeof json === "object" && "status" in json && "data" in json) {
       if (json.status !== "success") {
-        const msg = json.message || "请求失败";
+        const msg = json.message || tt("common.http.requestFailed", "请求失败");
         toast.error(translateErrorMsg(msg));
         throw new Error(msg);
       }
@@ -167,8 +187,9 @@ export async function upload<T = any>(url: string, formData: FormData): Promise<
     return json as T;
   } catch (err: any) {
     if (err.name !== "Error" || !err.message.startsWith("HTTP")) {
-      const msg = err.message || "网络错误";
-      if (msg !== "登录已过期，请重新登录") {
+      const expired = loginExpiredMsg();
+      const msg = err.message || tt("common.http.networkError", "网络错误");
+      if (msg !== expired) {
         toast.error(translateErrorMsg(msg));
       }
     }

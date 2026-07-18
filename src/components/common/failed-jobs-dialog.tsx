@@ -19,6 +19,7 @@ interface FailedJobsDialogProps {
 }
 
 function FailedJobCard({ job }: { job: FailedJobItem }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-lg border p-4 transition-colors hover:bg-muted/30">
       <div className="flex items-start justify-between gap-2">
@@ -43,7 +44,8 @@ function FailedJobCard({ job }: { job: FailedJobItem }) {
       </div>
       <div className="mt-2 rounded bg-muted/50 p-2">
         <p className="text-xs text-muted-foreground leading-relaxed break-all max-h-20 overflow-hidden relative">
-          {job.exception?.split("\n")[0] || "暂无异常信息"}
+          {job.exception?.split("\n")[0] ||
+            t("dashboard.queue.details.noException")}
         </p>
       </div>
     </div>
@@ -65,8 +67,8 @@ export function FailedJobsDialog({ open, onOpenChange }: FailedJobsDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Bug className="h-5 w-5 text-destructive" />
             {t("dashboard.queue.details.failedJobsDetailTitle")}
@@ -78,7 +80,7 @@ export function FailedJobsDialog({ open, onOpenChange }: FailedJobsDialogProps) 
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto -mx-6 px-6">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -87,25 +89,26 @@ export function FailedJobsDialog({ open, onOpenChange }: FailedJobsDialogProps) 
             </div>
           ) : jobs.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-muted-foreground">
-              <AlertCircle className="mb-2 h-8 w-8" />
+              <AlertCircle className="mb-2 h-8 w-8 text-muted-foreground/60" />
               <p className="text-sm">{t("dashboard.queue.details.noFailedJobs")}</p>
             </div>
           ) : (
-            <div className="space-y-3 py-2">
-              {jobs.map((job) => (
-                <FailedJobCard key={job.id} job={job} />
-              ))}
-            </div>
+            jobs.map((job) => (
+              <FailedJobCard key={job.id} job={job} />
+            ))
           )}
         </div>
 
         {total > PAGE_SIZE && (
-          <Pagination
-            page={page}
-            pageSize={PAGE_SIZE}
-            total={total}
-            onPageChange={setPage}
-          />
+          <div className="border-t px-6 py-3 shrink-0">
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              onPageChange={setPage}
+              compact
+            />
+          </div>
         )}
       </DialogContent>
     </Dialog>

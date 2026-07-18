@@ -1,4 +1,5 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 interface DataPoint {
   date: string;
@@ -22,9 +23,27 @@ function formatAxisValue(v: number): string {
   return v.toFixed(1);
 }
 
+/** 生成平滑三次贝塞尔曲线（Monotone-ish：控制点 y 分别贴合端点，避免过冲过大） */
+function buildSmoothPath(pts: Array<{ x: number; y: number }>): string {
+  if (pts.length === 0) return "";
+  if (pts.length === 1) return `M${pts[0].x},${pts[0].y}`;
+
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const p0 = pts[i - 1];
+    const p1 = pts[i];
+    const dx = (p1.x - p0.x) * 0.4;
+    // 水平控制点 + 端点 y，曲线与填充共用同一几何
+    d += ` C${p0.x + dx},${p0.y} ${p1.x - dx},${p1.y} ${p1.x},${p1.y}`;
+  }
+  return d;
+}
+
 export function SimpleAreaChart({ data, gradientId = "areaGradient", formatter }: SimpleAreaChartProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 300 });
+  const [tooltip, setTooltip] = useState<{ x: number; i: number } | null>(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -45,55 +64,51 @@ export function SimpleAreaChart({ data, gradientId = "areaGradient", formatter }
   const cw = w - pad.l - pad.r;
   const ch = h - pad.t - pad.b;
 
-  if (!data || data.length === 0) {
+  const chart = useMemo(() => {
+    if (!data || data.length === 0) return null;
+
+    const values = data.map((d) => d.value);
+    const maxVal = Math.max(...values, 1);
+    const minVal = 0;
+    const range = maxVal - minVal || 1;
+
+    const xScale = (i: number) => pad.l + (i / Math.max(data.length - 1, 1)) * cw;
+    const yScale = (v: number) => pad.t + ch - ((v - minVal) / range) * ch;
+
+    const pts = data.map((d, i) => ({ x: xScale(i), y: yScale(d.value) }));
+    const smoothPath = buildSmoothPath(pts);
+
+    // 面积与曲线共用同一平滑路径，再沿底边闭合
+    const baselineY = pad.t + ch;
+    const areaPath =
+      pts.length === 0
+        ? ""
+        : `${smoothPath} L${pts[pts.length - 1].x},${baselineY} L${pts[0].x},${baselineY} Z`;
+
+    const gridLines = Array.from({ length: 6 }, (_, i) => {
+      const y = pad.t + (ch / 5) * i;
+      const val = maxVal - (range / 5) * i;
+      return { y, label: formatAxisValue(val) };
+    });
+
+    const labelCount = Math.min(data.length, 6);
+    const labelStep = Math.max(Math.floor(data.length / labelCount), 1);
+    const xLabels = data
+      .map((d, i) => ({ d, i }))
+      .filter(({ i }) => i % labelStep === 0 || i === data.length - 1);
+
+    return { pts, smoothPath, areaPath, gridLines, xLabels, xScale, yScale };
+  }, [data, w, h, cw, ch, pad.l, pad.t, pad.b]);
+
+  if (!data || data.length === 0 || !chart) {
     return (
       <div ref={containerRef} className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
-        暂无数据
+        {t("common.table.noData")}
       </div>
     );
   }
 
-  const values = data.map((d) => d.value);
-  const maxVal = Math.max(...values, 1);
-  const minVal = 0;
-  const range = maxVal - minVal || 1;
-
-  const xScale = (i: number) => pad.l + (i / Math.max(data.length - 1, 1)) * cw;
-  const yScale = (v: number) => pad.t + ch - ((v - minVal) / range) * ch;
-
-  const points = data.map((d, i) => `${xScale(i)},${yScale(d.value)}`);
-  const areaPath = `M${points.join(" L ")} L${xScale(data.length - 1)},${pad.t + ch} L${pad.l},${pad.t + ch} Z`;
-
-  // smooth line path via cubic bezier
-  const smoothLinePath = (() => {
-    if (points.length < 2) return "";
-    let path = `M${points[0]}`;
-    for (let i = 1; i < points.length; i++) {
-      const [x0, y0] = points[i - 1].split(",").map(Number);
-      const [x1, y1] = points[i].split(",").map(Number);
-      const cp1x = x0 + (x1 - x0) * 0.25;
-      const cp1y = y0;
-      const cp2x = x1 - (x1 - x0) * 0.25;
-      const cp2y = y1;
-      path += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${x1},${y1}`;
-    }
-    return path;
-  })();
-
-  // grid lines (5 horizontal)
-  const gridLines = Array.from({ length: 6 }, (_, i) => {
-    const y = pad.t + (ch / 5) * i;
-    const val = maxVal - (range / 5) * i;
-    return { y, label: formatAxisValue(val) };
-  });
-
-  // x-axis labels (show ~6 evenly spaced)
-  const labelCount = Math.min(data.length, 6);
-  const labelStep = Math.max(Math.floor(data.length / labelCount), 1);
-  const xLabels = data.filter((_, i) => i % labelStep === 0 || i === data.length - 1);
-
-  // tooltip state
-  const [tooltip, setTooltip] = useState<{ x: number; i: number } | null>(null);
+  const { smoothPath, areaPath, gridLines, xLabels, xScale, yScale } = chart;
 
   return (
     <div ref={containerRef} style={{ width: "100%", height: 300 }} className="relative select-none">
@@ -108,7 +123,15 @@ export function SimpleAreaChart({ data, gradientId = "areaGradient", formatter }
         {/* grid */}
         {gridLines.map((gl, i) => (
           <g key={i}>
-            <line x1={pad.l} y1={gl.y} x2={w - pad.r} y2={gl.y} stroke={GRID_COLOR} strokeWidth={1} strokeDasharray="3 3" />
+            <line
+              x1={pad.l}
+              y1={gl.y}
+              x2={w - pad.r}
+              y2={gl.y}
+              stroke={GRID_COLOR}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
             <text x={pad.l - 8} y={gl.y + 4} textAnchor="end" fill={AXIS_COLOR} fontSize={12}>
               {gl.label}
             </text>
@@ -116,22 +139,18 @@ export function SimpleAreaChart({ data, gradientId = "areaGradient", formatter }
         ))}
 
         {/* x-axis labels */}
-        {xLabels.map((d, i) => {
-          const idx = data.indexOf(d);
-          const x = xScale(idx);
-          return (
-            <text key={i} x={x} y={h - 6} textAnchor="middle" fill={AXIS_COLOR} fontSize={12}>
-              {d.date}
-            </text>
-          );
-        })}
+        {xLabels.map(({ d, i }) => (
+          <text key={i} x={xScale(i)} y={h - 6} textAnchor="middle" fill={AXIS_COLOR} fontSize={12}>
+            {d.date}
+          </text>
+        ))}
 
-        {/* area fill */}
+        {/* area fill：与折线同一平滑曲线，再闭合到基线 */}
         <path d={areaPath} fill={`url(#${gradientId})`} />
 
-        {/* line */}
+        {/* smooth line */}
         <path
-          d={smoothLinePath}
+          d={smoothPath}
           fill="none"
           stroke="hsl(var(--primary))"
           strokeWidth={2}
@@ -139,8 +158,13 @@ export function SimpleAreaChart({ data, gradientId = "areaGradient", formatter }
           strokeLinecap="round"
         />
 
-        {/* overlay for hover */}
-        <rect x={pad.l} y={pad.t} width={cw} height={ch} fill="transparent"
+        {/* hover overlay */}
+        <rect
+          x={pad.l}
+          y={pad.t}
+          width={cw}
+          height={ch}
+          fill="transparent"
           onMouseMove={(e) => {
             const rect = containerRef.current?.getBoundingClientRect();
             if (!rect) return;
@@ -155,21 +179,41 @@ export function SimpleAreaChart({ data, gradientId = "areaGradient", formatter }
         {/* tooltip */}
         {tooltip && (
           <>
-            <circle cx={tooltip.x} cy={yScale(data[tooltip.i].value)} r={4} fill="hsl(var(--primary))" stroke="white" strokeWidth={2} />
+            <line
+              x1={tooltip.x}
+              y1={pad.t}
+              x2={tooltip.x}
+              y2={pad.t + ch}
+              stroke={GRID_COLOR}
+              strokeWidth={1}
+              strokeDasharray="4 3"
+            />
+            <circle
+              cx={tooltip.x}
+              cy={yScale(data[tooltip.i].value)}
+              r={4}
+              fill="hsl(var(--primary))"
+              stroke="hsl(var(--background))"
+              strokeWidth={2}
+            />
             <foreignObject
               x={Math.min(tooltip.x + 12, w - 160)}
               y={Math.max(yScale(data[tooltip.i].value) - 45, 0)}
-              width={150} height={50}
+              width={150}
+              height={50}
             >
-              <div style={{
-                background: "hsl(var(--popover))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "8px",
-                padding: "8px 12px",
-                fontSize: 13,
-                color: "hsl(var(--popover-foreground))",
-                pointerEvents: "none",
-              }}>
+              <div
+                style={{
+                  background: "hsl(var(--popover))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
+                  padding: "8px 12px",
+                  fontSize: 13,
+                  color: "hsl(var(--popover-foreground))",
+                  pointerEvents: "none",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                }}
+              >
                 <div style={{ fontWeight: 500, marginBottom: 2 }}>{data[tooltip.i].date}</div>
                 <div>
                   {formatter

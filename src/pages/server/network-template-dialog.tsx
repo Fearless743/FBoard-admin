@@ -27,11 +27,14 @@ export function NetworkTemplateDialog({ open, onOpenChange, protocol, onApply }:
   if (templates.length === 0) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>网络模板</DialogTitle>
-            <DialogDescription>当前协议暂无可用模板</DialogDescription>
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
+            <DialogTitle>{t("server.networkTemplate.title")}</DialogTitle>
+            <DialogDescription>
+              {t("server.networkTemplate.empty")}
+            </DialogDescription>
           </DialogHeader>
+          <div className="px-6 py-4" />
         </DialogContent>
       </Dialog>
     );
@@ -39,18 +42,18 @@ export function NetworkTemplateDialog({ open, onOpenChange, protocol, onApply }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>网络模板</DialogTitle>
+      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
+          <DialogTitle>{t("server.networkTemplate.title")}</DialogTitle>
           <DialogDescription>
-            选择一个预设网络模板，一键填充协议配置
+            {t("server.networkTemplate.description")}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
           {templates.map((tmpl) => (
             <label
               key={tmpl.id}
-              className="block cursor-pointer rounded-lg border p-3 transition-colors hover:bg-accent"
+              className="block cursor-pointer rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1 min-w-0">
@@ -70,7 +73,7 @@ export function NetworkTemplateDialog({ open, onOpenChange, protocol, onApply }:
                   }}
                 >
                   <Check className="h-4 w-4" />
-                  使用
+                  {t("server.networkTemplate.use")}
                 </Button>
               </div>
             </label>

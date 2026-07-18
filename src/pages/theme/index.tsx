@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Upload, Trash2, Palette, Settings as SettingsIcon, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +58,7 @@ export function ThemePage() {
       const fd = new FormData();
       fd.append("file", file);
       await uploadTheme(fd);
-      toast.success(t("theme.upload.uploading").includes("上传中") ? "上传成功" : "Upload success");
+      toast.success(t("theme.upload.success"));
       qc.invalidateQueries({ queryKey: ["themes"] });
     } catch (e) {
     } finally {
@@ -94,12 +95,9 @@ export function ThemePage() {
           ))}
         </div>
       ) : list.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <Palette className="mb-3 h-10 w-10" />
-            <p>暂无主题</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border bg-card">
+          <EmptyState icon={<Palette className="h-10 w-10" />} message={t("common.table.noData")} />
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {list.map((th) => (
@@ -115,10 +113,10 @@ export function ThemePage() {
                   {th.is_current ? (
                     <Badge variant="success">{t("theme.card.currentTheme")}</Badge>
                   ) : (
-                    <Button size="sm" variant="outline" onClick={async () => {
+                    <Button size="sm" onClick={async () => {
                       try {
                         await switchTheme(th.name);
-                        toast.success("已激活");
+                        toast.success(t("theme.card.activateSuccess"));
                         qc.invalidateQueries({ queryKey: ["themes"] });
                       } catch (e) {}
                     }}>

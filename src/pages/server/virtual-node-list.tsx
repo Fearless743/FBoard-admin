@@ -127,9 +127,7 @@ export function VirtualNodeList({
         await invalidate();
       } catch {
         toast.error(
-          t("server.form.virtualNode.toggleFailed", {
-            defaultValue: "更新显示状态失败",
-          }),
+          t("server.form.virtualNode.toggleFailed"),
         );
       } finally {
         setTogglingId(null);
@@ -146,17 +144,13 @@ export function VirtualNodeList({
       setDeleteNode(null);
       toast.success(
         t("server.form.virtualNode.deleteSuccess", {
-          defaultValue: t("server.columns.actions_dropdown.delete_success", {
-            defaultValue: "删除成功",
-          }),
+          defaultValue: t("server.columns.actions_dropdown.delete_success"),
         }),
       );
       await invalidate();
     } catch {
       toast.error(
-        t("server.form.virtualNode.deleteFailed", {
-          defaultValue: "删除失败",
-        }),
+        t("server.form.virtualNode.deleteFailed"),
       );
     } finally {
       setDeleting(false);
@@ -164,7 +158,7 @@ export function VirtualNodeList({
   }, [deleteNode, invalidate, t]);
 
   return (
-    <div className="space-y-3 sm:col-span-2 rounded-lg border p-4">
+    <div className="space-y-3 sm:col-span-2 rounded-lg border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -185,7 +179,7 @@ export function VirtualNodeList({
             size="icon"
             variant="ghost"
             className="h-8 w-8"
-            title={t("common.refresh", { defaultValue: "刷新" })}
+            title={t("common.refresh")}
             disabled={isFetching}
             onClick={() => void refetch()}
           >
@@ -211,7 +205,7 @@ export function VirtualNodeList({
       {isLoading ? (
         <div className="flex items-center justify-center gap-2 rounded-md border border-dashed py-8 text-xs text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {t("common.loading", { defaultValue: "加载中..." })}
+          {t("common.loading")}
         </div>
       ) : childNodes.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed px-4 py-8 text-center">
@@ -271,12 +265,8 @@ export function VirtualNodeList({
                         className="text-[10px]"
                       >
                         {node.show
-                          ? t("server.form.virtualNode.visible", {
-                              defaultValue: "显示",
-                            })
-                          : t("server.form.virtualNode.hidden", {
-                              defaultValue: "隐藏",
-                            })}
+                          ? t("server.form.virtualNode.visible")
+                          : t("server.form.virtualNode.hidden")}
                       </Badge>
                       {isToggling && (
                         <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
@@ -313,9 +303,7 @@ export function VirtualNodeList({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
-                      title={t("server.form.virtualNode.edit", {
-                        defaultValue: "编辑",
-                      })}
+                      title={t("server.form.virtualNode.edit")}
                       onClick={() => {
                         setEditNode(node);
                         setDialogOpen(true);
@@ -328,9 +316,7 @@ export function VirtualNodeList({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-destructive hover:text-destructive"
-                      title={t("server.form.virtualNode.delete", {
-                        defaultValue: "删除",
-                      })}
+                      title={t("server.form.virtualNode.delete")}
                       onClick={() => setDeleteNode(node)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -360,14 +346,11 @@ export function VirtualNodeList({
       <ConfirmDialog
         open={!!deleteNode}
         onOpenChange={(v) => !v && setDeleteNode(null)}
-        title={t("server.form.virtualNode.deleteConfirmTitle", {
-          defaultValue: "确认删除",
-        })}
+        title={t("server.form.virtualNode.deleteConfirmTitle")}
         description={t("server.form.virtualNode.deleteConfirmDesc", {
-          defaultValue: "确定要删除虚拟节点「{{name}}」吗？此操作不可恢复。",
           name: deleteNode?.name || deleteNode?.host || "",
         })}
-        confirmText={t("common.delete", { defaultValue: "删除" })}
+        confirmText={t("server.form.virtualNode.delete")}
         variant="destructive"
         loading={deleting}
         onConfirm={handleDelete}
@@ -451,9 +434,7 @@ function ChildNodeDialog({
       }
     } catch {
       toast.error(
-        t("server.form.virtualNode.saveFailed", {
-          defaultValue: "保存虚拟节点失败",
-        }),
+        t("server.form.virtualNode.saveFailed"),
       );
     } finally {
       setSubmitting(false);
@@ -463,25 +444,21 @@ function ChildNodeDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md flex flex-col p-0 gap-0 max-h-[90vh]">
-        <DialogHeader className="px-6 pt-6 pb-2">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {isEditing
-              ? t("server.form.virtualNode.editDialogTitle", {
-                  defaultValue: "编辑虚拟节点",
-                })
+              ? t("server.form.virtualNode.editDialogTitle")
               : t("server.form.virtualNode.addDialogTitle")}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-3 px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
           <div className="space-y-1.5">
-            <Label>{t("server.form.name.label", { defaultValue: "名称" })}</Label>
+            <Label>{t("server.form.name.label")}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t("server.form.virtualNode.namePlaceholder", {
-                defaultValue: "虚拟节点名称",
-              })}
+              placeholder={t("server.form.virtualNode.namePlaceholder")}
             />
           </div>
 
@@ -507,7 +484,7 @@ function ChildNodeDialog({
 
           <div className="flex items-center justify-between rounded-md border px-3 py-2">
             <Label className="text-sm font-normal">
-              {t("server.form.virtualNode.show", { defaultValue: "显示" })}
+              {t("server.form.virtualNode.show")}
             </Label>
             <Switch checked={show} onCheckedChange={setShow} />
           </div>
@@ -585,7 +562,7 @@ function ChildNodeDialog({
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 gap-2 border-t bg-background px-6 py-4">
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
           <Button
             type="button"
             variant="outline"
@@ -601,8 +578,8 @@ function ChildNodeDialog({
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {isEditing
-              ? t("common.save", { defaultValue: "保存" })
-              : t("common.add", { defaultValue: "添加" })}
+              ? t("common.save")
+              : t("common.add")}
           </Button>
         </DialogFooter>
       </DialogContent>
