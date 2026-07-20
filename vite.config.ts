@@ -65,6 +65,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // 官方 package.exports 仅暴露 dist/index.css；分字重需绕过 exports 直指 dist
+      "harmonyos-sans-sc-webfont-splitted/dist": path.resolve(
+        __dirname,
+        "node_modules/harmonyos-sans-sc-webfont-splitted/dist",
+      ),
     },
   },
   server: {

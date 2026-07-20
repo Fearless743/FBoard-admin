@@ -44,6 +44,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "codemirror": "^6.0.2",
+    "harmonyos-sans-sc-webfont-splitted": "1.1.0",
     "i18next": "^24.2.0",
     "i18next-browser-languagedetector": "^8.0.2",
     "lucide-react": "^0.468.0",

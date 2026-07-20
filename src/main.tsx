@@ -7,6 +7,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useApplyTheme } from "@/hooks/use-theme";
 import { router } from "@/router";
 import "@/lib/i18n";
+// HarmonyOS Sans SC（按 unicode-range 分片，浏览器按需拉取；仅常用字重）
+import "harmonyos-sans-sc-webfont-splitted/dist/Regular.css";
+import "harmonyos-sans-sc-webfont-splitted/dist/Medium.css";
+import "harmonyos-sans-sc-webfont-splitted/dist/Semibold.css";
+import "harmonyos-sans-sc-webfont-splitted/dist/Bold.css";
 import "@/index.css";
 
 const queryClient = new QueryClient({
