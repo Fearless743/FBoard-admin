@@ -539,6 +539,8 @@ const translations: Translations = {
         "email_placeholder": "请输入邮箱",
         "inviter_email": "邀请人邮箱",
         "inviter_email_placeholder": "请输入邮箱",
+        "invite_user_id": "邀请人ID",
+        "invite_user_id_placeholder": "请输入邀请人用户ID，留空则清空",
         "password": "密码",
         "password_placeholder": "如需修改密码请输入",
         "balance": "余额",

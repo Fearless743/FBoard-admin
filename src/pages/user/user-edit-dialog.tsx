@@ -54,6 +54,7 @@ interface FormValues {
   speed_limit: number | null;
   device_limit: number | null;
   remarks: string;
+  invite_user_id: number | null;
 }
 
 export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDialogProps) {
@@ -102,6 +103,7 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
         speed_limit: user.speed_limit ?? null,
         device_limit: user.device_limit ?? null,
         remarks: user.remark || "",
+        invite_user_id: user.invite_user_id ?? null,
       });
     }
   }, [user, reset]);
@@ -120,6 +122,14 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
         expired_at: values.expired_at
           ? Math.floor(new Date(values.expired_at).getTime() / 1000)
           : null,
+        // 始终提交：null/空表示清空邀请关系
+        invite_user_id:
+          values.invite_user_id === null ||
+          values.invite_user_id === undefined ||
+          Number.isNaN(Number(values.invite_user_id)) ||
+          values.invite_user_id === ("" as any)
+            ? null
+            : Number(values.invite_user_id),
       };
       if (payload.password === undefined) delete payload.password;
       await updateUser(payload);
@@ -144,6 +154,21 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label={t("user.edit.form.email")} error={errors.email?.message}>
               <Input type="email" {...register("email")} />
+            </Field>
+            <Field label={t("user.edit.form.invite_user_id")}>
+              <Input
+                type="number"
+                min={1}
+                step={1}
+                placeholder={t("user.edit.form.invite_user_id_placeholder")}
+                {...register("invite_user_id", {
+                  setValueAs: (v) => {
+                    if (v === "" || v === null || v === undefined) return null;
+                    const n = Number(v);
+                    return Number.isFinite(n) ? n : null;
+                  },
+                })}
+              />
             </Field>
             <Field label={t("user.edit.form.password")}>
               <Input
@@ -450,6 +475,7 @@ function emptyValues(): FormValues {
     speed_limit: null,
     device_limit: null,
     remarks: "",
+    invite_user_id: null,
   };
 }
 

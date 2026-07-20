@@ -539,6 +539,8 @@ const translations: Translations = {
         "email_placeholder": "Please enter email",
         "inviter_email": "Inviter Email",
         "inviter_email_placeholder": "Please enter email",
+        "invite_user_id": "Inviter ID",
+        "invite_user_id_placeholder": "Enter inviter user ID, leave empty to clear",
         "password": "Password",
         "password_placeholder": "Enter new password if you want to change it",
         "balance": "Balance",

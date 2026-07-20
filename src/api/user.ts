@@ -24,6 +24,7 @@ export interface UserListItem {
   created_at: number;
   updated_at?: number;
   invite_user_id?: number | null;
+  invite_user?: { id: number; email: string } | null;
   remark?: string;
   commission_type?: number;
   commission_rate?: number | null;

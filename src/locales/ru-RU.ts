@@ -539,6 +539,8 @@ const translations: Translations = {
         "email_placeholder": "Пожалуйста, введите email",
         "inviter_email": "Email пригласителя",
         "inviter_email_placeholder": "Пожалуйста, введите email",
+        "invite_user_id": "ID пригласителя",
+        "invite_user_id_placeholder": "Введите ID пригласителя, оставьте пустым для очистки",
         "password": "Пароль",
         "password_placeholder": "Введите новый пароль, если хотите изменить его",
         "balance": "Баланс",
