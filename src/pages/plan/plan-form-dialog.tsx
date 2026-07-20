@@ -1,4 +1,4 @@
-import { useEffect, type ComponentProps, type ReactNode } from "react";
+import { forwardRef, useEffect, type ComponentProps, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useForm, Controller, type Control, type FieldPath } from "react-hook-form";
@@ -37,14 +37,16 @@ import { savePlan, type Plan } from "@/api/plan";
 import { fetchGroups, type ServerGroup } from "@/api/server";
 
 const GROUP_NONE = "__none__";
+/** 与后端 Plan::RESET_TRAFFIC_* 对齐：null=跟随系统，0=每月1号 … 4=按年重置 */
+const RESET_FOLLOW = "__follow__";
 
-const RESET_METHOD_OPTIONS = [
-  ["follow_system", 0],
-  ["monthly_first", 1],
-  ["monthly_reset", 2],
-  ["no_reset", 3],
-  ["yearly_first", 4],
-  ["yearly_reset", 5],
+const RESET_METHOD_OPTIONS: readonly { key: string; value: number | null }[] = [
+  { key: "follow_system", value: null },
+  { key: "monthly_first", value: 0 },
+  { key: "monthly_reset", value: 1 },
+  { key: "no_reset", value: 2 },
+  { key: "yearly_first", value: 3 },
+  { key: "yearly_reset", value: 4 },
 ] as const;
 
 const PRICE_FIELDS: {
@@ -85,7 +87,8 @@ interface FormValues {
   three_year_price: number | null;
   onetime_price: number | null;
   reset_price: number | null;
-  reset_traffic_method: number;
+  /** null = 跟随系统（对应后端 Plan::RESET_TRAFFIC_FOLLOW_SYSTEM） */
+  reset_traffic_method: number | null;
   show: boolean;
   sell: boolean;
   renew: boolean;
@@ -109,7 +112,7 @@ function emptyValues(): FormValues {
     three_year_price: null,
     onetime_price: null,
     reset_price: null,
-    reset_traffic_method: 0,
+    reset_traffic_method: null,
     show: true,
     sell: true,
     renew: true,
@@ -127,6 +130,13 @@ function toNullableNumber(v: unknown): number | null {
 function cleanPrice(v: number | null | undefined): number | null {
   if (v === null || v === undefined || Number.isNaN(v)) return null;
   return Number(v);
+}
+
+/** 从 API prices 读取：null/undefined/空串 → null；0 合法（免费） */
+function priceFromApi(v: unknown): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 export function PlanFormDialog({
@@ -173,15 +183,22 @@ export function PlanFormDialog({
       device_limit: plan?.device_limit ?? null,
       capacity_limit: plan?.capacity_limit ?? null,
       group_id: plan?.group_id ?? null,
-      month_price: pr.monthly != null ? Number(pr.monthly) : null,
-      quarter_price: pr.quarterly != null ? Number(pr.quarterly) : null,
-      half_year_price: pr.half_yearly != null ? Number(pr.half_yearly) : null,
-      year_price: pr.yearly != null ? Number(pr.yearly) : null,
-      two_year_price: pr.two_yearly != null ? Number(pr.two_yearly) : null,
-      three_year_price: pr.three_yearly != null ? Number(pr.three_yearly) : null,
-      onetime_price: pr.onetime != null ? Number(pr.onetime) : null,
-      reset_price: pr.reset_traffic != null ? Number(pr.reset_traffic) : null,
-      reset_traffic_method: plan?.reset_traffic_method ?? 0,
+      // 价格 0 表示免费，需与 null（未设置）区分
+      month_price: priceFromApi(pr.monthly),
+      quarter_price: priceFromApi(pr.quarterly),
+      half_year_price: priceFromApi(pr.half_yearly),
+      year_price: priceFromApi(pr.yearly),
+      two_year_price: priceFromApi(pr.two_yearly),
+      three_year_price: priceFromApi(pr.three_yearly),
+      onetime_price: priceFromApi(pr.onetime),
+      reset_price: priceFromApi(pr.reset_traffic),
+      // 0 是合法值（每月1号），不能用 ?? 0，否则 null（跟随系统）会被当成 0
+      reset_traffic_method:
+        plan == null
+          ? null
+          : plan.reset_traffic_method === undefined || plan.reset_traffic_method === null
+            ? null
+            : Number(plan.reset_traffic_method),
       show: plan ? Boolean(plan.show) : true,
       sell: plan ? Boolean(plan.sell) : true,
       renew: plan ? Boolean(plan.renew) : true,
@@ -205,7 +222,11 @@ export function PlanFormDialog({
         device_limit: toNullableNumber(values.device_limit),
         capacity_limit: toNullableNumber(values.capacity_limit),
         group_id: values.group_id ?? null,
-        reset_traffic_method: values.reset_traffic_method ?? 0,
+        // null 表示跟随系统，不可用 0 替代
+        reset_traffic_method:
+          values.reset_traffic_method === undefined || values.reset_traffic_method === null
+            ? null
+            : Number(values.reset_traffic_method),
         show: values.show ? 1 : 0,
         sell: values.sell ? 1 : 0,
         renew: values.renew ? 1 : 0,
@@ -327,8 +348,16 @@ export function PlanFormDialog({
                     name="reset_traffic_method"
                     render={({ field }) => (
                       <Select
-                        value={String(field.value ?? 0)}
-                        onValueChange={(v) => field.onChange(Number(v))}
+                        value={
+                          field.value === null || field.value === undefined
+                            ? RESET_FOLLOW
+                            : String(field.value)
+                        }
+                        onValueChange={(v) =>
+                          field.onChange(
+                            v === RESET_FOLLOW ? null : Number(v),
+                          )
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue
@@ -338,10 +367,15 @@ export function PlanFormDialog({
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {RESET_METHOD_OPTIONS.map(([k, v]) => (
-                            <SelectItem key={k} value={String(v)}>
+                          {RESET_METHOD_OPTIONS.map(({ key, value }) => (
+                            <SelectItem
+                              key={key}
+                              value={
+                                value === null ? RESET_FOLLOW : String(value)
+                              }
+                            >
                               {t(
-                                `subscribe.plan.form.reset_method.options.${k}`,
+                                `subscribe.plan.form.reset_method.options.${key}`,
                               )}
                             </SelectItem>
                           ))}
@@ -621,18 +655,19 @@ function Field({
   );
 }
 
-const UnitInput = ({
-  unit,
-  className,
-  ...props
-}: ComponentProps<typeof Input> & { unit: string }) => (
+/** 必须 forwardRef，否则 register().ref 接不到真实 input，reset 后价格等数字框会显示为空 */
+const UnitInput = forwardRef<
+  HTMLInputElement,
+  ComponentProps<typeof Input> & { unit: string }
+>(({ unit, className, ...props }, ref) => (
   <div className="relative">
-    <Input className={cn("pr-12", className)} {...props} />
+    <Input ref={ref} className={cn("pr-12", className)} {...props} />
     <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground tabular-nums">
       {unit}
     </span>
   </div>
-);
+));
+UnitInput.displayName = "UnitInput";
 
 function StatusSwitch({
   control,

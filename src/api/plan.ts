@@ -12,7 +12,8 @@ export interface Plan {
   speed_limit?: number | null;
   device_limit?: number | null;
   capacity_limit?: number | null;
-  reset_traffic_method?: number;
+  /** null = 跟随系统；0=每月1号；1=按月；2=不重置；3=每年1月1日；4=按年 */
+  reset_traffic_method?: number | null;
   content?: string | null;
   prices?: Record<string, number | null>;
   month_price?: number | null;

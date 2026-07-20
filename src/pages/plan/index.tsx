@@ -247,31 +247,35 @@ export function PlanListPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex flex-col items-end gap-0.5 text-xs">
-                        {p.prices?.monthly ? (
+                        {/* 0 为合法免费价，不能用 truthy 判断 */}
+                        {p.prices?.monthly != null ? (
                           <span>
                             {t("subscribe.plan.form.price.period.monthly")}:{" "}
                             <b className="tabular-nums">¥{Number(p.prices.monthly).toFixed(2)}</b>
                           </span>
                         ) : null}
-                        {p.prices?.quarterly ? (
+                        {p.prices?.quarterly != null ? (
                           <span className="text-muted-foreground">
                             {t("subscribe.plan.form.price.period.months", { count: 3 })}:{" "}
                             ¥{Number(p.prices.quarterly).toFixed(2)}
                           </span>
                         ) : null}
-                        {p.prices?.half_yearly ? (
+                        {p.prices?.half_yearly != null ? (
                           <span className="text-muted-foreground">
                             {t("subscribe.plan.form.price.period.months", { count: 6 })}:{" "}
                             ¥{Number(p.prices.half_yearly).toFixed(2)}
                           </span>
                         ) : null}
-                        {p.prices?.yearly ? (
+                        {p.prices?.yearly != null ? (
                           <span className="text-muted-foreground">
                             {t("subscribe.plan.form.price.period.months", { count: 12 })}:{" "}
                             ¥{Number(p.prices.yearly).toFixed(2)}
                           </span>
                         ) : null}
-                        {!p.prices?.monthly && !p.prices?.quarterly && !p.prices?.half_yearly && !p.prices?.yearly ? (
+                        {p.prices?.monthly == null &&
+                        p.prices?.quarterly == null &&
+                        p.prices?.half_yearly == null &&
+                        p.prices?.yearly == null ? (
                           <span className="text-muted-foreground">—</span>
                         ) : null}
                       </div>
