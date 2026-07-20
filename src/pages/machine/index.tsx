@@ -64,6 +64,7 @@ import {
   batchUpgradeMachines,
   type Machine,
   type MachineLoadStatus,
+  type MachineKernelStatus,
   type MachineSummary,
 } from "@/api/server";
 import { formatBytes, formatDate } from "@/lib/utils";
@@ -85,6 +86,93 @@ function loadLevelClass(value: number | null | undefined): string {
   if (value >= 90) return "bg-destructive";
   if (value >= 70) return "bg-amber-500";
   return "bg-emerald-500";
+}
+
+
+function machineKernelStatus(m: Machine): MachineKernelStatus | null {
+  const status = m.load_status?.kernel?.status;
+  if (status === "idle" || status === "running" || status === "stopped" || status === "partial") {
+    return status;
+  }
+  return null;
+}
+
+/** 根据上报的内核聚合状态控制运维按钮可用性（未知状态保持可操作） */
+function kernelActionDisabled(
+  m: Machine,
+  action: "start" | "stop" | "reload" | "restart",
+): boolean {
+  if (!m.is_active || !m.is_online) return true;
+  const status = machineKernelStatus(m);
+  if (status == null) return false; // 旧节点未上报：不禁用
+  const total = m.load_status?.kernel?.nodes_total ?? 0;
+  if (status === "idle" || total === 0) return true;
+  switch (action) {
+    case "start":
+      return status === "running";
+    case "stop":
+      return status === "stopped";
+    case "reload":
+      // 运维停止后 reload 会失败，要求先 start
+      return status === "stopped";
+    case "restart":
+      return false;
+    default:
+      return false;
+  }
+}
+
+function KernelStatusBadge({ machine }: { machine: Machine }) {
+  const { t } = useTranslation();
+  if (!machine.is_online || !machine.is_active) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  const status = machineKernelStatus(machine);
+  const k = machine.load_status?.kernel;
+  if (status == null) {
+    return (
+      <span className="text-xs text-muted-foreground" title={t("machine.columns.kernelUnknown")}>
+        {t("machine.columns.kernelUnknown")}
+      </span>
+    );
+  }
+  const labelKey =
+    status === "running"
+      ? "machine.columns.kernelRunning"
+      : status === "stopped"
+        ? "machine.columns.kernelStopped"
+        : status === "partial"
+          ? "machine.columns.kernelPartial"
+          : "machine.columns.kernelIdle";
+  const variant:
+    | "success"
+    | "secondary"
+    | "warning"
+    | "outline" =
+    status === "running"
+      ? "success"
+      : status === "stopped"
+        ? "secondary"
+        : status === "partial"
+          ? "warning"
+          : "outline";
+  const detail =
+    k && (k.nodes_total ?? 0) > 0
+      ? t("machine.columns.kernelDetail", {
+          running: k.nodes_running ?? 0,
+          total: k.nodes_total ?? 0,
+        })
+      : undefined;
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <Badge variant={variant} className="font-normal">
+        {t(labelKey)}
+      </Badge>
+      {detail ? (
+        <span className="text-[10px] tabular-nums text-muted-foreground">{detail}</span>
+      ) : null}
+    </div>
+  );
 }
 
 function LoadMeter({
@@ -407,6 +495,7 @@ export function MachineListPage() {
               <TableHead className="w-24 text-center">{t("machine.columns.status")}</TableHead>
               <TableHead className="w-24 text-right">{t("machine.columns.nodesHosted")}</TableHead>
               <TableHead className="w-28">{t("machine.columns.version")}</TableHead>
+              <TableHead className="w-28">{t("machine.columns.kernel")}</TableHead>
               <TableHead className="min-w-[160px]">{t("machine.columns.load")}</TableHead>
               <TableHead className="w-40">{t("machine.columns.lastSeen")}</TableHead>
               <TableHead className="w-40 text-right">{t("machine.columns.actions")}</TableHead>
@@ -416,14 +505,14 @@ export function MachineListPage() {
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 8 }).map((_, j) => (
+                  {Array.from({ length: 9 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : list.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8}>
+                <TableCell colSpan={9}>
                   <EmptyState icon={<Server className="h-10 w-10" />} />
                 </TableCell>
               </TableRow>
@@ -444,6 +533,9 @@ export function MachineListPage() {
                   <TableCell className="text-right tabular-nums">{m.servers_count ?? 0}</TableCell>
                   <TableCell className="text-xs font-mono text-muted-foreground tabular-nums">
                     {m.version || m.load_status?.version || "—"}
+                  </TableCell>
+                  <TableCell>
+                    <KernelStatusBadge machine={m} />
                   </TableCell>
                   <TableCell>
                     <LoadStatusCell load={m.load_status} />
@@ -492,20 +584,30 @@ export function MachineListPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setKernelOp({ machine: m, action: "start" })}>
+                          <DropdownMenuItem
+                            disabled={kernelActionDisabled(m, "start")}
+                            onClick={() => setKernelOp({ machine: m, action: "start" })}
+                          >
                             <Play className="mr-2 h-4 w-4" />
                             {t("machine.operations.start")}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setKernelOp({ machine: m, action: "reload" })}>
+                          <DropdownMenuItem
+                            disabled={kernelActionDisabled(m, "reload")}
+                            onClick={() => setKernelOp({ machine: m, action: "reload" })}
+                          >
                             <RefreshCcw className="mr-2 h-4 w-4" />
                             {t("machine.operations.reload")}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setKernelOp({ machine: m, action: "restart" })}>
+                          <DropdownMenuItem
+                            disabled={kernelActionDisabled(m, "restart")}
+                            onClick={() => setKernelOp({ machine: m, action: "restart" })}
+                          >
                             <RotateCcw className="mr-2 h-4 w-4" />
                             {t("machine.operations.restart")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
+                            disabled={kernelActionDisabled(m, "stop")}
                             onClick={() => setKernelOp({ machine: m, action: "stop" })}
                           >
                             <Square className="mr-2 h-4 w-4" />
@@ -631,7 +733,11 @@ export function MachineListPage() {
             toast.success(
               t(`machine.operations.${action}Submitted` as const, { name: machine.name }),
             );
+            // 节点会在内核操作后立即上报一次 status；短延迟再刷列表以更新按钮状态
             qc.invalidateQueries({ queryKey: ["machines"] });
+            window.setTimeout(() => {
+              qc.invalidateQueries({ queryKey: ["machines"] });
+            }, 1500);
             setKernelOp(null);
           } catch (e) {
             console.error(`[machine] kernel ${action} failed`, machine.id, e);
@@ -1359,6 +1465,27 @@ function MachineDetailDialog({
                         <span className="font-mono">
                           {t("machine.columns.version")}:{" "}
                           {machine.version || machine.load_status?.version}
+                        </span>
+                      </>
+                    )}
+                    {machineKernelStatus(machine) && (
+                      <>
+                        <span>•</span>
+                        <span>
+                          {t("machine.columns.kernel")}:{" "}
+                          {t(
+                            machineKernelStatus(machine) === "running"
+                              ? "machine.columns.kernelRunning"
+                              : machineKernelStatus(machine) === "stopped"
+                                ? "machine.columns.kernelStopped"
+                                : machineKernelStatus(machine) === "partial"
+                                  ? "machine.columns.kernelPartial"
+                                  : "machine.columns.kernelIdle",
+                          )}
+                          {machine.load_status?.kernel &&
+                          (machine.load_status.kernel.nodes_total ?? 0) > 0
+                            ? ` (${machine.load_status.kernel.nodes_running ?? 0}/${machine.load_status.kernel.nodes_total})`
+                            : ""}
                         </span>
                       </>
                     )}

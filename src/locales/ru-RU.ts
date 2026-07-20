@@ -3243,7 +3243,14 @@ const translations: Translations = {
       "memory": "Память",
       "disk": "Диск",
       "never": "Никогда",
-      "lastReport": "Отчёт о нагрузке"
+      "lastReport": "Отчёт о нагрузке",
+      "kernel": "Ядро",
+      "kernelRunning": "Работает",
+      "kernelStopped": "Остановлено",
+      "kernelPartial": "Частично",
+      "kernelIdle": "Нет узлов",
+      "kernelUnknown": "Неизвестно",
+      "kernelDetail": "{{running}}/{{total}} работают"
     },
     "toolbar": {
       "search": "Поиск по имени сервера, заметкам или SID...",

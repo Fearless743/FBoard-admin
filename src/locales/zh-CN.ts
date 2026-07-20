@@ -3242,7 +3242,14 @@ const translations: Translations = {
       "memory": "内存",
       "disk": "磁盘",
       "never": "从未上报",
-      "lastReport": "负载上报"
+      "lastReport": "负载上报",
+      "kernel": "内核",
+      "kernelRunning": "运行中",
+      "kernelStopped": "已停止",
+      "kernelPartial": "部分运行",
+      "kernelIdle": "无节点",
+      "kernelUnknown": "未知",
+      "kernelDetail": "{{running}}/{{total}} 运行"
     },
     "toolbar": {
       "search": "搜索服务器名称或备注...",

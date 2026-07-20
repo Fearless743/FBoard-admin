@@ -288,6 +288,16 @@ export interface MachineLoadResource {
   used?: number;
 }
 
+/** 机器级聚合内核状态（来自 fboard-node 心跳 load_status.kernel） */
+export type MachineKernelStatus = "idle" | "running" | "stopped" | "partial";
+
+export interface MachineKernelInfo {
+  status: MachineKernelStatus;
+  nodes_total?: number;
+  nodes_running?: number;
+  nodes_desired?: number;
+}
+
 export interface MachineLoadStatus {
   cpu?: number;
   mem?: MachineLoadResource;
@@ -299,6 +309,8 @@ export interface MachineLoadStatus {
   };
   /** fboard-node 二进制版本（机器心跳上报） */
   version?: string | null;
+  /** 整机内嵌 xray 内核聚合状态 */
+  kernel?: MachineKernelInfo | null;
   updated_at?: number;
 }
 

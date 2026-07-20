@@ -3243,7 +3243,14 @@ const translations: Translations = {
       "memory": "Memory",
       "disk": "Disk",
       "never": "Never",
-      "lastReport": "Load report"
+      "lastReport": "Load report",
+      "kernel": "Kernel",
+      "kernelRunning": "Running",
+      "kernelStopped": "Stopped",
+      "kernelPartial": "Partial",
+      "kernelIdle": "No nodes",
+      "kernelUnknown": "Unknown",
+      "kernelDetail": "{{running}}/{{total}} running"
     },
     "toolbar": {
       "search": "Search by server name, notes or SID...",
