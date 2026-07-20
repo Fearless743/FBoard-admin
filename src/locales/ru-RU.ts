@@ -420,6 +420,7 @@ const translations: Translations = {
         "orders": "Заказы",
         "invites": "Приглашения",
         "traffic_records": "Записи трафика",
+        "login_history": "История входов",
         "reset_traffic": "Сбросить трафик",
         "delete": "Удалить",
         "delete_confirm_title": "Подтверждение удаления пользователя",
@@ -730,6 +731,21 @@ const translations: Translations = {
         "other": "Сброс выполнен другим способом"
       }
     },
+    "login_history": {
+      "title": "История входов",
+      "no_records": "Записей о входах нет",
+      "columns": {
+        "time": "Время",
+        "ip": "IP",
+        "method": "Способ",
+        "user_agent": "User-Agent"
+      },
+      "methods": {
+        "password": "Пароль",
+        "register": "Регистрация",
+        "mail_link": "Ссылка из письма"
+      }
+    },
     "send_mail": {
       "title": "Отправить Email",
       "description": "Отправить сообщение выбранным или отфильтрованным пользователям",
@@ -773,6 +789,7 @@ const translations: Translations = {
         "commissionRate": "Ставка комиссии",
         "lastLoginAt": "Последний вход",
         "lastLoginIp": "IP последнего входа",
+        "registerIp": "IP регистрации",
         "lastOnlineAt": "Последний раз онлайн",
         "onlineCount": "Устройства онлайн",
         "inviteUser": "Пригласитель",

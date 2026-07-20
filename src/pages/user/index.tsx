@@ -17,6 +17,7 @@ import {
   Activity,
   Users,
   ShoppingCart,
+  History,
   X,
   Infinity as InfinityIcon,
   CheckCircle2,
@@ -98,6 +99,7 @@ import {
 } from "./user-related-dialogs";
 import { UserTrafficResetDialog } from "./user-traffic-reset-dialog";
 import { UserAssignOrderDialog } from "./user-assign-order-dialog";
+import { UserLoginHistoryDialog } from "./user-login-history-dialog";
 
 const COL_COUNT = 13;
 
@@ -163,6 +165,8 @@ export function UserListPage() {
   const [trafficRecordsUser, setTrafficRecordsUser] =
     useState<UserListItem | null>(null);
   const [invitesUser, setInvitesUser] = useState<UserListItem | null>(null);
+  const [loginHistoryUser, setLoginHistoryUser] =
+    useState<UserListItem | null>(null);
   const [assignOrderUser, setAssignOrderUser] = useState<UserListItem | null>(
     null,
   );
@@ -687,6 +691,12 @@ export function UserListPage() {
                               <Activity className="h-4 w-4" />
                               {t("user.columns.actions_menu.traffic_records")}
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setLoginHistoryUser(u)}
+                            >
+                              <History className="h-4 w-4" />
+                              {t("user.columns.actions_menu.login_history")}
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setInvitesUser(u)}>
                               <Users className="h-4 w-4" />
                               {t("user.columns.actions_menu.invites")}
@@ -807,6 +817,12 @@ export function UserListPage() {
         open={!!trafficRecordsUser}
         onOpenChange={(v) => !v && setTrafficRecordsUser(null)}
         user={trafficRecordsUser}
+      />
+
+      <UserLoginHistoryDialog
+        open={!!loginHistoryUser}
+        onOpenChange={(v) => !v && setLoginHistoryUser(null)}
+        user={loginHistoryUser}
       />
 
       <UserInvitesDialog

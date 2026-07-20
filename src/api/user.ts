@@ -19,7 +19,8 @@ export interface UserListItem {
   device_limit?: number | null;
   speed_limit?: number | null;
   last_login_at?: number;
-  last_login_ip?: string;
+  last_login_ip?: string | null;
+  register_ip?: string | null;
   created_at: number;
   updated_at?: number;
   invite_user_id?: number | null;
@@ -93,4 +94,32 @@ export async function dumpUsersCSV(filter?: Record<string, any>) {
 
 export async function getUserInfoById(id: number) {
   return adminGet<any>(`/user/getUserInfoById`, { id });
+}
+
+export interface UserLoginLogItem {
+  id: number;
+  ip: string;
+  user_agent?: string | null;
+  method: "password" | "register" | "mail_link" | string;
+  created_at: number;
+}
+
+export interface UserLoginLogsResponse {
+  total: number;
+  current_page: number;
+  per_page: number;
+  last_page: number;
+  data: UserLoginLogItem[];
+}
+
+export async function fetchUserLoginLogs(
+  userId: number,
+  page = 1,
+  pageSize = 20,
+): Promise<UserLoginLogsResponse> {
+  return adminGet<UserLoginLogsResponse>("/user/loginLogs", {
+    user_id: userId,
+    current: page,
+    pageSize,
+  });
 }

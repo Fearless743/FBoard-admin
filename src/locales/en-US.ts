@@ -420,6 +420,7 @@ const translations: Translations = {
         "orders": "Orders",
         "invites": "Invites",
         "traffic_records": "Traffic Records",
+        "login_history": "Login History",
         "reset_traffic": "Reset Traffic",
         "delete": "Delete",
         "delete_confirm_title": "Confirm Delete User",
@@ -730,6 +731,21 @@ const translations: Translations = {
         "other": "Triggered by other methods"
       }
     },
+    "login_history": {
+      "title": "Login History",
+      "no_records": "No login records",
+      "columns": {
+        "time": "Time",
+        "ip": "IP",
+        "method": "Method",
+        "user_agent": "User-Agent"
+      },
+      "methods": {
+        "password": "Password",
+        "register": "Register",
+        "mail_link": "Mail Link"
+      }
+    },
     "send_mail": {
       "title": "Send Email",
       "description": "Send email to selected or filtered users",
@@ -773,6 +789,7 @@ const translations: Translations = {
         "commissionRate": "Commission Rate",
         "lastLoginAt": "Last Login",
         "lastLoginIp": "Last Login IP",
+        "registerIp": "Register IP",
         "lastOnlineAt": "Last Online",
         "onlineCount": "Online Devices",
         "inviteUser": "Inviter",

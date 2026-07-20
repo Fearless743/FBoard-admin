@@ -421,6 +421,7 @@ const translations: Translations = {
         "orders": "TA的订单",
         "invites": "TA的邀请",
         "traffic_records": "TA的流量记录",
+        "login_history": "登录历史",
         "delete": "删除",
         "delete_confirm_title": "确认删除用户",
         "delete_confirm_description": "此操作将永久删除用户 {{email}} 及其所有相关数据，包括订单、优惠码、流量记录、工单记录等信息。删除后无法恢复，是否继续？"
@@ -710,6 +711,21 @@ const translations: Translations = {
         "other": "其他方式触发"
       }
     },
+    "login_history": {
+      "title": "登录历史",
+      "no_records": "暂无登录记录",
+      "columns": {
+        "time": "时间",
+        "ip": "IP",
+        "method": "方式",
+        "user_agent": "User-Agent"
+      },
+      "methods": {
+        "password": "密码登录",
+        "register": "注册",
+        "mail_link": "邮件链接"
+      }
+    },
     "messages": {
       "success": "成功",
       "error": "错误",
@@ -773,6 +789,7 @@ const translations: Translations = {
         "commissionRate": "佣金比例",
         "lastLoginAt": "最后登录",
         "lastLoginIp": "最后登录IP",
+        "registerIp": "注册IP",
         "lastOnlineAt": "最后在线",
         "onlineCount": "在线设备",
         "inviteUser": "邀请人",

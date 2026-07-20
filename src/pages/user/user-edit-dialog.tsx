@@ -262,6 +262,31 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
                 {...register("d", { setValueAs: trafficAsNumber })}
               />
             </Field>
+            <Field label={t("user.dialog.fields.registerIp")}>
+              <Input
+                value={user?.register_ip || "—"}
+                readOnly
+                className="bg-muted/40 font-mono"
+              />
+            </Field>
+            <Field label={t("user.dialog.fields.lastLoginIp")}>
+              <Input
+                value={user?.last_login_ip || "—"}
+                readOnly
+                className="bg-muted/40 font-mono"
+              />
+            </Field>
+            <Field label={t("user.dialog.fields.lastLoginAt")}>
+              <Input
+                value={
+                  user?.last_login_at
+                    ? toLocalInput(user.last_login_at).replace("T", " ")
+                    : "—"
+                }
+                readOnly
+                className="bg-muted/40"
+              />
+            </Field>
           </div>
 
           <div className="space-y-2">
