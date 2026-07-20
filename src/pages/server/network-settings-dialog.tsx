@@ -125,17 +125,39 @@ export function NetworkSettingsDialog({
     [remoteTemplates],
   );
 
+  const templateDisplayName = useCallback(
+    (tmpl: TemplateItem) => {
+      if ("nameKey" in tmpl && tmpl.nameKey) return t(tmpl.nameKey);
+      if ("name" in tmpl && tmpl.name) return tmpl.name;
+      return (tmpl as any).label || tmpl.id;
+    },
+    [t],
+  );
+
+  const templateDisplayDescription = useCallback(
+    (tmpl: TemplateItem) => {
+      if ("descriptionKey" in tmpl && tmpl.descriptionKey) {
+        return t(tmpl.descriptionKey);
+      }
+      if ("description" in tmpl && tmpl.description) {
+        return tmpl.description;
+      }
+      return "";
+    },
+    [t],
+  );
+
   const applyTemplate = useCallback(
     (tmpl: TemplateItem) => {
       setText(JSON.stringify(tmpl.settings ?? {}, null, 2));
       setError("");
       toast.success(
         t("server.network_settings.template_applied", {
-          name: "name" in tmpl ? tmpl.name : (tmpl as any).label,
+          name: templateDisplayName(tmpl),
         }),
       );
     },
-    [t],
+    [t, templateDisplayName],
   );
 
   const handleSaveAsTemplate = async () => {
@@ -321,8 +343,8 @@ export function NetworkSettingsDialog({
                       {customTemplates.map((tmpl) => (
                         <TemplateRow
                           key={`db-${tmpl.id}`}
-                          name={tmpl.name}
-                          description={tmpl.description}
+                          name={templateDisplayName(tmpl)}
+                          description={templateDisplayDescription(tmpl)}
                           network={tmpl.network}
                           builtin={false}
                           deleting={deletingId === Number(tmpl.id)}
@@ -345,8 +367,8 @@ export function NetworkSettingsDialog({
                       {builtinTemplates.map((tmpl) => (
                         <TemplateRow
                           key={`builtin-${tmpl.id}`}
-                          name={tmpl.name}
-                          description={tmpl.description}
+                          name={templateDisplayName(tmpl)}
+                          description={templateDisplayDescription(tmpl)}
                           network={tmpl.network}
                           builtin
                           onApply={() => applyTemplate(tmpl)}

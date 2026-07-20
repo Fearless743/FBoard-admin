@@ -10,6 +10,7 @@ import { useSectionData } from "../use-section-data";
 const NUMBER_FIELDS = ["server_pull_interval", "server_push_interval"];
 const SELECT_FIELDS = ["device_limit_mode"];
 const TEXT_FIELDS = ["node_install_script_url"];
+const TAGS_FIELDS = ["utls_fingerprints"];
 
 export function ServerSection() {
   const { data, isLoading } = useSectionData("server");
@@ -48,6 +49,13 @@ function ServerSectionBody({ data }: { data: Record<string, unknown> }) {
       ...TEXT_FIELDS.map((k) => ({
         key: k,
         type: "text" as const,
+        label: meta(k).label,
+        description: meta(k).description,
+        placeholder: meta(k).placeholder,
+      })),
+      ...TAGS_FIELDS.map((k) => ({
+        key: k,
+        type: "tags" as const,
         label: meta(k).label,
         description: meta(k).description,
         placeholder: meta(k).placeholder,
@@ -113,6 +121,33 @@ function ServerSectionBody({ data }: { data: Record<string, unknown> }) {
     />
   );
 
+  const UTLS_META = new Set(["random", "randomized"]);
+
+  const renderTags = (key: string) => (
+    <FieldRow
+      key={key}
+      field={{
+        key,
+        type: "tags",
+        label: meta(key).label,
+        description: meta(key).description,
+        placeholder: meta(key).placeholder,
+      }}
+      value={values[key]}
+      onChange={(v) => {
+        // random / randomized 由系统固定追加，不允许在设置中编辑
+        if (key === "utls_fingerprints" && Array.isArray(v)) {
+          const filtered = (v as string[]).filter(
+            (item) => !UTLS_META.has(String(item).trim().toLowerCase()),
+          );
+          set(key, filtered);
+          return;
+        }
+        set(key, v);
+      }}
+    />
+  );
+
   return (
     <SectionCard
       title={section.title}
@@ -171,6 +206,7 @@ function ServerSectionBody({ data }: { data: Record<string, unknown> }) {
 
       <div className="space-y-4">
         {TEXT_FIELDS.map(renderText)}
+        {TAGS_FIELDS.map(renderTags)}
       </div>
     </SectionCard>
   );

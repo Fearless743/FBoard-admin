@@ -1026,6 +1026,11 @@ const translations: Translations = {
         "description": "Пользовательский URL скрипта установки узла. Оставьте пустым, чтобы использовать URL по умолчанию из GitHub.",
         "placeholder": "Оставьте пустым для URL по умолчанию"
       },
+      "utls_fingerprints": {
+        "title": "Список отпечатков uTLS",
+        "description": "Конкретные отпечатки для «uTLS → отпечаток» при редактировании узла. Поддерживаются chrome / firefox / safari / ios / android / edge / qq и другие имена клиентов. random (случайный выбор при подписке) и randomized (на стороне клиента) всегда добавляются системой и здесь не настраиваются.",
+        "placeholder": "Введите имя отпечатка и нажмите Enter, например chrome"
+      },
       "saving": "Сохранение...",
       "manage": {
         "description": "Управление всеми узлами: добавление, удаление и редактирование.",
@@ -1635,7 +1640,8 @@ const translations: Translations = {
     },
     "subscribe_template": {
       "title": "Шаблоны подписки",
-      "description": "Конфигурация форматов выдачи для различных клиентов.",
+      "description": "Конфигурация форматов выдачи для различных клиентов (загрузка по запросу, сохранение вручную).",
+      "unsaved_hint": "Есть несохранённые изменения. Нажмите «Сохранить».",
       "singbox": {
         "title": "Шаблон Sing-box",
         "description": "Формат конфига для Sing-box"
@@ -2076,6 +2082,7 @@ const translations: Translations = {
     "toolbar": {
       "search": "Поиск узлов...",
       "type": "Тип",
+      "status": "Статус",
       "server": "Сервер",
       "server_search": "Поиск серверов...",
       "server_empty": "Серверы не найдены",
@@ -2144,6 +2151,7 @@ const translations: Translations = {
       },
       "rate": {
         "label": "Базовый множитель",
+        "hint": "Множитель учёта трафика; 1 — по фактическому объёму",
         "error": "Множитель обязателен",
         "error_numeric": "Множитель должен быть числом",
         "error_gte_zero": "Множитель должен быть больше или равен 0",
@@ -2167,26 +2175,34 @@ const translations: Translations = {
         "multiplier_error_numeric": "Множитель должен быть числом",
         "multiplier_error_gte_zero": "Множитель должен быть больше или равен 0"
       },
+      "required_mark": "Обязательно",
+      "optional_mark": "Необязательно",
+      "required_fields_hint": "Поля, отмеченные *, обязательны",
       "code": {
         "label": "Кастомный ID узла",
         "optional": "(Опционально)",
-        "placeholder": "Введите кастомный ID узла"
+        "placeholder": "Введите кастомный ID узла",
+        "hint": "Необязательно; для внешней сверки, на соединение не влияет"
       },
       "tags": {
         "label": "Теги узла",
-        "placeholder": "Нажмите Enter для добавления"
+        "optional": "(Опционально)",
+        "placeholder": "Нажмите Enter для добавления",
+        "hint": "Необязательно; отображаются рядом с именем узла у пользователей"
       },
       "groups": {
         "label": "Группы доступа",
         "add": "Добавить группу",
         "placeholder": "Пожалуйста, выберите группы",
-        "empty": "Ничего не найдено"
+        "empty": "Ничего не найдено",
+        "hint": "Необязательно; определяет, какие группы пользователей видят узел"
       },
       "machine": {
         "label": "Привязка к серверу",
         "placeholder": "Выберите сервер (необязательно)",
         "none": "Автономная",
-        "enabled_hint": "Управлять ли этим узлом с сервера"
+        "enabled_hint": "Управлять ли этим узлом с сервера",
+        "hint": "Необязательно; привязка передаёт узел Fboard-Node на этом сервере"
       },
       "host": {
         "label": "Адрес узла",
@@ -2210,7 +2226,8 @@ const translations: Translations = {
       "parent": {
         "label": "Родительский узел",
         "placeholder": "Выберите родителя",
-        "none": "Нет"
+        "none": "Нет",
+        "hint": "Необязательно; дочерний узел наследует протокол и онлайн-статус"
       },
       "route": {
         "label": "Группы маршрутов",
@@ -2257,6 +2274,7 @@ const translations: Translations = {
         "groupIds": "Группы доступа",
         "hidden": "Скрыт",
         "host": "Хост",
+        "hostPlaceholder": "хост / домен",
         "label": "Виртуальный узел",
         "namePlaceholder": "Имя виртуального узла",
         "port": "Порт",
@@ -2275,8 +2293,64 @@ const translations: Translations = {
       "empty": "Для этого протокола нет доступных шаблонов",
       "description": "Выберите предустановленный сетевой шаблон, чтобы заполнить настройки протокола",
       "use": "Применить"
-    },
+    ,
+      "presets": {
+        "vless-tcp-vision": {
+          "label": "TCP + XTLS Vision",
+          "description": "VLESS + TCP + XTLS Vision напрямую; очень быстро, рекомендуется"
+        },
+        "vless-ws-tls": {
+          "label": "WebSocket + TLS + CDN",
+          "description": "VLESS + WebSocket + TLS; совместим с CDN (Cloudflare и др.)"
+        },
+        "vless-grpc-tls": {
+          "label": "gRPC + TLS",
+          "description": "VLESS + gRPC + TLS; подходит для высокой нагрузки"
+        },
+        "vless-tcp-reality": {
+          "label": "TCP + REALITY",
+          "description": "VLESS + REALITY напрямую; без сертификата, устойчивость к probing"
+        },
+        "trojan-tls": {
+          "label": "Trojan + TLS",
+          "description": "Стандартный Trojan + TLS, порт 443"
+        },
+        "trojan-ws-tls": {
+          "label": "Trojan + WebSocket + TLS",
+          "description": "Trojan + WebSocket + TLS; совместим с CDN"
+        },
+        "ss-simple": {
+          "label": "Стандартный AEAD",
+          "description": "Туннель Shadowsocks; просто и эффективно"
+        },
+        "hy-standard": {
+          "label": "Hysteria стандарт",
+          "description": "Hysteria на QUIC; устойчив к потерям, для слабых сетей"
+        },
+        "hy-brutal": {
+          "label": "Hysteria2 Brute",
+          "description": "Hysteria2 + режим Brute; максимальное использование канала"
+        },
+        "tuic-v5": {
+          "label": "TUIC v5 стандарт",
+          "description": "TUIC v5 на QUIC; низкая задержка"
+        },
+        "anytls-default": {
+          "label": "AnyTLS по умолчанию",
+          "description": "AnyTLS с автоматической TLS-маскировкой"
+        },
+        "sudoku-default": {
+          "label": "Sudoku по умолчанию",
+          "description": "Низкоэнтропийная таблица + ChaCha20 + legacy HTTPMask"
+        }
+      }},
     "dynamic_form": {
+      "utls": {
+        "fingerprint": {
+          "random": "Случайный (при подписке)",
+          "randomized": "Рандомизированный (на клиенте)"
+        }
+      },
       "multiplex": {
         "enabled": {
           "label": "Multiplex",
@@ -2599,10 +2673,10 @@ const translations: Translations = {
           "description": "Enable VLESS encryption",
           "server_label": "decryption",
           "server_placeholder": "./xray vlessenc",
-          "server_description": "",
+          "server_description": "Параметр decryption на сервере; сгенерируйте через ./xray vlessenc",
           "client_label": "encryption",
           "client_placeholder": "./xray vlessenc",
-          "client_description": "",
+          "client_description": "Параметр encryption на клиенте; должен соответствовать серверу",
           "generate_hint": "./xray vlessenc"
         }
       },
@@ -2824,7 +2898,49 @@ const translations: Translations = {
       "templates_custom": "Мои шаблоны",
       "templates_empty": "Нет шаблонов — сохраните текущую конфигурацию",
       "use_template_btn": "Использовать"
-    },
+    ,
+      "builtin_templates": {
+        "ws-basic": {
+          "name": "WebSocket базовый",
+          "description": "path + Host"
+        },
+        "ws-cdn": {
+          "name": "WebSocket + CDN",
+          "description": "Подходит для Cloudflare и других CDN"
+        },
+        "grpc-basic": {
+          "name": "gRPC базовый",
+          "description": "serviceName"
+        },
+        "grpc-multi": {
+          "name": "gRPC multiMode",
+          "description": "Включить multiMode"
+        },
+        "http-basic": {
+          "name": "HTTP/2 базовый",
+          "description": "path + host"
+        },
+        "tcp-none": {
+          "name": "TCP без маскировки",
+          "description": "Обычный TCP"
+        },
+        "tcp-http": {
+          "name": "TCP HTTP маскировка",
+          "description": "header type = http"
+        },
+        "xhttp-basic": {
+          "name": "XHTTP базовый",
+          "description": "режим path"
+        },
+        "quic-basic": {
+          "name": "QUIC базовый",
+          "description": "security + key"
+        },
+        "kcp-basic": {
+          "name": "KCP базовый",
+          "description": "mtu / tti по умолчанию"
+        }
+      }},
     "common": {
       "cancel": "Cancel",
       "confirm": "Confirm"
@@ -2979,7 +3095,13 @@ const translations: Translations = {
       "dns": "Разрешать через DNS",
       "block": "Блокировать",
       "direct": "Напрямую",
-      "proxy": "Прокси"
+      "proxy": "Прокси",
+      "short": {
+        "dns": "DNS",
+        "block": "Блок",
+        "direct": "Прямой",
+        "proxy": "Прокси"
+      }
     },
     "form": {
       "add": "Добавить маршрут",
@@ -3122,18 +3244,32 @@ const translations: Translations = {
     },
     "operations": {
       "upgrade": "Обновить Fboard-Node",
-      "restart": "Перезапустить службу Fboard-Node",
+      "ops": "Операции ядра",
+      "start": "Запустить ядро",
+      "stop": "Остановить ядро",
+      "reload": "Перезагрузить ядро",
+      "restart": "Перезапустить ядро",
       "upgradeTitle": "Подтверждение обновления сервера",
       "upgradeDescription": "Fboard-Node на сервере «{{name}}» будет обновлён. Во время обновления служба может быть кратковременно недоступна.",
-      "restartTitle": "Подтверждение перезапуска службы",
-      "restartDescription": "Будет перезапущен весь процесс службы Fboard-Node на сервере «{{name}}», что кратковременно прервёт работу служб на этом сервере.",
+      "startTitle": "Подтверждение запуска ядра",
+      "startDescription": "Будет запущено встроенное ядро xray для всех узлов на сервере «{{name}}». Процесс fboard-node и WebSocket продолжат работу.",
+      "stopTitle": "Подтверждение остановки ядра",
+      "stopDescription": "Будет остановлено встроенное ядро xray для всех узлов на сервере «{{name}}». Прокси будет недоступен до повторного запуска. Процесс и WebSocket продолжат работу.",
+      "reloadTitle": "Подтверждение перезагрузки ядра",
+      "reloadDescription": "Будет перезагружена конфигурация встроенного ядра xray для всех узлов на сервере «{{name}}». Процесс и WebSocket продолжат работу.",
+      "restartTitle": "Подтверждение перезапуска ядра",
+      "restartDescription": "Встроенное ядро xray на сервере «{{name}}» будет принудительно пересоздано. Прокси кратко прервётся; процесс fboard-node и WebSocket продолжат работу.",
       "upgradeSubmitted": "Задача обновления сервера «{{name}}» отправлена",
-      "restartSubmitted": "Задача перезапуска сервера «{{name}}» отправлена",
+      "startSubmitted": "Задача запуска ядра для «{{name}}» отправлена",
+      "stopSubmitted": "Задача остановки ядра для «{{name}}» отправлена",
+      "reloadSubmitted": "Задача перезагрузки ядра для «{{name}}» отправлена",
+      "restartSubmitted": "Задача перезапуска ядра для «{{name}}» отправлена",
       "batchUpgrade": "Обновить все серверы",
       "batchUpgradeTitle": "Подтверждение пакетного обновления серверов",
       "batchUpgradeDescription": "Для каждого активного сервера онлайн будет отправлена одна задача обновления Fboard-Node. Количество размещённых узлов не имеет значения.",
       "batchUpgradeSubmitted": "Отправлено серверов: {{submitted}}; пропущено отключённых: {{inactive}}, офлайн: {{offline}}"
     },
+
     "overview": {
       "total": "Всего серверов",
       "total_hint": "Всего размещено узлов: {{count}}",
@@ -3329,6 +3465,7 @@ const translations: Translations = {
   },
   "common": {
     "all": "Все",
+    "selectAll": "Выбрать все",
     "loading": "Загрузка...",
     "error": "Ошибка",
     "success": "Успех",
@@ -3429,25 +3566,6 @@ const translations: Translations = {
     "actions": "Действия",
     "start": "С",
     "end": "По"
-  },
-  "sidebar": {
-    "dashboard": "Панель управления",
-    "systemManagement": "Управление системой",
-    "systemConfig": "Конфигурация системы",
-    "themeConfig": "Конфигурация тем",
-    "noticeManagement": "Объявления",
-    "paymentConfig": "Платежные методы",
-    "knowledgeManagement": "База знаний",
-    "nodeManagement": "Узлы",
-    "permissionGroupManagement": "Группы прав",
-    "routeManagement": "Маршруты",
-    "subscriptionManagement": "Управление подписками",
-    "planManagement": "Тарифы",
-    "orderManagement": "Заказы",
-    "couponManagement": "Купоны",
-    "userManagement": "Пользователи",
-    "ticketManagement": "Тикеты",
-    "pluginManagement": "Управление плагинами"
   },
   "plugin": {
     "title": "Управление плагинами",
@@ -3553,6 +3671,7 @@ const translations: Translations = {
     },
     "staticFiles": {
       "title": "HTML статические файлы",
+      "previewTitle": "Предпросмотр HTML плагина",
       "backToList": "Назад к списку",
       "openInNewTab": "Открыть в новой вкладке",
       "empty": "Нет статических файлов"

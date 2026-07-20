@@ -295,7 +295,7 @@ export function UserListPage() {
                     selected.length === users.length
                   }
                   onCheckedChange={(c) => handleSelectAll(c === true)}
-                  aria-label="select all"
+                  aria-label={t("common.selectAll")}
                 />
               </TableHead>
               <TableHead className="w-14">{t("user.columns.id")}</TableHead>

@@ -7,6 +7,17 @@ export async function fetchConfigSection(key: string): Promise<ConfigSection> {
   return res?.data?.[key] ?? res?.[key] ?? {};
 }
 
+/** 按需获取单个订阅模板（name 为 singbox / clash / ...） */
+export async function fetchSubscribeTemplate(name: string): Promise<string> {
+  const res = await adminGet<any>("/config/fetch", {
+    key: "subscribe_template",
+    name,
+  });
+  const section = res?.data?.subscribe_template ?? res?.subscribe_template ?? {};
+  const fieldKey = `subscribe_template_${name}`;
+  return (section[fieldKey] as string) ?? "";
+}
+
 export async function saveConfig(payload: ConfigSection) {
   return adminPost<any>("/config/save", payload);
 }

@@ -4,6 +4,10 @@ import { adminGet, adminPost } from "@/api/client";
 export interface ServerGroup {
   id: number;
   name: string;
+  /** 绑定到该权限组的用户数（Laravel withCount('users')） */
+  users_count?: number;
+  /** 节点 group_ids 包含该组的数量 */
+  server_count?: number;
   [k: string]: any;
 }
 
@@ -128,13 +132,23 @@ export interface Server {
   [k: string]: any;
 }
 
-export async function getNodes(params?: { current?: number; pageSize?: number; search?: string; type?: string }): Promise<Server[]> {
+export async function getNodes(params?: {
+  current?: number;
+  pageSize?: number;
+  search?: string;
+  type?: string;
+  /** 运行状态：0 未运行 / 1 无人使用或异常 / 2 运行正常 */
+  status?: 0 | 1 | 2 | number | string;
+}): Promise<Server[]> {
   if (params) {
     const searchParams = new URLSearchParams();
     if (params.current) searchParams.set('current', String(params.current));
     if (params.pageSize) searchParams.set('pageSize', String(params.pageSize));
     if (params.search) searchParams.set('search', params.search);
     if (params.type) searchParams.set('type', params.type);
+    if (params.status !== undefined && params.status !== null && params.status !== "") {
+      searchParams.set('status', String(params.status));
+    }
     return adminGet<Server[]>("/server/manage/getNodes?" + searchParams.toString());
   }
   return adminGet<Server[]>("/server/manage/getNodes");
@@ -249,6 +263,8 @@ export interface ProtocolDefinition {
   name: string;
   description?: string;
   config_fields: Record<string, ProtocolConfigField>;
+  /** Laravel 校验规则字符串 map，键为 protocol_settings 相对路径，如 tls / tls_settings.server_name */
+  validation_rules?: Record<string, string | string[]>;
 }
 
 export interface ProtocolType {
@@ -300,12 +316,22 @@ export interface Machine {
   [k: string]: any;
 }
 
+/** 服务器管理页顶部概览（全局，不受搜索/分页影响） */
+export interface MachineSummary {
+  total: number;
+  online: number;
+  offline: number;
+  high_load: number;
+  nodes: number;
+}
+
 export interface MachineListResponse {
   data: Machine[];
   total: number;
   current_page: number;
   per_page: number;
   last_page: number;
+  summary?: MachineSummary;
 }
 
 export async function fetchMachines(
@@ -358,7 +384,22 @@ export async function upgradeMachine(id: number) {
 }
 
 export async function restartMachine(id: number) {
-  return adminPost<{ submitted: boolean; machine_id: number }>("/server/machine/restart", { id });
+  return adminPost<{ submitted: boolean; machine_id: number; action?: string }>("/server/machine/restart", { id });
+}
+
+/** 停止内嵌 xray 内核（整机） */
+export async function stopMachine(id: number) {
+  return adminPost<{ submitted: boolean; machine_id: number; action?: string }>("/server/machine/stop", { id });
+}
+
+/** 启动内嵌 xray 内核（整机） */
+export async function startMachine(id: number) {
+  return adminPost<{ submitted: boolean; machine_id: number; action?: string }>("/server/machine/start", { id });
+}
+
+/** 重载内嵌 xray 内核配置（整机） */
+export async function reloadMachine(id: number) {
+  return adminPost<{ submitted: boolean; machine_id: number; action?: string }>("/server/machine/reload", { id });
 }
 
 export interface BatchMachineUpgradeResult {

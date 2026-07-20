@@ -1626,6 +1626,11 @@ const translations: Translations = {
         "description": "自定义节点安装脚本的 URL 地址，留空则使用默认的 GitHub 地址。",
         "placeholder": "留空则使用默认地址"
       },
+      "utls_fingerprints": {
+        "title": "uTLS 指纹列表",
+        "description": "编辑节点时「uTLS 设置 → 指纹」的具体指纹可选项。支持 chrome / firefox / safari / ios / android / edge / qq 等，也可添加客户端支持的其它指纹名。random（订阅时随机）与 randomized（客户端内随机）由系统固定提供，无需在此配置。",
+        "placeholder": "输入指纹名称后回车添加，如 chrome"
+      },
       "saving": "保存中...",
       "manage": {
         "title": "节点管理",
@@ -1634,7 +1639,8 @@ const translations: Translations = {
     },
     "subscribe_template": {
       "title": "订阅模板",
-      "description": "配置各个客户端的订阅模板",
+      "description": "配置各个客户端的订阅模板（按需加载，需手动保存）",
+      "unsaved_hint": "当前模板有未保存的修改，请点击保存。",
       "singbox": {
         "title": "Sing-box 订阅模板",
         "description": "配置 Sing-box 的订阅模板格式"
@@ -2050,6 +2056,7 @@ const translations: Translations = {
     "toolbar": {
       "search": "搜索节点...",
       "type": "类型",
+      "status": "运行状态",
       "server": "服务器",
       "server_search": "搜索服务器...",
       "server_empty": "未找到服务器",
@@ -2118,6 +2125,7 @@ const translations: Translations = {
       },
       "rate": {
         "label": "基础倍率",
+        "hint": "流量计费倍率，1 表示按实际流量计费",
         "error": "基础倍率不能为空",
         "error_numeric": "基础倍率必须是数字",
         "error_gte_zero": "基础倍率必须大于或等于0",
@@ -2154,26 +2162,34 @@ const translations: Translations = {
         "multiplier_error_numeric": "倍率乘数必须是数字",
         "multiplier_error_gte_zero": "倍率乘数必须大于或等于0"
       },
+      "required_mark": "必填",
+      "optional_mark": "选填",
+      "required_fields_hint": "带 * 的为必填项，提交前请完整填写",
       "code": {
         "label": "自定义节点ID",
         "optional": "(选填)",
-        "placeholder": "请输入自定义节点ID"
+        "placeholder": "请输入自定义节点ID",
+        "hint": "选填；用于外部系统对照，不影响协议连接"
       },
       "tags": {
         "label": "节点标签",
-        "placeholder": "输入后按逗号/回车添加"
+        "optional": "(选填)",
+        "placeholder": "输入后按逗号/回车添加",
+        "hint": "选填；展示在用户端节点名称旁"
       },
       "groups": {
         "label": "权限组",
         "add": "添加权限组",
         "placeholder": "请选择权限组",
-        "empty": "未找到结果"
+        "empty": "未找到结果",
+        "hint": "选填；不选则任何权限组用户都看不到此节点（取决于业务逻辑，建议至少选一个）"
       },
       "machine": {
         "label": "绑定服务器",
         "placeholder": "选择服务器（可选）",
         "none": "独立部署",
-        "enabled_hint": "选择是否由此服务器管理该节点"
+        "enabled_hint": "选择是否由此服务器管理该节点",
+        "hint": "选填；绑定后由该服务器上的 Fboard-Node 托管此节点"
       },
       "host": {
         "label": "节点地址",
@@ -2205,7 +2221,8 @@ const translations: Translations = {
       "parent": {
         "label": "父级节点",
         "placeholder": "选择父节点",
-        "none": "无"
+        "none": "无",
+        "hint": "选填；子节点会继承父节点协议配置与在线状态"
       },
       "virtualNode": {
         "label": "虚拟节点",
@@ -2221,6 +2238,7 @@ const translations: Translations = {
         "empty": "暂无虚拟节点",
         "tagsPlaceholder": "输入后按回车添加",
         "host": "主机地址",
+        "hostPlaceholder": "主机名 / 域名",
         "port": "端口",
         "groupIds": "权限组",
         "tags": "标签",
@@ -2249,8 +2267,64 @@ const translations: Translations = {
       "empty": "当前协议暂无可用模板",
       "description": "选择一个预设网络模板，一键填充协议配置",
       "use": "使用"
-    },
+    ,
+      "presets": {
+        "vless-tcp-vision": {
+          "label": "TCP + XTLS Vision",
+          "description": "VLESS + TCP + XTLS Vision 直连，速度极快，推荐"
+        },
+        "vless-ws-tls": {
+          "label": "WebSocket + TLS + CDN",
+          "description": "VLESS + WebSocket + TLS，可套 CDN（Cloudflare 等）"
+        },
+        "vless-grpc-tls": {
+          "label": "gRPC + TLS",
+          "description": "VLESS + gRPC + TLS，适合大规模负载"
+        },
+        "vless-tcp-reality": {
+          "label": "TCP + REALITY",
+          "description": "VLESS + REALITY 直连，无需证书，防主动探测"
+        },
+        "trojan-tls": {
+          "label": "Trojan + TLS",
+          "description": "标准 Trojan + TLS，端口 443"
+        },
+        "trojan-ws-tls": {
+          "label": "Trojan + WebSocket + TLS",
+          "description": "Trojan + WebSocket + TLS，可套 CDN"
+        },
+        "ss-simple": {
+          "label": "标准 AEAD",
+          "description": "Shadowsocks 加密隧道，简洁高效"
+        },
+        "hy-standard": {
+          "label": "Hysteria 标准",
+          "description": "Hysteria 基于 QUIC，抗丢包，适合弱网"
+        },
+        "hy-brutal": {
+          "label": "Hysteria2 Brute",
+          "description": "Hysteria2 + Brute 模式，极高带宽利用"
+        },
+        "tuic-v5": {
+          "label": "TUIC v5 标准",
+          "description": "TUIC v5 基于 QUIC，低延迟"
+        },
+        "anytls-default": {
+          "label": "AnyTLS 默认",
+          "description": "AnyTLS 自动化 TLS 伪装"
+        },
+        "sudoku-default": {
+          "label": "Sudoku 默认",
+          "description": "低熵表 + ChaCha20 + legacy HTTPMask"
+        }
+      }},
     "dynamic_form": {
+      "utls": {
+        "fingerprint": {
+          "random": "随机（订阅时抽取）",
+          "randomized": "随机化（客户端内随机）"
+        }
+      },
       "multiplex": {
         "enabled": {
           "label": "多路复用 (Multiplex)",
@@ -2573,10 +2647,10 @@ const translations: Translations = {
           "description": "启用 VLESS 加密",
           "server_label": "decryption",
           "server_placeholder": "./xray vlessenc 生成",
-          "server_description": "",
+          "server_description": "服务端 decryption 参数，可由 ./xray vlessenc 生成",
           "client_label": "encryption",
           "client_placeholder": "./xray vlessenc 生成",
-          "client_description": "",
+          "client_description": "客户端 encryption 参数，需与服务端配对",
           "generate_hint": "./xray vlessenc 生成"
         }
       },
@@ -2798,7 +2872,49 @@ const translations: Translations = {
       "errors": {
         "save_failed": "保存时发生错误"
       }
-    },
+    ,
+      "builtin_templates": {
+        "ws-basic": {
+          "name": "WebSocket 基础",
+          "description": "path + Host"
+        },
+        "ws-cdn": {
+          "name": "WebSocket + CDN",
+          "description": "适合 Cloudflare 等 CDN"
+        },
+        "grpc-basic": {
+          "name": "gRPC 基础",
+          "description": "serviceName"
+        },
+        "grpc-multi": {
+          "name": "gRPC multiMode",
+          "description": "开启 multiMode"
+        },
+        "http-basic": {
+          "name": "HTTP/2 基础",
+          "description": "path + host"
+        },
+        "tcp-none": {
+          "name": "TCP 无伪装",
+          "description": "纯 TCP"
+        },
+        "tcp-http": {
+          "name": "TCP HTTP 伪装",
+          "description": "header type = http"
+        },
+        "xhttp-basic": {
+          "name": "XHTTP 基础",
+          "description": "path 模式"
+        },
+        "quic-basic": {
+          "name": "QUIC 基础",
+          "description": "security + key"
+        },
+        "kcp-basic": {
+          "name": "KCP 基础",
+          "description": "mtu / tti 默认"
+        }
+      }},
     "common": {
       "cancel": "取消",
       "confirm": "确定"
@@ -2978,7 +3094,13 @@ const translations: Translations = {
       "dns": "指定DNS服务器进行解析",
       "block": "禁止访问",
       "direct": "直连",
-      "proxy": "转发"
+      "proxy": "转发",
+      "short": {
+        "dns": "DNS",
+        "block": "阻止",
+        "direct": "直连",
+        "proxy": "转发"
+      }
     },
     "form": {
       "add": "添加路由",
@@ -3121,18 +3243,32 @@ const translations: Translations = {
     },
     "operations": {
       "upgrade": "升级 Fboard-Node",
-      "restart": "重启 Fboard-Node 服务",
+      "ops": "内核运维",
+      "start": "启动内核",
+      "stop": "停止内核",
+      "reload": "重载内核",
+      "restart": "重启内核",
       "upgradeTitle": "确认升级服务器",
       "upgradeDescription": "将升级服务器“{{name}}”上的 Fboard-Node 服务。升级过程中该服务器上的服务可能短暂中断。",
-      "restartTitle": "确认重启服务器服务",
-      "restartDescription": "将重启服务器“{{name}}”上的整个 Fboard-Node 服务进程，期间该服务器上的服务会短暂中断。",
+      "startTitle": "确认启动内核",
+      "startDescription": "将启动服务器“{{name}}”上所有节点的内嵌 xray 内核。fboard-node 进程与 WebSocket 保持运行。",
+      "stopTitle": "确认停止内核",
+      "stopDescription": "将停止服务器“{{name}}”上所有节点的内嵌 xray 内核，该服务器上的代理将不可用，直到再次启动。进程与 WebSocket 保持运行。",
+      "reloadTitle": "确认重载内核",
+      "reloadDescription": "将重载服务器“{{name}}”上所有节点的内嵌 xray 内核配置；进程与 WebSocket 保持运行。",
+      "restartTitle": "确认重启内核",
+      "restartDescription": "将强制重建服务器“{{name}}”上所有节点的内嵌 xray 内核，代理会短暂中断。fboard-node 进程与 WebSocket 保持运行。",
       "upgradeSubmitted": "服务器“{{name}}”的升级任务已提交",
-      "restartSubmitted": "服务器“{{name}}”的重启任务已提交",
+      "startSubmitted": "服务器“{{name}}”的内核启动任务已提交",
+      "stopSubmitted": "服务器“{{name}}”的内核停止任务已提交",
+      "reloadSubmitted": "服务器“{{name}}”的内核重载任务已提交",
+      "restartSubmitted": "服务器“{{name}}”的内核重启任务已提交",
       "batchUpgrade": "一键升级服务器",
       "batchUpgradeTitle": "确认批量升级服务器",
       "batchUpgradeDescription": "将对所有在线且启用的服务器各提交一次 Fboard-Node 升级任务，不依赖服务器承载的节点数量。",
       "batchUpgradeSubmitted": "已提交 {{submitted}} 台服务器；跳过 {{inactive}} 台禁用、{{offline}} 台离线服务器"
     },
+
     "overview": {
       "total": "服务器总数",
       "total_hint": "共承载 {{count}} 个节点",
@@ -3327,6 +3463,7 @@ const translations: Translations = {
   },
   "common": {
     "all": "全部",
+    "selectAll": "全选",
     "loading": "加载中...",
     "error": "错误",
     "success": "成功",
@@ -3427,25 +3564,6 @@ const translations: Translations = {
     "actions": "操作",
     "start": "起",
     "end": "止"
-  },
-  "sidebar": {
-    "dashboard": "仪表盘",
-    "systemManagement": "系统管理",
-    "systemConfig": "系统配置",
-    "pluginManagement": "插件管理",
-    "themeConfig": "主题配置",
-    "noticeManagement": "公告管理",
-    "paymentConfig": "支付配置",
-    "knowledgeManagement": "知识库管理",
-    "nodeManagement": "节点管理",
-    "permissionGroupManagement": "权限组管理",
-    "routeManagement": "路由管理",
-    "subscriptionManagement": "订阅管理",
-    "planManagement": "套餐管理",
-    "orderManagement": "订单管理",
-    "couponManagement": "优惠券管理",
-    "userManagement": "用户管理",
-    "ticketManagement": "工单管理"
   },
   "plugin": {
     "title": "插件管理",
@@ -3551,6 +3669,7 @@ const translations: Translations = {
     },
     "staticFiles": {
       "title": "HTML 静态文件",
+      "previewTitle": "插件 HTML 预览",
       "backToList": "返回列表",
       "openInNewTab": "新标签页打开",
       "empty": "暂无静态文件"

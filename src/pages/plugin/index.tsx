@@ -537,7 +537,7 @@ function PluginStaticFilesDialog({
             src={selectedFile}
             className="w-full flex-1 border-0"
             style={{ height: "calc(95vh - 53px)" }}
-            title="Plugin HTML Preview"
+            title={t("plugin.staticFiles.previewTitle")}
           />
         </DialogContent>
       </Dialog>

@@ -1,144 +1,91 @@
 /** 前端内置网络设置模板（只读，不入库） */
 export interface BuiltinNetworkSettingsTemplate {
   id: string;
-  name: string;
-  description?: string;
+  /** i18n key under server.network_settings.builtin_templates.<id>.name */
+  nameKey: string;
+  /** i18n key under server.network_settings.builtin_templates.<id>.description */
+  descriptionKey: string;
   network?: string;
   settings: Record<string, any>;
   builtin: true;
 }
 
+function builtin(
+  id: string,
+  network: string,
+  settings: Record<string, any>,
+): BuiltinNetworkSettingsTemplate {
+  return {
+    id,
+    nameKey: `server.network_settings.builtin_templates.${id}.name`,
+    descriptionKey: `server.network_settings.builtin_templates.${id}.description`,
+    network,
+    builtin: true,
+    settings,
+  };
+}
+
 const BUILTIN: BuiltinNetworkSettingsTemplate[] = [
-  {
-    id: "ws-basic",
-    name: "WebSocket 基础",
-    description: "path + Host",
-    network: "ws",
-    builtin: true,
-    settings: {
-      path: "/",
-      headers: {
-        Host: "example.com",
-      },
+  builtin("ws-basic", "ws", {
+    path: "/",
+    headers: {
+      Host: "example.com",
     },
-  },
-  {
-    id: "ws-cdn",
-    name: "WebSocket + CDN",
-    description: "适合 Cloudflare 等 CDN",
-    network: "ws",
-    builtin: true,
-    settings: {
-      path: "/ws",
-      headers: {
-        Host: "cdn.example.com",
-      },
+  }),
+  builtin("ws-cdn", "ws", {
+    path: "/ws",
+    headers: {
+      Host: "cdn.example.com",
     },
-  },
-  {
-    id: "grpc-basic",
-    name: "gRPC 基础",
-    description: "serviceName",
-    network: "grpc",
-    builtin: true,
-    settings: {
-      serviceName: "GunService",
+  }),
+  builtin("grpc-basic", "grpc", {
+    serviceName: "GunService",
+  }),
+  builtin("grpc-multi", "grpc", {
+    serviceName: "GunService",
+    multiMode: true,
+  }),
+  builtin("http-basic", "http", {
+    path: "/",
+    host: ["example.com"],
+  }),
+  builtin("tcp-none", "tcp", {
+    header: {
+      type: "none",
     },
-  },
-  {
-    id: "grpc-multi",
-    name: "gRPC multiMode",
-    description: "开启 multiMode",
-    network: "grpc",
-    builtin: true,
-    settings: {
-      serviceName: "GunService",
-      multiMode: true,
-    },
-  },
-  {
-    id: "http-basic",
-    name: "HTTP/2 基础",
-    description: "path + host",
-    network: "http",
-    builtin: true,
-    settings: {
-      path: "/",
-      host: ["example.com"],
-    },
-  },
-  {
-    id: "tcp-none",
-    name: "TCP 无伪装",
-    description: "纯 TCP",
-    network: "tcp",
-    builtin: true,
-    settings: {
-      header: {
-        type: "none",
-      },
-    },
-  },
-  {
-    id: "tcp-http",
-    name: "TCP HTTP 伪装",
-    description: "header type = http",
-    network: "tcp",
-    builtin: true,
-    settings: {
-      header: {
-        type: "http",
-        request: {
-          path: ["/"],
-          headers: {
-            Host: ["example.com"],
-          },
+  }),
+  builtin("tcp-http", "tcp", {
+    header: {
+      type: "http",
+      request: {
+        path: ["/"],
+        headers: {
+          Host: ["example.com"],
         },
       },
     },
-  },
-  {
-    id: "xhttp-basic",
-    name: "XHTTP 基础",
-    description: "path 模式",
-    network: "xhttp",
-    builtin: true,
-    settings: {
-      path: "/",
-      mode: "auto",
+  }),
+  builtin("xhttp-basic", "xhttp", {
+    path: "/",
+    mode: "auto",
+  }),
+  builtin("quic-basic", "quic", {
+    security: "none",
+    key: "",
+    header: {
+      type: "none",
     },
-  },
-  {
-    id: "quic-basic",
-    name: "QUIC 基础",
-    description: "security + key",
-    network: "quic",
-    builtin: true,
-    settings: {
-      security: "none",
-      key: "",
-      header: {
-        type: "none",
-      },
+  }),
+  builtin("kcp-basic", "kcp", {
+    mtu: 1350,
+    tti: 50,
+    uplinkCapacity: 5,
+    downlinkCapacity: 20,
+    congestion: false,
+    header: {
+      type: "none",
     },
-  },
-  {
-    id: "kcp-basic",
-    name: "KCP 基础",
-    description: "mtu / tti 默认",
-    network: "kcp",
-    builtin: true,
-    settings: {
-      mtu: 1350,
-      tti: 50,
-      uplinkCapacity: 5,
-      downlinkCapacity: 20,
-      congestion: false,
-      header: {
-        type: "none",
-      },
-    },
-  },
+  }),
 ];
 
 export function listBuiltinNetworkSettingsTemplates(

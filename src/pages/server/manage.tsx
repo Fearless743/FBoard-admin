@@ -87,6 +87,12 @@ const STATUS_DOT: Record<number, string> = {
   1: "bg-destructive",
   2: "bg-emerald-500",
 };
+/** i18n 缺失时的中文回退，避免页面直接露出 0/1/2 */
+const STATUS_LABEL_FALLBACK: Record<number, string> = {
+  0: "未运行",
+  1: "无人使用或异常",
+  2: "运行正常",
+};
 
 export function ServerListPage() {
   const { t } = useTranslation();
@@ -99,6 +105,8 @@ export function ServerListPage() {
   const [resetting, setResetting] = useState<Server | null>(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  /** 运行状态过滤：all | 0 | 1 | 2 */
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingSortList, setPendingSortList] = useState<any[] | null>(null);
   const [page, setPage] = useState(1);
@@ -123,9 +131,22 @@ export function ServerListPage() {
   }, []);
 
   const { data, isLoading } = useQuery<any>({
-    queryKey: ["servers", "nodes", page, pageSize, search, typeFilter],
-    queryFn: () => getNodes({ current: page, pageSize, search: search || undefined, type: typeFilter === "all" ? undefined : typeFilter }),
+    queryKey: ["servers", "nodes", page, pageSize, search, typeFilter, statusFilter],
+    queryFn: () =>
+      getNodes({
+        current: page,
+        pageSize,
+        search: search || undefined,
+        type: typeFilter === "all" ? undefined : typeFilter,
+        status:
+          statusFilter === "all" ? undefined : Number(statusFilter),
+      }),
   });
+
+  // 筛选条件变化时回到第 1 页，避免结果变少后停在空页
+  useEffect(() => {
+    setPage(1);
+  }, [search, typeFilter, statusFilter]);
 
   const { data: sortNodes } = useQuery({
     queryKey: ["servers", "sort-nodes"],
@@ -213,6 +234,7 @@ export function ServerListPage() {
       setPendingSortList(null);
       setSearch("");
       setTypeFilter("all");
+      setStatusFilter("all");
       setDragEnabled(true);
     }
   }, [dragEnabled, pendingSortList, finishSort]);
@@ -264,6 +286,25 @@ export function ServerListPage() {
             {PROTOCOL_TYPES.map((p) => (
               <SelectItem key={p.type} value={p.type}>
                 {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+          disabled={dragEnabled}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={t("server.toolbar.status")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("common.all")}</SelectItem>
+            {([0, 1, 2] as const).map((code) => (
+              <SelectItem key={code} value={String(code)}>
+                {t(`server.columns.status.${code}`, {
+                  defaultValue: STATUS_LABEL_FALLBACK[code],
+                })}
               </SelectItem>
             ))}
           </SelectContent>
@@ -380,7 +421,11 @@ export function ServerListPage() {
                             <span
                               className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[statusCode] ?? "bg-muted-foreground"}`}
                             />
-                            {t(`server.status.${statusCode}`, String(statusCode))}
+                            {t(`server.columns.status.${statusCode}`, {
+                              defaultValue:
+                                STATUS_LABEL_FALLBACK[statusCode] ??
+                                String(statusCode),
+                            })}
                           </Badge>
                         </div>
                       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import {
@@ -62,6 +62,56 @@ import { gbToBytes } from "@/lib/utils";
 import { AdvancedSettingsDialog } from "./advanced-settings-dialog";
 import { NetworkSettingsDialog } from "./network-settings-dialog";
 import { VirtualNodeList } from "./virtual-node-list";
+
+
+/** 判断 Laravel 规则字符串是否含无条件 required（required_if / required_with 不算星号） */
+function isUnconditionallyRequired(rule: string | string[] | undefined | null): boolean {
+  if (!rule) return false;
+  const s = Array.isArray(rule) ? rule.join("|") : String(rule);
+  return s
+    .split("|")
+    .map((p) => p.trim().toLowerCase())
+    .some((p) => p === "required");
+}
+
+function FormField({
+  label,
+  required,
+  optionalText,
+  hint,
+  error,
+  className,
+  children,
+}: {
+  label: ReactNode;
+  required?: boolean;
+  optionalText?: string;
+  hint?: string;
+  error?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={cn("space-y-1.5", className)}>
+      <Label className="text-sm">
+        {label}
+        {required ? <span className="ml-0.5 text-destructive">*</span> : null}
+        {!required && optionalText ? (
+          <span className="ml-1 text-xs font-normal text-muted-foreground">
+            {optionalText}
+          </span>
+        ) : null}
+      </Label>
+      {children}
+      {error ? (
+        <p className="text-xs text-destructive">{error}</p>
+      ) : hint ? (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
 
 interface FormValues {
   id?: number;
@@ -306,15 +356,21 @@ export function ServerFormDialog({
               </DialogTitle>
               <DialogDescription>
                 {t("server.manage.description")}
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {t("server.form.required_fields_hint")}
+                </span>
               </DialogDescription>
             </div>
-            <div className="w-48 shrink-0 mr-10">
+            <div className="w-48 shrink-0 mr-10 space-y-1">
               <Controller
                 control={control}
                 name="type"
+                rules={{ required: true }}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
+                    <SelectTrigger
+                      className={cn(errors.type && "border-destructive")}
+                    >
                       <SelectValue
                         placeholder={t("server.form.type.placeholder")}
                       />
@@ -329,42 +385,105 @@ export function ServerFormDialog({
                   </Select>
                 )}
               />
+              {errors.type ? (
+                <p className="text-xs text-destructive">
+                  {t("server.form.type.select_error")}
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  <span className="text-destructive">*</span>{" "}
+                  {t("server.form.required_mark")}
+                </p>
+              )}
             </div>
           </div>
         </DialogHeader>
 
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, () => {
+            toast.error(t("server.form.required_fields_hint"));
+          })}
           className="flex flex-col min-h-0 flex-1"
         >
           <div className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6 py-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>{t("server.form.name.label")}</Label>
-                <Input {...register("name", { required: true })} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("server.form.code.label")}</Label>
+              <FormField
+                className="sm:col-span-2"
+                label={t("server.form.name.label")}
+                required
+                error={errors.name ? t("server.form.name.error") : undefined}
+              >
+                <Input
+                  placeholder={t("server.form.name.placeholder")}
+                  {...register("name", {
+                    required: true,
+                    validate: (v) => !!String(v || "").trim(),
+                  })}
+                />
+              </FormField>
+
+              <FormField
+                label={t("server.form.code.label")}
+                optionalText={t("server.form.code.optional")}
+                hint={t("server.form.code.hint")}
+              >
                 <Input
                   placeholder={t("server.form.code.placeholder")}
                   {...register("code")}
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("server.form.host.label")}</Label>
-                <Input {...register("host", { required: true })} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("server.form.rate.label")}</Label>
+              </FormField>
+
+              <FormField
+                label={t("server.form.host.label")}
+                required
+                error={errors.host ? t("server.form.host.error") : undefined}
+              >
+                <Input
+                  placeholder={t("server.form.host.placeholder")}
+                  {...register("host", {
+                    required: true,
+                    validate: (v) => !!String(v || "").trim(),
+                  })}
+                />
+              </FormField>
+
+              <FormField
+                label={t("server.form.rate.label")}
+                required
+                hint={t("server.form.rate.hint")}
+                error={
+                  errors.rate
+                    ? errors.rate.type === "min"
+                      ? t("server.form.rate.error_gte_zero")
+                      : t("server.form.rate.error")
+                    : undefined
+                }
+              >
                 <Input
                   type="number"
                   step="0.01"
                   className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  {...register("rate", { valueAsNumber: true })}
+                  {...register("rate", {
+                    required: true,
+                    valueAsNumber: true,
+                    min: 0,
+                    validate: (v) => Number.isFinite(v),
+                  })}
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("server.form.port.label")}</Label>
+              </FormField>
+
+              <FormField
+                label={`${t("server.form.port.label")} / ${t("server.form.server_port.label")}`}
+                required
+                hint={t("server.form.port.tooltip")}
+                error={
+                  errors.port || errors.server_port
+                    ? errors.port
+                      ? t("server.form.port.error")
+                      : t("server.form.server_port.error")
+                    : undefined
+                }
+              >
                 <div className="flex items-center gap-1.5">
                   <div className="flex-1">
                     <Input
@@ -372,10 +491,18 @@ export function ServerFormDialog({
                       inputMode="numeric"
                       autoComplete="off"
                       placeholder={t("server.form.port.placeholder")}
+                      aria-label={t("server.form.port.label")}
+                      className={cn(errors.port && "border-destructive")}
                       {...register("port", {
                         required: true,
                         setValueAs: (v) =>
                           typeof v === "string" ? v.trim() : v,
+                        validate: (v) => {
+                          const s = String(v ?? "").trim();
+                          if (!s) return false;
+                          // 单端口或范围
+                          return /^\d+$/.test(s) || /^\d+\s*-\s*\d+$/.test(s);
+                        },
                       })}
                     />
                   </div>
@@ -386,10 +513,11 @@ export function ServerFormDialog({
                     className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-foreground"
                     title={t("server.form.port.sync")}
                     onClick={() => {
-                      // 仅当连接端口为单数字时同步到服务端口；范围端口不同步
                       const p = String(watch("port") ?? "").trim();
                       if (/^\d+$/.test(p)) {
-                        setValue("server_port", Number(p));
+                        setValue("server_port", Number(p), {
+                          shouldValidate: true,
+                        });
                       }
                     }}
                   >
@@ -401,32 +529,53 @@ export function ServerFormDialog({
                     </Label>
                     <Input
                       type="number"
-                      className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      className={cn(
+                        "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+                        errors.server_port && "border-destructive",
+                      )}
                       placeholder={t("server.form.server_port.placeholder")}
+                      title={t("server.form.server_port.tooltip")}
+                      aria-label={t("server.form.server_port.label")}
                       {...register("server_port", {
+                        required: true,
                         setValueAs: (v) => {
-                          if (v === "" || v === null || v === undefined) return "";
+                          if (v === "" || v === null || v === undefined)
+                            return "";
                           const n = Number(v);
                           return Number.isFinite(n) ? n : "";
+                        },
+                        validate: (v) => {
+                          if (v === "" || v === null || v === undefined)
+                            return false;
+                          const n = Number(v);
+                          return Number.isFinite(n) && n > 0;
                         },
                       })}
                     />
                   </div>
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>
-                  {t("server.form.traffic_limit.label")} ({t("server.form.traffic_limit_unit")})
-                </Label>
+              </FormField>
+
+              <FormField
+                label={`${t("server.form.traffic_limit.label")} (${t("server.form.traffic_limit_unit")})`}
+                optionalText={t("server.form.optional_mark")}
+                hint={t("server.form.traffic_limit.hint")}
+              >
                 <Input
                   type="number"
                   step="0.01"
                   className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  placeholder={t("server.form.traffic_limit.placeholder")}
                   {...register("traffic_limit_gb", { valueAsNumber: true })}
                 />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>{t("server.form.machine.label")}</Label>
+              </FormField>
+
+              <FormField
+                className="sm:col-span-2"
+                label={t("server.form.machine.label")}
+                optionalText={t("server.form.optional_mark")}
+                hint={t("server.form.machine.hint")}
+              >
                 <Controller
                   control={control}
                   name="machine_id"
@@ -465,9 +614,14 @@ export function ServerFormDialog({
                     </Select>
                   )}
                 />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>{t("server.form.parent.label")}</Label>
+              </FormField>
+
+              <FormField
+                className="sm:col-span-2"
+                label={t("server.form.parent.label")}
+                optionalText={t("server.form.optional_mark")}
+                hint={t("server.form.parent.hint")}
+              >
                 <Controller
                   control={control}
                   name="parent_id"
@@ -503,13 +657,18 @@ export function ServerFormDialog({
                     </Select>
                   )}
                 />
-              </div>
-              {/* 虚拟节点列表（仅编辑已有节点时） */}
+              </FormField>
+
               {server?.id ? (
                 <VirtualNodeList parentId={server.id} enabled={open} />
               ) : null}
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>{t("server.form.tags.label")}</Label>
+
+              <FormField
+                className="sm:col-span-2"
+                label={t("server.form.tags.label")}
+                optionalText={t("server.form.tags.optional")}
+                hint={t("server.form.tags.hint")}
+              >
                 <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm focus-within:ring-1 focus-within:ring-ring">
                   {tags.map((tag, i) => (
                     <span
@@ -543,9 +702,14 @@ export function ServerFormDialog({
                     onBlur={() => addTag()}
                   />
                 </div>
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>{t("server.form.groups.label")}</Label>
+              </FormField>
+
+              <FormField
+                className="sm:col-span-2"
+                label={t("server.form.groups.label")}
+                optionalText={t("server.form.optional_mark")}
+                hint={t("server.form.groups.hint")}
+              >
                 <Controller
                   control={control}
                   name="group_ids"
@@ -583,12 +747,20 @@ export function ServerFormDialog({
                     </div>
                   )}
                 />
-              </div>
+              </FormField>
             </div>
 
             {selectedType && (
               <div className="space-y-3 rounded-lg border bg-card p-4">
-                <h4 className="text-sm font-medium">{t("server.form.protocolSection")}</h4>
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-sm font-medium">
+                    {t("server.form.protocolSection")}
+                  </h4>
+                  <span className="text-[11px] text-muted-foreground">
+                    <span className="text-destructive">*</span>{" "}
+                    {t("server.form.required_mark")}
+                  </span>
+                </div>
                 {currentDef ? (
                   <ProtocolConfigFields
                     fields={currentDef?.config_fields || {}}
@@ -597,6 +769,8 @@ export function ServerFormDialog({
                     control={control}
                     watch={watch}
                     setValue={setValue}
+                    errors={errors}
+                    validationRules={currentDef?.validation_rules || {}}
                   />
                 ) : (
                   <p className="text-xs text-muted-foreground">
@@ -648,6 +822,8 @@ function ProtocolConfigFields({
   control,
   watch,
   setValue,
+  errors,
+  validationRules,
 }: {
   fields: Record<string, ProtocolConfigField>;
   prefix: string;
@@ -655,11 +831,28 @@ function ProtocolConfigFields({
   control: any;
   watch: any;
   setValue: any;
+  errors?: any;
+  validationRules?: Record<string, string | string[]>;
 }) {
   const { t } = useTranslation();
   const [networkSettingsOpen, setNetworkSettingsOpen] = useState(false);
   const hasNetworkSettingsField =
     !prefix && Object.prototype.hasOwnProperty.call(fields, "network_settings");
+  const rules = validationRules || {};
+
+  const ruleFor = (fieldPath: string) => rules[fieldPath];
+  const requiredFor = (fieldPath: string) =>
+    isUnconditionallyRequired(ruleFor(fieldPath));
+  const errorFor = (fieldPath: string): string | undefined => {
+    // errors.protocol_settings.a.b
+    const parts = ("protocol_settings." + fieldPath).split(".");
+    let cur: any = errors;
+    for (const p of parts) {
+      if (!cur) return undefined;
+      cur = cur[p];
+    }
+    return cur ? t("server.form.required_mark") : undefined;
+  };
 
   const pluginHints: Record<string, string> = {
     "simple-obfs": t("server.dynamic_form.shadowsocks.plugin.obfs_hint"),
@@ -722,6 +915,8 @@ function ProtocolConfigFields({
                 control={control}
                 watch={watch}
                 setValue={setValue}
+                errors={errors}
+                validationRules={validationRules}
               />
             </div>
           );
@@ -754,18 +949,41 @@ function ProtocolConfigFields({
         }
 
         if (field.options) {
-          const entries = Object.entries(field.options);
+          // uTLS 元选项 random / randomized 使用 i18n 文案，其它指纹沿用后端 label
+          const entries = Object.entries(field.options).map(
+            ([value, label]): [string, string] => {
+              if (key === "fingerprint" && (value === "random" || value === "randomized")) {
+                const i18nKey = `server.dynamic_form.utls.fingerprint.${value}`;
+                const translated = t(i18nKey);
+                return [value, translated !== i18nKey ? translated : label];
+              }
+              return [value, label];
+            },
+          );
           const isMulti = field.type === "array";
           if (isMulti) {
             return (
               <div key={key} className="space-y-1.5">
-                <Label>{fieldName}</Label>
+                <Label>
+                  {fieldName}
+                  {requiredFor(fieldPath) ? (
+                    <span className="ml-0.5 text-destructive">*</span>
+                  ) : null}
+                </Label>
                 {desc && (
                   <p className="text-xs text-muted-foreground">{desc}</p>
                 )}
                 <Controller
                   control={control}
                   name={`protocol_settings.${fieldPath}`}
+                  rules={
+                    requiredFor(fieldPath)
+                      ? {
+                          validate: (v) =>
+                            Array.isArray(v) ? v.length > 0 : !!v,
+                        }
+                      : undefined
+                  }
                   render={({ field: controllerField }) => {
                     const selected = Array.isArray(controllerField.value)
                       ? controllerField.value
@@ -780,6 +998,9 @@ function ProtocolConfigFields({
                     );
                   }}
                 />
+                {errorFor(fieldPath) ? (
+                  <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+                ) : null}
               </div>
             );
           }
@@ -791,7 +1012,12 @@ function ProtocolConfigFields({
           return (
             <div key={key} className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <Label>{fieldName}</Label>
+                <Label>
+                  {fieldName}
+                  {requiredFor(fieldPath) ? (
+                    <span className="ml-0.5 text-destructive">*</span>
+                  ) : null}
+                </Label>
                 {showNetworkSettingsBtn && (
                   <Button
                     type="button"
@@ -808,12 +1034,24 @@ function ProtocolConfigFields({
               <Controller
                 control={control}
                 name={`protocol_settings.${fieldPath}`}
+                rules={
+                  requiredFor(fieldPath)
+                    ? {
+                        validate: (v) =>
+                          v !== undefined && v !== null && String(v) !== "",
+                      }
+                    : undefined
+                }
                 render={({ field: controllerField }) => (
                   <Select
                     value={String(controllerField.value ?? "")}
                     onValueChange={controllerField.onChange}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger
+                      className={cn(
+                        errorFor(fieldPath) && "border-destructive",
+                      )}
+                    >
                       <SelectValue
                         placeholder={field.placeholder || t("common.selectField", { name: fieldName })}
                       />
@@ -828,6 +1066,9 @@ function ProtocolConfigFields({
                   </Select>
                 )}
               />
+              {errorFor(fieldPath) ? (
+                <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+              ) : null}
             </div>
           );
         }
@@ -835,15 +1076,30 @@ function ProtocolConfigFields({
         if (field.type === "integer" || field.type === "number") {
           return (
             <div key={key} className="space-y-1.5">
-              <Label>{fieldName}</Label>
+              <Label>
+                {fieldName}
+                {requiredFor(fieldPath) ? (
+                  <span className="ml-0.5 text-destructive">*</span>
+                ) : null}
+              </Label>
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
               <Input
                 type="number"
                 placeholder={field.placeholder || t("common.inputField", { name: fieldName })}
                 {...register(`protocol_settings.${fieldPath}`, {
                   valueAsNumber: true,
+                  ...(requiredFor(fieldPath)
+                    ? {
+                        required: true,
+                        validate: (v: any) =>
+                          v !== "" && v !== null && v !== undefined && !Number.isNaN(v),
+                      }
+                    : {}),
                 })}
               />
+              {errorFor(fieldPath) ? (
+                <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+              ) : null}
             </div>
           );
         }
@@ -881,13 +1137,26 @@ function ProtocolConfigFields({
         if (key === "public_key" && prefix === "reality_settings") {
           return (
             <div key={key} className="space-y-1.5">
-              <Label>{fieldName}</Label>
+              <Label>
+                {fieldName}
+                {requiredFor(fieldPath) ? (
+                  <span className="ml-0.5 text-destructive">*</span>
+                ) : null}
+              </Label>
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
               <div className="relative">
                 <Input
                   placeholder={field.placeholder || t("common.inputField", { name: fieldName })}
                   className="pr-10"
-                  {...register(`protocol_settings.${fieldPath}`)}
+                  {...register(`protocol_settings.${fieldPath}`, {
+                    ...(requiredFor(fieldPath)
+                      ? {
+                          required: true,
+                          validate: (v: any) =>
+                            !!String(v ?? "").trim(),
+                        }
+                      : {}),
+                  })}
                 />
                 <Button
                   type="button"
@@ -903,10 +1172,12 @@ function ProtocolConfigFields({
                       setValue(
                         `protocol_settings.reality_settings.public_key`,
                         res.public_key,
+                        { shouldValidate: true, shouldDirty: true },
                       );
                       setValue(
                         `protocol_settings.reality_settings.private_key`,
                         res.private_key,
+                        { shouldValidate: true, shouldDirty: true },
                       );
                     } catch (e) {}
                   }}
@@ -914,6 +1185,9 @@ function ProtocolConfigFields({
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
+              {errorFor(fieldPath) ? (
+                <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+              ) : null}
             </div>
           );
         }
@@ -973,20 +1247,54 @@ function ProtocolConfigFields({
                 </Button>
               </div>
               <div className="space-y-1.5">
-                <Label>Master Public Key</Label>
+                <Label>
+                  Master Public Key
+                  {requiredFor("master_public_key") ? (
+                    <span className="ml-0.5 text-destructive">*</span>
+                  ) : null}
+                </Label>
                 <Input
                   placeholder={t("server.dynamic_form.sudoku.publicPlaceholder")}
                   className="font-mono text-xs"
-                  {...register("protocol_settings.master_public_key")}
+                  {...register("protocol_settings.master_public_key", {
+                    ...(requiredFor("master_public_key")
+                      ? {
+                          required: true,
+                          validate: (v: any) => !!String(v ?? "").trim(),
+                        }
+                      : {}),
+                  })}
                 />
+                {errorFor("master_public_key") ? (
+                  <p className="text-xs text-destructive">
+                    {errorFor("master_public_key")}
+                  </p>
+                ) : null}
               </div>
               <div className="space-y-1.5">
-                <Label>Master Private Key</Label>
+                <Label>
+                  Master Private Key
+                  {requiredFor("master_private_key") ? (
+                    <span className="ml-0.5 text-destructive">*</span>
+                  ) : null}
+                </Label>
                 <Input
                   placeholder={t("server.dynamic_form.sudoku.privatePlaceholder")}
                   className="font-mono text-xs"
-                  {...register("protocol_settings.master_private_key")}
+                  {...register("protocol_settings.master_private_key", {
+                    ...(requiredFor("master_private_key")
+                      ? {
+                          required: true,
+                          validate: (v: any) => !!String(v ?? "").trim(),
+                        }
+                      : {}),
+                  })}
                 />
+                {errorFor("master_private_key") ? (
+                  <p className="text-xs text-destructive">
+                    {errorFor("master_private_key")}
+                  </p>
+                ) : null}
               </div>
             </div>
           );
@@ -994,12 +1302,28 @@ function ProtocolConfigFields({
 
         return (
           <div key={key} className="space-y-1.5">
-            <Label>{fieldName}</Label>
+            <Label>
+              {fieldName}
+              {requiredFor(fieldPath) ? (
+                <span className="ml-0.5 text-destructive">*</span>
+              ) : null}
+            </Label>
             {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
             <Input
               placeholder={field.placeholder || t("common.inputField", { name: fieldName })}
-              {...register(`protocol_settings.${fieldPath}`)}
+              {...register(`protocol_settings.${fieldPath}`, {
+                ...(requiredFor(fieldPath)
+                  ? {
+                      required: true,
+                      validate: (v: any) =>
+                        v !== undefined && v !== null && String(v).trim() !== "",
+                    }
+                  : {}),
+              })}
             />
+            {errorFor(fieldPath) ? (
+              <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+            ) : null}
           </div>
         );
       })}

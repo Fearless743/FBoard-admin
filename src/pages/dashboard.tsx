@@ -237,6 +237,9 @@ export function Dashboard() {
               value={Number(stats?.commissionPendingTotal || 0).toLocaleString()}
               footer={t("dashboard.stats.hasPendingCommission")}
               icon={<Bell className="h-4 w-4" />}
+              onClick={() =>
+                navigate(`${adminPath("order")}?commission_status=0`)
+              }
               highlight={Number(stats?.commissionPendingTotal || 0) > 0}
             />
             <StatCard

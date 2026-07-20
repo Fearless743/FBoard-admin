@@ -192,6 +192,7 @@ export function OrderListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const userId = searchParams.get("user_id");
   const tradeNoParam = searchParams.get("trade_no") || "";
+  const commissionStatusParam = searchParams.get("commission_status") || "";
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const { data: plans = [] } = usePlanOptions();
@@ -199,7 +200,9 @@ export function OrderListPage() {
   const [typeFilter, setTypeFilter] = useState("");
   const [periodFilter, setPeriodFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [commissionFilter, setCommissionFilter] = useState("");
+  const [commissionFilter, setCommissionFilter] = useState(
+    commissionStatusParam,
+  );
   const [detail, setDetail] = useState<OrderItem | null>(null);
   const [actionOrder, setActionOrder] = useState<{
     trade_no: string;
@@ -230,6 +233,16 @@ export function OrderListPage() {
     }
   }, [tradeNoParam]);
 
+  // 支持从仪表盘等页面带 ?commission_status= 跳转过来时同步佣金筛选
+  useEffect(() => {
+    if (commissionStatusParam !== commissionFilter) {
+      setCommissionFilter(commissionStatusParam);
+      setPage(1);
+    }
+    // 仅在 URL 参数变化时同步，避免与本地下拉改选互相覆盖
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commissionStatusParam]);
+
   const hasActiveFilters = !!(
     search ||
     typeFilter ||
@@ -252,10 +265,11 @@ export function OrderListPage() {
     setStatusFilter("");
     setCommissionFilter("");
     setPage(1);
-    if (userId || tradeNoParam) {
+    if (userId || tradeNoParam || commissionStatusParam) {
       const next = new URLSearchParams(searchParams);
       next.delete("user_id");
       next.delete("trade_no");
+      next.delete("commission_status");
       setSearchParams(next);
     }
   };
@@ -278,15 +292,23 @@ export function OrderListPage() {
     }
   };
 
+  // 后端 filter 对「无 : 操作符」的值会走 LIKE；数值状态类必须用 eq: 精确匹配。
+  // 仅筛 commission_status=0 会命中默认 0 且无佣金的订单，需配合 is_commission
+  //（有邀请人、已支付/已完成、commission_balance>0）与仪表盘待处理佣金统计对齐。
   const queryFilters: Array<{ id: string; value: any; logic?: string }> = [];
   if (search) queryFilters.push({ id: "trade_no", value: search });
-  if (typeFilter) queryFilters.push({ id: "type", value: Number(typeFilter) });
-  if (periodFilter) queryFilters.push({ id: "period", value: periodFilter });
-  if (statusFilter) queryFilters.push({ id: "status", value: Number(statusFilter) });
+  if (typeFilter) queryFilters.push({ id: "type", value: `eq:${typeFilter}` });
+  if (periodFilter) queryFilters.push({ id: "period", value: `eq:${periodFilter}` });
+  if (statusFilter) queryFilters.push({ id: "status", value: `eq:${statusFilter}` });
   if (commissionFilter) {
-    queryFilters.push({ id: "commission_status", value: Number(commissionFilter) });
+    queryFilters.push({
+      id: "commission_status",
+      value: `eq:${commissionFilter}`,
+    });
   }
   if (userId) queryFilters.push({ id: "user_id", value: `eq:${userId}` });
+
+  const isCommissionList = commissionFilter !== "";
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -300,6 +322,7 @@ export function OrderListPage() {
         statusFilter,
         commissionFilter,
         userId,
+        isCommissionList,
       },
     ],
     queryFn: () =>
@@ -307,6 +330,7 @@ export function OrderListPage() {
         current: page,
         pageSize,
         filter: queryFilters.length > 0 ? queryFilters : [],
+        ...(isCommissionList ? { is_commission: true } : {}),
       }),
   });
 
@@ -455,8 +479,14 @@ export function OrderListPage() {
         <Select
           value={commissionFilter || "__all__"}
           onValueChange={(v) => {
-            setCommissionFilter(v === "__all__" ? "" : v);
+            const nextVal = v === "__all__" ? "" : v;
+            setCommissionFilter(nextVal);
             setPage(1);
+            // 与 URL 同步，便于刷新/分享；清除时去掉参数
+            const next = new URLSearchParams(searchParams);
+            if (nextVal) next.set("commission_status", nextVal);
+            else next.delete("commission_status");
+            setSearchParams(next, { replace: true });
           }}
         >
           <SelectTrigger className="w-[150px]">

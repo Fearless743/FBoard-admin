@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Users, Server } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -60,6 +61,12 @@ export function GroupListPage() {
             <TableRow>
               <TableHead className="w-20">{t("group.columns.id")}</TableHead>
               <TableHead>{t("group.columns.name")}</TableHead>
+              <TableHead className="w-40 text-center">
+                {t("group.columns.usersCount")}
+              </TableHead>
+              <TableHead className="w-40 text-center">
+                {t("group.columns.serverCount")}
+              </TableHead>
               <TableHead className="w-32 text-right">{t("group.columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -69,18 +76,40 @@ export function GroupListPage() {
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="ml-auto h-4 w-10" /></TableCell>
+                  <TableCell><Skeleton className="ml-auto h-4 w-10" /></TableCell>
+                  <TableCell><Skeleton className="ml-auto h-4 w-20" /></TableCell>
                 </TableRow>
               ))
             ) : groups.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3}><EmptyState /></TableCell>
+                <TableCell colSpan={5}><EmptyState /></TableCell>
               </TableRow>
             ) : (
               groups.map((g) => (
                 <TableRow key={g.id}>
                   <TableCell><IdBadge id={g.id} /></TableCell>
                   <TableCell className="font-medium">{g.name}</TableCell>
+                  <TableCell className="text-center">
+                    <Badge
+                      variant={(g.users_count ?? 0) > 0 ? "secondary" : "outline"}
+                      className="h-5 gap-1 select-none font-normal tabular-nums"
+                      title={t("group.columns.usersCount")}
+                    >
+                      <Users className="h-3 w-3" />
+                      {g.users_count ?? 0}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge
+                      variant={(g.server_count ?? 0) > 0 ? "secondary" : "outline"}
+                      className="h-5 gap-1 select-none font-normal tabular-nums"
+                      title={t("group.columns.serverCount")}
+                    >
+                      <Server className="h-3 w-3" />
+                      {g.server_count ?? 0}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button
@@ -149,11 +178,9 @@ function GroupFormDialog({
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     if (open) setName(group?.name || "");
-  });
-
-  if (open && name === "" && group?.name) setName(group.name);
+  }, [open, group]);
 
   const submit = async () => {
     if (!name.trim()) {

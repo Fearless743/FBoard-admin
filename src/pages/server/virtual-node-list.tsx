@@ -477,7 +477,7 @@ function ChildNodeDialog({
               <Input
                 value={host}
                 onChange={(e) => setHost(e.target.value)}
-                placeholder="host / domain"
+                placeholder={t("server.form.virtualNode.hostPlaceholder")}
               />
             </div>
             <div className="space-y-1.5">

@@ -58,12 +58,12 @@ export function NetworkTemplateDialog({ open, onOpenChange, protocol, onApply }:
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{tmpl.label}</span>
+                    <span className="text-sm font-medium">{t(tmpl.labelKey)}</span>
                     <Badge variant="outline" className="text-[10px]">
                       {protocol}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">{tmpl.description}</p>
+                  <p className="text-xs text-muted-foreground">{t(tmpl.descriptionKey)}</p>
                 </div>
                 <Button
                   size="sm"

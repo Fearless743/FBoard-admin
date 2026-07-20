@@ -41,6 +41,11 @@ export interface OrderFilter {
   current?: number;
   pageSize?: number;
   filter?: Array<{ id: string; value: any; logic?: string }>;
+  /**
+   * 仅返回有佣金的订单：有邀请人、非待支付/已取消、commission_balance > 0。
+   * 与仪表盘「待处理佣金」统计口径一致，避免 commission_status=0 扫出无佣金订单。
+   */
+  is_commission?: boolean;
   [k: string]: any;
 }
 

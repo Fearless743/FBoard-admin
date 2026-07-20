@@ -1,14 +1,16 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, Loader2, Server, Copy, Check, Eye, EyeOff,
   Activity, Terminal, Unlink, Link2, ExternalLink, ArrowRight, ArrowUpToLine, RotateCcw,
-  ScrollText, RefreshCw, Search,
+  ScrollText, RefreshCw, Search, Wifi, WifiOff, Gauge, Network, MoreHorizontal,
+  Play, Square, RefreshCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
+import { StatCard } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,12 @@ import {
 import { EmptyState } from "@/components/common/empty-state";
 import { Pagination } from "@/components/common/pagination";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -49,10 +57,14 @@ import {
   saveMachine,
   upgradeMachine,
   restartMachine,
+  stopMachine,
+  startMachine,
+  reloadMachine,
   getMachineLogs,
   batchUpgradeMachines,
   type Machine,
   type MachineLoadStatus,
+  type MachineSummary,
 } from "@/api/server";
 import { formatBytes, formatDate } from "@/lib/utils";
 import { adminPath } from "@/lib/paths";
@@ -279,18 +291,31 @@ export function MachineListPage() {
   const [deleting, setDeleting] = useState<Machine | null>(null);
   const [viewing, setViewing] = useState<Machine | null>(null);
   const [upgrading, setUpgrading] = useState<Machine | null>(null);
-  const [restarting, setRestarting] = useState<Machine | null>(null);
+  const [kernelOp, setKernelOp] = useState<{ machine: Machine; action: "start" | "stop" | "reload" | "restart" } | null>(null);
   const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
-  const [restartSubmitting, setRestartSubmitting] = useState(false);
+  const [kernelSubmitting, setKernelSubmitting] = useState(false);
   const [batchUpgradeOpen, setBatchUpgradeOpen] = useState(false);
   const [batchUpgradeSubmitting, setBatchUpgradeSubmitting] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["machines", { page, pageSize, search: debouncedSearch }],
     queryFn: () => fetchMachines(page, pageSize, debouncedSearch),
+    refetchInterval: 30_000,
   });
   const list: Machine[] = data?.data || [];
   const total = data?.total || 0;
+
+  const summary: MachineSummary = useMemo(
+    () =>
+      data?.summary ?? {
+        total: 0,
+        online: 0,
+        offline: 0,
+        high_load: 0,
+        nodes: 0,
+      },
+    [data?.summary],
+  );
 
   return (
     <>
@@ -310,6 +335,56 @@ export function MachineListPage() {
           </div>
         }
       />
+
+      <div className="mb-4 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+        {isLoading && !data ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-[110px] rounded-lg" />
+          ))
+        ) : (
+          <>
+            <StatCard
+              title={t("machine.overview.total")}
+              value={summary.total.toLocaleString()}
+              footer={t("machine.overview.total_hint", {
+                count: summary.nodes,
+              })}
+              icon={<Server className="h-4 w-4" />}
+              iconClassName="bg-sky-500/10 text-sky-600 dark:text-sky-400"
+            />
+            <StatCard
+              title={t("machine.overview.online")}
+              value={summary.online.toLocaleString()}
+              footer={t("machine.overview.online_hint")}
+              icon={<Wifi className="h-4 w-4" />}
+              iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            />
+            <StatCard
+              title={t("machine.overview.offline")}
+              value={summary.offline.toLocaleString()}
+              footer={t("machine.overview.offline_hint")}
+              icon={<WifiOff className="h-4 w-4" />}
+              iconClassName="bg-rose-500/10 text-rose-600 dark:text-rose-400"
+              highlight={summary.offline > 0}
+            />
+            <StatCard
+              title={t("machine.overview.high_load")}
+              value={summary.high_load.toLocaleString()}
+              footer={t("machine.overview.high_load_hint")}
+              icon={<Gauge className="h-4 w-4" />}
+              iconClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              highlight={summary.high_load > 0}
+            />
+            <StatCard
+              title={t("machine.columns.nodesHosted")}
+              value={summary.nodes.toLocaleString()}
+              footer={t("machine.overview.nodes_suffix")}
+              icon={<Network className="h-4 w-4" />}
+              iconClassName="bg-violet-500/10 text-violet-600 dark:text-violet-400"
+            />
+          </>
+        )}
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="relative max-w-sm flex-1">
@@ -404,16 +479,40 @@ export function MachineListPage() {
                       >
                         <ArrowUpToLine className="h-4 w-4" />
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        disabled={!m.is_active || !m.is_online}
-                        title={t("machine.operations.restart")}
-                        onClick={() => setRestarting(m)}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            disabled={!m.is_active || !m.is_online}
+                            title={t("machine.operations.ops")}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setKernelOp({ machine: m, action: "start" })}>
+                            <Play className="mr-2 h-4 w-4" />
+                            {t("machine.operations.start")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setKernelOp({ machine: m, action: "reload" })}>
+                            <RefreshCcw className="mr-2 h-4 w-4" />
+                            {t("machine.operations.reload")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setKernelOp({ machine: m, action: "restart" })}>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            {t("machine.operations.restart")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setKernelOp({ machine: m, action: "stop" })}
+                          >
+                            <Square className="mr-2 h-4 w-4" />
+                            {t("machine.operations.stop")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -495,26 +594,49 @@ export function MachineListPage() {
       />
 
       <ConfirmDialog
-        open={!!restarting}
+        open={!!kernelOp}
         onOpenChange={(v) => {
-          if (!v && !restartSubmitting) setRestarting(null);
+          if (!v && !kernelSubmitting) setKernelOp(null);
         }}
-        title={t("machine.operations.restartTitle")}
-        description={restarting ? t("machine.operations.restartDescription", { name: restarting.name }) : undefined}
-        confirmText={t("machine.operations.restart")}
-        loading={restartSubmitting}
+        title={
+          kernelOp
+            ? t(`machine.operations.${kernelOp.action}Title` as const)
+            : undefined
+        }
+        description={
+          kernelOp
+            ? t(`machine.operations.${kernelOp.action}Description` as const, {
+                name: kernelOp.machine.name,
+              })
+            : undefined
+        }
+        confirmText={
+          kernelOp ? t(`machine.operations.${kernelOp.action}` as const) : undefined
+        }
+        variant={
+          kernelOp && (kernelOp.action === "stop" || kernelOp.action === "restart")
+            ? "destructive"
+            : "default"
+        }
+        loading={kernelSubmitting}
         onConfirm={async () => {
-          if (!restarting || restartSubmitting) return;
-          setRestartSubmitting(true);
+          if (!kernelOp || kernelSubmitting) return;
+          setKernelSubmitting(true);
+          const { machine, action } = kernelOp;
           try {
-            await restartMachine(restarting.id);
-            toast.success(t("machine.operations.restartSubmitted", { name: restarting.name }));
+            if (action === "start") await startMachine(machine.id);
+            else if (action === "stop") await stopMachine(machine.id);
+            else if (action === "reload") await reloadMachine(machine.id);
+            else await restartMachine(machine.id);
+            toast.success(
+              t(`machine.operations.${action}Submitted` as const, { name: machine.name }),
+            );
             qc.invalidateQueries({ queryKey: ["machines"] });
-            setRestarting(null);
+            setKernelOp(null);
           } catch (e) {
-            console.error("[machine] restart failed", restarting.id, e);
+            console.error(`[machine] kernel ${action} failed`, machine.id, e);
           } finally {
-            setRestartSubmitting(false);
+            setKernelSubmitting(false);
           }
         }}
       />

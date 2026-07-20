@@ -71,7 +71,7 @@ export function RouteListPage() {
             <TableRow>
               <TableHead className="w-16">{t("route.columns.id")}</TableHead>
               <TableHead>{t("route.columns.remarks")}</TableHead>
-              <TableHead className="w-24">{t("route.columns.action")}</TableHead>
+              <TableHead className="w-28 min-w-[7rem]">{t("route.columns.action")}</TableHead>
               <TableHead className="w-32">{t("route.columns.matchRules", { count: 0 })}</TableHead>
               <TableHead className="w-24 text-right">{t("route.columns.actions")}</TableHead>
             </TableRow>
@@ -99,17 +99,21 @@ export function RouteListPage() {
                   <TableCell>
                     <Badge
                       variant="outline"
+                      title={t(`route.actions.${r.action}`)}
                       className={
                         r.action === "block"
-                          ? "h-5 border-destructive/30 bg-destructive/10 font-normal text-destructive"
+                          ? "h-auto max-w-full whitespace-nowrap border-destructive/30 bg-destructive/10 font-normal text-destructive"
                           : r.action === "direct"
-                            ? "h-5 border-emerald-500/30 bg-emerald-500/10 font-normal text-emerald-700 dark:text-emerald-300"
+                            ? "h-auto max-w-full whitespace-nowrap border-emerald-500/30 bg-emerald-500/10 font-normal text-emerald-700 dark:text-emerald-300"
                             : r.action === "dns"
-                              ? "h-5 border-sky-500/30 bg-sky-500/10 font-normal text-sky-700 dark:text-sky-300"
-                              : "h-5 border-violet-500/30 bg-violet-500/10 font-normal text-violet-700 dark:text-violet-300"
+                              ? "h-auto max-w-full whitespace-nowrap border-sky-500/30 bg-sky-500/10 font-normal text-sky-700 dark:text-sky-300"
+                              : "h-auto max-w-full whitespace-nowrap border-violet-500/30 bg-violet-500/10 font-normal text-violet-700 dark:text-violet-300"
                       }
                     >
-                      {t(`route.actions.${r.action}`)}
+                      {/* 列表用短标签，完整说明放 title；避免长文案撑破 / 溢出 tag */}
+                      {t(`route.actions.short.${r.action}`, {
+                        defaultValue: t(`route.actions.${r.action}`),
+                      })}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">

@@ -8,13 +8,26 @@ interface StatCardProps {
   delta?: number;
   deltaLabel?: string;
   icon?: ReactNode;
+  /** 图标容器 class，用于区分卡片配色，如 "bg-emerald-500/10 text-emerald-600" */
+  iconClassName?: string;
   className?: string;
   footer?: ReactNode;
   onClick?: () => void;
   highlight?: boolean;
 }
 
-export function StatCard({ title, value, delta, deltaLabel, icon, className, footer, onClick, highlight }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  delta,
+  deltaLabel,
+  icon,
+  iconClassName,
+  className,
+  footer,
+  onClick,
+  highlight,
+}: StatCardProps) {
   const up = (delta ?? 0) >= 0;
   return (
     <div
@@ -31,7 +44,14 @@ export function StatCard({ title, value, delta, deltaLabel, icon, className, foo
       <div className="flex items-start justify-between">
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
         {icon && (
-          <div className="rounded-md bg-primary/10 p-1.5 text-primary">{icon}</div>
+          <div
+            className={cn(
+              "rounded-md p-1.5",
+              iconClassName ?? "bg-primary/10 text-primary",
+            )}
+          >
+            {icon}
+          </div>
         )}
       </div>
       <p className="mt-3 text-2xl font-semibold tracking-tight">{value}</p>

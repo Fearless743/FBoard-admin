@@ -907,7 +907,7 @@ function GenerateCodesDialog({
               type="number"
               value={templateId}
               onChange={(e) => setTemplateId(e.target.value)}
-              placeholder="Template ID"
+              placeholder={t("giftCard.code.form.template_id.placeholder")}
             />
           </div>
           <div className="space-y-1.5">

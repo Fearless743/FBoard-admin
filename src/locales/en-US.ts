@@ -1026,6 +1026,11 @@ const translations: Translations = {
         "description": "Custom URL for the node installation script. Leave empty to use the default GitHub URL.",
         "placeholder": "Leave empty to use default URL"
       },
+      "utls_fingerprints": {
+        "title": "uTLS Fingerprint List",
+        "description": "Concrete fingerprint options for “uTLS → fingerprint” when editing a node. Supports chrome / firefox / safari / ios / android / edge / qq, or any name your clients accept. random (pick at subscribe time) and randomized (client-side random) are always provided by the system and are not configured here.",
+        "placeholder": "Type a fingerprint name and press Enter, e.g. chrome"
+      },
       "saving": "Saving...",
       "manage": {
         "description": "Manage all nodes, including add, delete, and edit operations.",
@@ -1635,7 +1640,8 @@ const translations: Translations = {
     },
     "subscribe_template": {
       "title": "Subscribe Templates",
-      "description": "Configure subscription templates for different clients",
+      "description": "Configure subscription templates for different clients (loaded on demand, save manually)",
+      "unsaved_hint": "This template has unsaved changes. Click Save to apply.",
       "singbox": {
         "title": "Sing-box Template",
         "description": "Configure subscription template format for Sing-box"
@@ -2076,6 +2082,7 @@ const translations: Translations = {
     "toolbar": {
       "search": "Search nodes...",
       "type": "Type",
+      "status": "Status",
       "server": "Server",
       "server_search": "Search servers...",
       "server_empty": "No servers found",
@@ -2144,6 +2151,7 @@ const translations: Translations = {
       },
       "rate": {
         "label": "Base Rate",
+        "hint": "Traffic billing multiplier; 1 means actual traffic",
         "error": "Base rate is required",
         "error_numeric": "Base rate must be a number",
         "error_gte_zero": "Base rate must be greater than or equal to 0",
@@ -2180,26 +2188,34 @@ const translations: Translations = {
         "multiplier_error_numeric": "Rate multiplier must be a number",
         "multiplier_error_gte_zero": "Rate multiplier must be greater than or equal to 0"
       },
+      "required_mark": "Required",
+      "optional_mark": "Optional",
+      "required_fields_hint": "Fields marked with * are required",
       "code": {
         "label": "Custom Node ID",
         "optional": "(Optional)",
-        "placeholder": "Please enter custom node ID"
+        "placeholder": "Please enter custom node ID",
+        "hint": "Optional; for external reference only"
       },
       "tags": {
         "label": "Node Tags",
-        "placeholder": "Press Enter to add tags"
+        "optional": "(Optional)",
+        "placeholder": "Press Enter to add tags",
+        "hint": "Optional; shown next to the node name for users"
       },
       "groups": {
         "label": "Permission Groups",
         "add": "Add Group",
         "placeholder": "Please select permission groups",
-        "empty": "No results found"
+        "empty": "No results found",
+        "hint": "Optional; assign which user groups can see this node"
       },
       "machine": {
         "label": "Bind to Machine",
         "placeholder": "Select a machine (optional)",
         "none": "Standalone",
-        "enabled_hint": "Whether this machine manages the node"
+        "enabled_hint": "Whether this machine manages the node",
+        "hint": "Optional; when set, Fboard-Node on that machine hosts this node"
       },
       "host": {
         "label": "Node Address",
@@ -2223,7 +2239,8 @@ const translations: Translations = {
       "parent": {
         "label": "Parent Node",
         "placeholder": "Select parent node",
-        "none": "None"
+        "none": "None",
+        "hint": "Optional; child nodes inherit protocol settings and online status"
       },
       "virtualNode": {
         "label": "Virtual Nodes",
@@ -2239,6 +2256,7 @@ const translations: Translations = {
         "empty": "No virtual nodes",
         "tagsPlaceholder": "Press Enter to add",
         "host": "Host",
+        "hostPlaceholder": "host / domain",
         "port": "Port",
         "groupIds": "Permission Groups",
         "tags": "Tags",
@@ -2275,8 +2293,64 @@ const translations: Translations = {
       "empty": "No templates available for this protocol",
       "description": "Pick a preset network template to fill protocol settings",
       "use": "Apply"
-    },
+    ,
+      "presets": {
+        "vless-tcp-vision": {
+          "label": "TCP + XTLS Vision",
+          "description": "VLESS + TCP + XTLS Vision direct; very fast, recommended"
+        },
+        "vless-ws-tls": {
+          "label": "WebSocket + TLS + CDN",
+          "description": "VLESS + WebSocket + TLS; works with CDN (Cloudflare, etc.)"
+        },
+        "vless-grpc-tls": {
+          "label": "gRPC + TLS",
+          "description": "VLESS + gRPC + TLS; suitable for high load"
+        },
+        "vless-tcp-reality": {
+          "label": "TCP + REALITY",
+          "description": "VLESS + REALITY direct; no cert needed, resists active probing"
+        },
+        "trojan-tls": {
+          "label": "Trojan + TLS",
+          "description": "Standard Trojan + TLS on port 443"
+        },
+        "trojan-ws-tls": {
+          "label": "Trojan + WebSocket + TLS",
+          "description": "Trojan + WebSocket + TLS; works with CDN"
+        },
+        "ss-simple": {
+          "label": "Standard AEAD",
+          "description": "Shadowsocks encrypted tunnel; simple and efficient"
+        },
+        "hy-standard": {
+          "label": "Hysteria Standard",
+          "description": "Hysteria over QUIC; loss-resistant, good for weak networks"
+        },
+        "hy-brutal": {
+          "label": "Hysteria2 Brute",
+          "description": "Hysteria2 + Brute mode; maximizes bandwidth"
+        },
+        "tuic-v5": {
+          "label": "TUIC v5 Standard",
+          "description": "TUIC v5 over QUIC; low latency"
+        },
+        "anytls-default": {
+          "label": "AnyTLS Default",
+          "description": "AnyTLS with automated TLS camouflage"
+        },
+        "sudoku-default": {
+          "label": "Sudoku Default",
+          "description": "Low-entropy table + ChaCha20 + legacy HTTPMask"
+        }
+      }},
     "dynamic_form": {
+      "utls": {
+        "fingerprint": {
+          "random": "Random (at subscribe time)",
+          "randomized": "Randomized (client-side)"
+        }
+      },
       "multiplex": {
         "enabled": {
           "label": "Multiplex",
@@ -2599,10 +2673,10 @@ const translations: Translations = {
           "description": "Enable VLESS encryption",
           "server_label": "decryption",
           "server_placeholder": "./xray vlessenc",
-          "server_description": "",
+          "server_description": "Server-side decryption value; generate with ./xray vlessenc",
           "client_label": "encryption",
           "client_placeholder": "./xray vlessenc",
-          "client_description": "",
+          "client_description": "Client-side encryption value; must pair with the server",
           "generate_hint": "./xray vlessenc"
         }
       },
@@ -2824,7 +2898,49 @@ const translations: Translations = {
         "save_failed": "Error occurred while saving"
       },
       "edit_padding_scheme": "Edit Padding Scheme"
-    },
+    ,
+      "builtin_templates": {
+        "ws-basic": {
+          "name": "WebSocket Basic",
+          "description": "path + Host"
+        },
+        "ws-cdn": {
+          "name": "WebSocket + CDN",
+          "description": "Suitable for Cloudflare and other CDNs"
+        },
+        "grpc-basic": {
+          "name": "gRPC Basic",
+          "description": "serviceName"
+        },
+        "grpc-multi": {
+          "name": "gRPC multiMode",
+          "description": "Enable multiMode"
+        },
+        "http-basic": {
+          "name": "HTTP/2 Basic",
+          "description": "path + host"
+        },
+        "tcp-none": {
+          "name": "TCP No Obfuscation",
+          "description": "Plain TCP"
+        },
+        "tcp-http": {
+          "name": "TCP HTTP Obfuscation",
+          "description": "header type = http"
+        },
+        "xhttp-basic": {
+          "name": "XHTTP Basic",
+          "description": "path mode"
+        },
+        "quic-basic": {
+          "name": "QUIC Basic",
+          "description": "security + key"
+        },
+        "kcp-basic": {
+          "name": "KCP Basic",
+          "description": "default mtu / tti"
+        }
+      }},
     "common": {
       "cancel": "Cancel",
       "confirm": "Confirm"
@@ -2979,7 +3095,13 @@ const translations: Translations = {
       "dns": "Resolve using specified DNS server",
       "block": "Block access",
       "direct": "Direct connection",
-      "proxy": "Proxy"
+      "proxy": "Proxy",
+      "short": {
+        "dns": "DNS",
+        "block": "Block",
+        "direct": "Direct",
+        "proxy": "Proxy"
+      }
     },
     "form": {
       "add": "Add Route",
@@ -3122,18 +3244,32 @@ const translations: Translations = {
     },
     "operations": {
       "upgrade": "Upgrade Fboard-Node",
-      "restart": "Restart Fboard-Node Service",
+      "ops": "Kernel Ops",
+      "start": "Start Kernel",
+      "stop": "Stop Kernel",
+      "reload": "Reload Kernel",
+      "restart": "Restart Kernel",
       "upgradeTitle": "Confirm Server Upgrade",
       "upgradeDescription": "Fboard-Node on server “{{name}}” will be upgraded. The service may be briefly interrupted during the upgrade.",
-      "restartTitle": "Confirm Service Restart",
-      "restartDescription": "The entire Fboard-Node service process on server “{{name}}” will be restarted, briefly interrupting services on that server.",
+      "startTitle": "Confirm Kernel Start",
+      "startDescription": "Start the embedded xray kernel for every node on server “{{name}}”. The fboard-node process and WebSocket stay up.",
+      "stopTitle": "Confirm Kernel Stop",
+      "stopDescription": "Stop the embedded xray kernel for every node on server “{{name}}”. Proxy will be unavailable until started again. Process and WebSocket stay up.",
+      "reloadTitle": "Confirm Kernel Reload",
+      "reloadDescription": "Reload the embedded xray kernel config for every node on server “{{name}}”. Process and WebSocket stay up.",
+      "restartTitle": "Confirm Kernel Restart",
+      "restartDescription": "Force-rebuild the embedded xray kernel for every node on server “{{name}}”. Proxy will briefly interrupt; fboard-node process and WebSocket stay up.",
       "upgradeSubmitted": "Upgrade task submitted for server “{{name}}”",
-      "restartSubmitted": "Restart task submitted for server “{{name}}”",
+      "startSubmitted": "Kernel start task submitted for server “{{name}}”",
+      "stopSubmitted": "Kernel stop task submitted for server “{{name}}”",
+      "reloadSubmitted": "Kernel reload task submitted for server “{{name}}”",
+      "restartSubmitted": "Kernel restart task submitted for server “{{name}}”",
       "batchUpgrade": "Upgrade All Servers",
       "batchUpgradeTitle": "Confirm Batch Server Upgrade",
       "batchUpgradeDescription": "One Fboard-Node upgrade task will be submitted for each online and enabled server. This does not depend on how many nodes the server hosts.",
       "batchUpgradeSubmitted": "Submitted {{submitted}} servers; skipped {{inactive}} disabled and {{offline}} offline servers"
     },
+
     "overview": {
       "total": "Total Servers",
       "total_hint": "Hosting {{count}} nodes in total",
@@ -3328,6 +3464,7 @@ const translations: Translations = {
   },
   "common": {
     "all": "All",
+    "selectAll": "Select all",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
@@ -3428,25 +3565,6 @@ const translations: Translations = {
     "actions": "Actions",
     "start": "From",
     "end": "To"
-  },
-  "sidebar": {
-    "dashboard": "Dashboard",
-    "systemManagement": "System Management",
-    "systemConfig": "System Configuration",
-    "themeConfig": "Theme Configuration",
-    "noticeManagement": "Notice Management",
-    "paymentConfig": "Payment Configuration",
-    "knowledgeManagement": "Knowledge Base",
-    "nodeManagement": "Node Management",
-    "permissionGroupManagement": "Permission Groups",
-    "routeManagement": "Route Management",
-    "subscriptionManagement": "Subscription Management",
-    "planManagement": "Plan Management",
-    "orderManagement": "Order Management",
-    "couponManagement": "Coupon Management",
-    "userManagement": "User Management",
-    "ticketManagement": "Ticket Management",
-    "pluginManagement": "Plugin Management"
   },
   "plugin": {
     "title": "Plugin Management",
@@ -3552,6 +3670,7 @@ const translations: Translations = {
     },
     "staticFiles": {
       "title": "HTML static files",
+      "previewTitle": "Plugin HTML Preview",
       "backToList": "Back to list",
       "openInNewTab": "Open in new tab",
       "empty": "No static files"

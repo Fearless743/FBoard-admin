@@ -139,13 +139,14 @@ export function SidebarToggle({
   collapsed: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Button
       variant="ghost"
       size="icon"
       onClick={onToggle}
       className="h-9 w-9 shrink-0"
-      title="Toggle sidebar"
+      title={t("common.toggleSidebar")}
     >
       {collapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
     </Button>
