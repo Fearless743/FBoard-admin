@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff, GripVertical, Search, CreditCard } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GripVertical, Search, CreditCard, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   dropPayment,
+  copyPayment,
   fetchPayments,
   getPaymentMethods,
   getPaymentForm,
@@ -213,6 +214,7 @@ export function PaymentListPage() {
                         size="icon"
                         variant="ghost"
                         className="h-8 w-8"
+                        title={t("payment.table.actions.edit")}
                         onClick={() => { setEditing(p); setOpen(true); }}
                       >
                         <Pencil className="h-4 w-4" />
@@ -220,7 +222,24 @@ export function PaymentListPage() {
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="h-8 w-8"
+                        title={t("payment.table.actions.copy")}
+                        disabled={dragEnabled}
+                        onClick={async () => {
+                          try {
+                            await copyPayment(p.id);
+                            toast.success(t("payment.table.actions.copy_success"));
+                            await qc.invalidateQueries({ queryKey: ["payments"] });
+                          } catch (e) {}
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
                         className="h-8 w-8 text-destructive hover:text-destructive"
+                        title={t("payment.table.actions.delete.title")}
                         onClick={() => setDeleting(p)}
                       >
                         <Trash2 className="h-4 w-4" />

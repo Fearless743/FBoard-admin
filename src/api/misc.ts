@@ -391,6 +391,10 @@ export async function dropPayment(id: number) {
   return adminPost<any>("/payment/drop", { id });
 }
 
+export async function copyPayment(id: number) {
+  return adminPost<any>("/payment/copy", { id });
+}
+
 export async function togglePaymentShow(id: number, enable: 0 | 1) {
   return adminPost<any>("/payment/show", { id, enable });
 }

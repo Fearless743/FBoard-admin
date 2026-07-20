@@ -1879,6 +1879,8 @@ const translations: Translations = {
       },
       "actions": {
         "edit": "编辑",
+        "copy": "复制",
+        "copy_success": "复制成功",
         "delete": {
           "title": "删除确认",
           "description": "确定要删除该支付方式吗？此操作无法撤销。",

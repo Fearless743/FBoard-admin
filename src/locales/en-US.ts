@@ -1880,6 +1880,8 @@ const translations: Translations = {
       },
       "actions": {
         "edit": "Edit",
+        "copy": "Copy",
+        "copy_success": "Copied successfully",
         "delete": {
           "title": "Confirm Delete",
           "description": "Are you sure you want to delete this payment method? This action cannot be undone.",
