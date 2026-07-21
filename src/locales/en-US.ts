@@ -1040,6 +1040,10 @@ const translations: Translations = {
         "description": "The WebSocket address nodes use to connect to the panel. Leave empty to use the site URL.",
         "placeholder": "Leave empty to use site URL"
       },
+      "server_ws_log_enable": {
+        "title": "WebSocket Debug Logging",
+        "description": "When enabled, logs [WS] events such as node/machine connect, full sync, and pushes. Off by default to avoid log spam with many nodes; warnings always write. Changes take effect within a few seconds without restart."
+      },
       "node_install_script_url": {
         "title": "Node Install Script URL",
         "description": "Custom URL for the node installation script. Leave empty to use the default GitHub URL.",

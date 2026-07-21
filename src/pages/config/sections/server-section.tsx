@@ -34,6 +34,7 @@ function ServerSectionBody({ data }: { data: Record<string, unknown> }) {
       { key: "server_token", type: "text" as const, label: meta("server_token").label, description: meta("server_token").description, placeholder: meta("server_token").placeholder },
       { key: "server_ws_enable", type: "switch" as const, label: meta("server_ws_enable").label, description: meta("server_ws_enable").description },
       { key: "server_ws_url", type: "text" as const, label: meta("server_ws_url").label, description: meta("server_ws_url").description, placeholder: meta("server_ws_url").placeholder },
+      { key: "server_ws_log_enable", type: "switch" as const, label: meta("server_ws_log_enable").label, description: meta("server_ws_log_enable").description },
       ...NUMBER_FIELDS.map((k) => ({
         key: k,
         type: "number" as const,
@@ -197,6 +198,13 @@ function ServerSectionBody({ data }: { data: Record<string, unknown> }) {
             {t("settings.server.server_ws_enable.supported_clients")}
           </p>
         </SwitchGroup>
+
+        <SwitchGroup
+          label={meta("server_ws_log_enable").label}
+          description={meta("server_ws_log_enable").description}
+          checked={!!values.server_ws_log_enable}
+          onChange={(v) => set("server_ws_log_enable", v)}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

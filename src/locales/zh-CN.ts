@@ -1640,6 +1640,10 @@ const translations: Translations = {
         "description": "节点连接面板的 WebSocket 地址，留空则自动使用站点网址。",
         "placeholder": "留空则使用站点网址"
       },
+      "server_ws_log_enable": {
+        "title": "WebSocket 调试日志",
+        "description": "开启后记录节点/机器连接、全量同步、推送等 [WS] 日志。默认关闭，避免节点较多时刷屏；异常告警始终会写入。修改后数秒内生效，无需重启。"
+      },
       "node_install_script_url": {
         "title": "节点安装脚本地址",
         "description": "自定义节点安装脚本的 URL 地址，留空则使用默认的 GitHub 地址。",
