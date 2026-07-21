@@ -2245,8 +2245,8 @@ const translations: Translations = {
       },
       "port": {
         "label": "Connection Port",
-        "placeholder": "443 or 10000-40000",
-        "tooltip": "Client connection port. Supports a single port (e.g. 443) or a random range (e.g. 10000-40000). If using a relay/tunnel, this may differ from the server listen port.",
+        "placeholder": "443 or 10000-11000",
+        "tooltip": "Client connection port. Supports a single port (e.g. 443) or a range (e.g. 10000-11000). For Hysteria2, a range makes the node listen on every port in that range for UDP port hopping (max span 1024); for other protocols the range is only used to pick a random port in the subscription. If using a relay/tunnel, this may differ from the server listen port.",
         "sync": "Sync to server port",
         "error": "Connection port is required"
       },
@@ -2254,7 +2254,7 @@ const translations: Translations = {
         "label": "Server Port",
         "placeholder": "Enter server port",
         "error": "Server port is required",
-        "tooltip": "The actual listening port on the server.",
+        "tooltip": "The actual listening port on the server. For Hysteria2 with a connection-port range, the node multi-listens on that range; this field is the fallback single port.",
         "sync": "Sync to server port"
       },
       "parent": {
