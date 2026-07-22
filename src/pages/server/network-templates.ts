@@ -87,6 +87,16 @@ const TEMPLATES: Record<string, NetworkTemplate[]> = {
       httpmask: { disable: false, mode: "legacy" },
     }),
   ],
+  shadowquic: [
+    preset("shadowquic-default", {
+      jls_upstream: "www.cloudflare.com:443",
+      server_name: "www.cloudflare.com",
+      alpn: ["h3"],
+      congestion_control: "bbr",
+      zero_rtt: true,
+      udp_over_stream: false,
+    }),
+  ],
 };
 
 export function getTemplatesForProtocol(type: string): NetworkTemplate[] {

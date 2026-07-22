@@ -2341,6 +2341,10 @@ const translations: Translations = {
         "sudoku-default": {
           "label": "Sudoku 默认",
           "description": "低熵表 + ChaCha20 + legacy HTTPMask"
+        },
+        "shadowquic-default": {
+          "label": "ShadowQUIC 默认",
+          "description": "JLS 伪装 + 0-RTT QUIC，默认上游 Cloudflare"
         }
       }},
     "dynamic_form": {

@@ -2367,6 +2367,10 @@ const translations: Translations = {
         "sudoku-default": {
           "label": "Sudoku по умолчанию",
           "description": "Низкоэнтропийная таблица + ChaCha20 + legacy HTTPMask"
+        },
+        "shadowquic-default": {
+          "label": "ShadowQUIC по умолчанию",
+          "description": "JLS-маскировка + 0-RTT QUIC, upstream Cloudflare по умолчанию"
         }
       }},
     "dynamic_form": {
