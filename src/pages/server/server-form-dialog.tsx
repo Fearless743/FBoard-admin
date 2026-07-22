@@ -660,7 +660,11 @@ export function ServerFormDialog({
               </FormField>
 
               {server?.id ? (
-                <VirtualNodeList parentId={server.id} enabled={open} />
+                <VirtualNodeList
+                  parentId={server.id}
+                  parentGroupIds={(watch("group_ids") || []).map(Number)}
+                  enabled={open}
+                />
               ) : null}
 
               <FormField

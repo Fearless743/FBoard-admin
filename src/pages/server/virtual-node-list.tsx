@@ -54,9 +54,12 @@ function toSinglePort(port: string | number | null | undefined): number {
 
 export function VirtualNodeList({
   parentId,
+  parentGroupIds = [],
   enabled,
 }: {
   parentId: number;
+  /** 父节点当前权限组；子节点只能从中选择，防止「能订阅不能连」 */
+  parentGroupIds?: number[];
   enabled: boolean;
 }) {
   const { t } = useTranslation();
@@ -85,6 +88,15 @@ export function VirtualNodeList({
     staleTime: 300_000,
   });
   const groups: ServerGroup[] = groupsData || [];
+  const parentGroupIdSet = useMemo(
+    () => new Set((parentGroupIds || []).map(Number).filter((id) => Number.isFinite(id))),
+    [parentGroupIds],
+  );
+  /** 子节点可选权限组 = 父节点权限组 ∩ 全量权限组 */
+  const allowedGroups = useMemo(
+    () => groups.filter((g) => parentGroupIdSet.has(g.id)),
+    [groups, parentGroupIdSet],
+  );
   const groupNameMap = useMemo(() => {
     const map = new Map<number, string>();
     for (const g of groups) map.set(g.id, g.name);
@@ -130,7 +142,10 @@ export function VirtualNodeList({
           host: node.host,
           port: toSinglePort(node.port),
           show: checked,
-          group_ids: node.group_ids,
+          // 仅提交父节点允许的权限组，避免历史越权数据导致切换失败
+          group_ids: (node.group_ids || [])
+            .map(Number)
+            .filter((id) => parentGroupIdSet.has(id)),
           tags: node.tags,
         });
         await invalidate();
@@ -142,7 +157,7 @@ export function VirtualNodeList({
         setTogglingId(null);
       }
     },
-    [invalidate, t],
+    [invalidate, parentGroupIdSet, t],
   );
 
   const handleDelete = useCallback(async () => {
@@ -347,7 +362,8 @@ export function VirtualNodeList({
           }
         }}
         editNode={editNode}
-        groups={groups}
+        groups={allowedGroups}
+        parentHasNoGroups={parentGroupIdSet.size === 0}
         onAdd={handleAdd}
         onEdit={handleEdit}
       />
@@ -373,13 +389,16 @@ function ChildNodeDialog({
   onOpenChange,
   editNode,
   groups,
+  parentHasNoGroups,
   onAdd,
   onEdit,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editNode: Server | null;
+  /** 仅父节点已选中的权限组 */
   groups: ServerGroup[];
+  parentHasNoGroups: boolean;
   onAdd: (payload: ChildPayload) => Promise<void>;
   onEdit: (payload: ChildPayload & { id: number }) => Promise<void>;
 }) {
@@ -394,6 +413,10 @@ function ChildNodeDialog({
   const [submitting, setSubmitting] = useState(false);
 
   const isEditing = !!editNode;
+  const allowedIdSet = useMemo(
+    () => new Set(groups.map((g) => g.id)),
+    [groups],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -402,7 +425,12 @@ function ChildNodeDialog({
       setHost(editNode.host || "");
       setPort(toSinglePort(editNode.port));
       setShow(!!editNode.show);
-      setGroupIds((editNode.group_ids || []).map(Number));
+      // 编辑时裁剪掉已不在父节点权限组中的项
+      setGroupIds(
+        (editNode.group_ids || [])
+          .map(Number)
+          .filter((id) => allowedIdSet.has(id)),
+      );
       setTags((editNode.tags || []).filter(Boolean));
     } else {
       setName("");
@@ -414,7 +442,7 @@ function ChildNodeDialog({
     }
     setTagInput("");
     setSubmitting(false);
-  }, [open, editNode]);
+  }, [open, editNode, allowedIdSet]);
 
   const addTag = () => {
     const next = tagInput.trim().replace(/,/g, "");
@@ -500,10 +528,15 @@ function ChildNodeDialog({
 
           <div className="space-y-1.5">
             <Label>{t("server.form.virtualNode.groupIds")}</Label>
+            <p className="text-xs text-muted-foreground">
+              {t("server.form.virtualNode.groupIdsHint")}
+            </p>
             <div className="flex flex-wrap gap-2 rounded-md border p-2 min-h-10">
               {groups.length === 0 && (
                 <span className="text-xs text-muted-foreground">
-                  {t("server.form.groups.empty")}
+                  {parentHasNoGroups
+                    ? t("server.form.virtualNode.groupIdsParentEmpty")
+                    : t("server.form.groups.empty")}
                 </span>
               )}
               {groups.map((g) => {

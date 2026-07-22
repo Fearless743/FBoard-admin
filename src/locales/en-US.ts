@@ -2284,6 +2284,8 @@ const translations: Translations = {
         "hostPlaceholder": "host / domain",
         "port": "Port",
         "groupIds": "Permission Groups",
+        "groupIdsHint": "Only groups already assigned to the parent node; extra groups cannot connect",
+        "groupIdsParentEmpty": "Assign permission groups on the parent node first",
         "tags": "Tags",
         "show": "Visible",
         "visible": "Visible",

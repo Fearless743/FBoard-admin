@@ -2266,6 +2266,8 @@ const translations: Translations = {
         "hostPlaceholder": "主机名 / 域名",
         "port": "端口",
         "groupIds": "权限组",
+        "groupIdsHint": "只能选择父节点已包含的权限组，超出父节点将无法连接",
+        "groupIdsParentEmpty": "请先为父节点选择权限组",
         "tags": "标签",
         "show": "显示",
         "visible": "显示",
