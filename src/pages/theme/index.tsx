@@ -40,7 +40,7 @@ export function ThemePage() {
     queryKey: ["themes"],
     queryFn: getThemes,
   });
-  // /theme/getThemes 返回 { themes: { name: config }, active: "Xboard" }
+  // /theme/getThemes 返回 { themes: { name: config }, active: "Fboard" }
   const activeTheme = (data as any)?.active;
   const themesObj = (data as any)?.themes ?? data ?? {};
   const list: any[] = Object.entries(themesObj).map(([name, cfg]: [string, any]) => ({
