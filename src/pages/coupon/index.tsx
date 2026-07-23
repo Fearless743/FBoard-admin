@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import { Plus, Pencil, Trash2, Loader2, Search, TicketPercent, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -50,33 +51,25 @@ export function CouponListPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CouponItem | null>(null);
   const [deleting, setDeleting] = useState<CouponItem | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 500);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, typeFilter]);
+  const [qs, setQs, query] = useUrlState(
+    listQuerySchema({
+      q: { type: "string", default: "", debounce: 500 },
+      type: { type: "string", default: "all" },
+    }),
+  );
 
   const queryFilters: Array<{ id: string; value: any }> = [];
-  if (typeFilter !== "all") {
-    queryFilters.push({ id: "type", value: Number(typeFilter) });
+  if (query.type !== "all") {
+    queryFilters.push({ id: "type", value: Number(query.type) });
   }
 
   const { data, isLoading } = useQuery({
-    queryKey: ["coupons", { page, pageSize, debouncedSearch, typeFilter }],
+    queryKey: ["coupons", { page: query.page, pageSize: query.pageSize, q: query.q, type: query.type }],
     queryFn: () =>
       fetchCoupons({
-        current: page,
-        pageSize,
-        search: debouncedSearch || undefined,
+        current: query.page,
+        pageSize: query.pageSize,
+        search: query.q || undefined,
         filter: queryFilters.length > 0 ? queryFilters : undefined,
       }),
   });
@@ -109,18 +102,14 @@ export function CouponListPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("coupon.table.toolbar.search")}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-            }}
+            value={qs.q}
+            onChange={(e) => setQs({ q: e.target.value })}
             className="pl-9"
           />
         </div>
         <Select
-          value={typeFilter}
-          onValueChange={(v) => {
-            setTypeFilter(v);
-          }}
+          value={qs.type}
+          onValueChange={(v) => setQs({ type: v })}
         >
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder={t("coupon.table.toolbar.type")} />
@@ -261,14 +250,11 @@ export function CouponListPage() {
         </Table>
 
         <Pagination
-          page={page}
-          pageSize={pageSize}
+          page={qs.page}
+          pageSize={qs.pageSize}
           total={total}
-          onPageChange={setPage}
-          onPageSizeChange={(s) => {
-            setPageSize(s);
-            setPage(1);
-          }}
+          onPageChange={(p) => setQs({ page: p })}
+          onPageSizeChange={(s) => setQs({ pageSize: s, page: 1 })}
         />
       </div>
 

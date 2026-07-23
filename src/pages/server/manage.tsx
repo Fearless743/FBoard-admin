@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
+import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import {
   Plus,
   Trash2,
@@ -98,21 +99,23 @@ export function ServerListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  // type/status 用 string：协议类型来自后端动态列表；默认 all 不写进 URL
+  const [qs, setQs, query] = useUrlState(
+    listQuerySchema({
+      q: { type: "string", default: "", debounce: 400 },
+      type: { type: "string", default: "all" },
+      status: { type: "string", default: "all" },
+    }),
+  );
   const [editing, setEditing] = useState<Server | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createMachineId, setCreateMachineId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<Server | null>(null);
   const [resetting, setResetting] = useState<Server | null>(null);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  /** 运行状态过滤：all | 0 | 1 | 2 */
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingSortList, setPendingSortList] = useState<any[] | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
 
-  // Handle createWithMachineId URL param
+  // Handle createWithMachineId URL param（一次性动作，不进列表 schema）
   useEffect(() => {
     const raw = searchParams.get("createWithMachineId");
     if (raw) {
@@ -120,7 +123,6 @@ export function ServerListPage() {
       if (!isNaN(id)) {
         setCreateMachineId(id);
         setCreateOpen(true);
-        // Clean up the URL param
         setSearchParams((prev) => {
           const next = new URLSearchParams(prev);
           next.delete("createWithMachineId");
@@ -128,25 +130,29 @@ export function ServerListPage() {
         }, { replace: true });
       }
     }
+    // 仅挂载时消费一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { data, isLoading } = useQuery<any>({
-    queryKey: ["servers", "nodes", page, pageSize, search, typeFilter, statusFilter],
+    queryKey: [
+      "servers",
+      "nodes",
+      query.page,
+      query.pageSize,
+      query.q,
+      query.type,
+      query.status,
+    ],
     queryFn: () =>
       getNodes({
-        current: page,
-        pageSize,
-        search: search || undefined,
-        type: typeFilter === "all" ? undefined : typeFilter,
-        status:
-          statusFilter === "all" ? undefined : Number(statusFilter),
+        current: query.page,
+        pageSize: query.pageSize,
+        search: query.q || undefined,
+        type: query.type === "all" ? undefined : query.type,
+        status: query.status === "all" ? undefined : Number(query.status),
       }),
   });
-
-  // 筛选条件变化时回到第 1 页，避免结果变少后停在空页
-  useEffect(() => {
-    setPage(1);
-  }, [search, typeFilter, statusFilter]);
 
   const { data: sortNodes } = useQuery({
     queryKey: ["servers", "sort-nodes"],
@@ -232,12 +238,10 @@ export function ServerListPage() {
       }
     } else {
       setPendingSortList(null);
-      setSearch("");
-      setTypeFilter("all");
-      setStatusFilter("all");
+      setQs({ q: "", type: "all", status: "all", page: 1 });
       setDragEnabled(true);
     }
-  }, [dragEnabled, pendingSortList, finishSort]);
+  }, [dragEnabled, pendingSortList, finishSort, setQs]);
 
   const getConfigUrl = (n: Server) => {
     const base = window.location.origin;
@@ -271,13 +275,17 @@ export function ServerListPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("server.toolbar.search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={qs.q}
+            onChange={(e) => setQs({ q: e.target.value })}
             className="pl-9"
             disabled={dragEnabled}
           />
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter} disabled={dragEnabled}>
+        <Select
+          value={qs.type}
+          onValueChange={(v) => setQs({ type: v })}
+          disabled={dragEnabled}
+        >
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder={t("server.toolbar.type")} />
           </SelectTrigger>
@@ -291,8 +299,8 @@ export function ServerListPage() {
           </SelectContent>
         </Select>
         <Select
-          value={statusFilter}
-          onValueChange={setStatusFilter}
+          value={qs.status}
+          onValueChange={(v) => setQs({ status: v })}
           disabled={dragEnabled}
         >
           <SelectTrigger className="w-[180px]">
@@ -561,11 +569,11 @@ export function ServerListPage() {
         </Table>
         {!dragEnabled && (
           <Pagination
-            page={page}
-            pageSize={pageSize}
+            page={qs.page}
+            pageSize={qs.pageSize}
             total={total}
-            onPageChange={setPage}
-            onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+            onPageChange={(p) => setQs({ page: p })}
+            onPageSizeChange={(s) => setQs({ pageSize: s, page: 1 })}
           />
         )}
       </div>

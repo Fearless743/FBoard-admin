@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import {
   Search,
   Plus,
@@ -189,20 +190,17 @@ export function OrderListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const userId = searchParams.get("user_id");
-  const tradeNoParam = searchParams.get("trade_no") || "";
-  const commissionStatusParam = searchParams.get("commission_status") || "";
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const { data: plans = [] } = usePlanOptions();
-  const [search, setSearch] = useState(tradeNoParam);
-  const [typeFilter, setTypeFilter] = useState("");
-  const [periodFilter, setPeriodFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [commissionFilter, setCommissionFilter] = useState(
-    commissionStatusParam,
+  const [qs, setQs, query] = useUrlState(
+    listQuerySchema({
+      trade_no: { type: "string", default: "", debounce: 400 },
+      type: { type: "string", default: "" },
+      period: { type: "string", default: "" },
+      status: { type: "string", default: "" },
+      commission_status: { type: "string", default: "" },
+      user_id: { type: "string", default: "" },
+    }),
   );
+  const { data: plans = [] } = usePlanOptions();
   const [detail, setDetail] = useState<OrderItem | null>(null);
   const [actionOrder, setActionOrder] = useState<{
     trade_no: string;
@@ -225,53 +223,29 @@ export function OrderListPage() {
   const [addAmount, setAddAmount] = useState("");
   const [addSubmitting, setAddSubmitting] = useState(false);
 
-  // 支持从其它页面带 ?trade_no= 跳转过来时同步搜索框
-  useEffect(() => {
-    if (tradeNoParam) {
-      setSearch(tradeNoParam);
-      setPage(1);
-    }
-  }, [tradeNoParam]);
-
-  // 支持从仪表盘等页面带 ?commission_status= 跳转过来时同步佣金筛选
-  useEffect(() => {
-    if (commissionStatusParam !== commissionFilter) {
-      setCommissionFilter(commissionStatusParam);
-      setPage(1);
-    }
-    // 仅在 URL 参数变化时同步，避免与本地下拉改选互相覆盖
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commissionStatusParam]);
-
   const hasActiveFilters = !!(
-    search ||
-    typeFilter ||
-    periodFilter ||
-    statusFilter ||
-    commissionFilter ||
-    userId
+    qs.trade_no ||
+    qs.type ||
+    qs.period ||
+    qs.status ||
+    qs.commission_status ||
+    qs.user_id
   );
 
   const clearUserFilter = () => {
-    const next = new URLSearchParams(searchParams);
-    next.delete("user_id");
-    setSearchParams(next);
+    setQs({ user_id: "" });
   };
 
   const clearAllFilters = () => {
-    setSearch("");
-    setTypeFilter("");
-    setPeriodFilter("");
-    setStatusFilter("");
-    setCommissionFilter("");
-    setPage(1);
-    if (userId || tradeNoParam || commissionStatusParam) {
-      const next = new URLSearchParams(searchParams);
-      next.delete("user_id");
-      next.delete("trade_no");
-      next.delete("commission_status");
-      setSearchParams(next);
-    }
+    setQs({
+      trade_no: "",
+      type: "",
+      period: "",
+      status: "",
+      commission_status: "",
+      user_id: "",
+      page: 1,
+    });
   };
 
   const openDetail = async (o: OrderItem) => {
@@ -295,40 +269,41 @@ export function OrderListPage() {
   // 后端 filter 对「无 : 操作符」的值会走 LIKE；数值状态类必须用 eq: 精确匹配。
   // 仅筛 commission_status=0 会命中默认 0 且无佣金的订单，需配合 is_commission
   //（有邀请人、已支付/已完成、commission_balance>0）与仪表盘待处理佣金统计对齐。
+  // 请求用 query（已写入 URL 的 committed 值），输入框用 qs（含 debounce draft）
   const queryFilters: Array<{ id: string; value: any; logic?: string }> = [];
-  if (search) queryFilters.push({ id: "trade_no", value: search });
-  if (typeFilter) queryFilters.push({ id: "type", value: `eq:${typeFilter}` });
-  if (periodFilter) queryFilters.push({ id: "period", value: `eq:${periodFilter}` });
-  if (statusFilter) queryFilters.push({ id: "status", value: `eq:${statusFilter}` });
-  if (commissionFilter) {
+  if (query.trade_no) queryFilters.push({ id: "trade_no", value: query.trade_no });
+  if (query.type) queryFilters.push({ id: "type", value: `eq:${query.type}` });
+  if (query.period) queryFilters.push({ id: "period", value: `eq:${query.period}` });
+  if (query.status) queryFilters.push({ id: "status", value: `eq:${query.status}` });
+  if (query.commission_status) {
     queryFilters.push({
       id: "commission_status",
-      value: `eq:${commissionFilter}`,
+      value: `eq:${query.commission_status}`,
     });
   }
-  if (userId) queryFilters.push({ id: "user_id", value: `eq:${userId}` });
+  if (query.user_id) queryFilters.push({ id: "user_id", value: `eq:${query.user_id}` });
 
-  const isCommissionList = commissionFilter !== "";
+  const isCommissionList = query.commission_status !== "";
 
   const { data, isLoading } = useQuery({
     queryKey: [
       "orders",
       {
-        page,
-        pageSize,
-        search,
-        typeFilter,
-        periodFilter,
-        statusFilter,
-        commissionFilter,
-        userId,
+        page: query.page,
+        pageSize: query.pageSize,
+        trade_no: query.trade_no,
+        type: query.type,
+        period: query.period,
+        status: query.status,
+        commission_status: query.commission_status,
+        user_id: query.user_id,
         isCommissionList,
       },
     ],
     queryFn: () =>
       fetchOrders({
-        current: page,
-        pageSize,
+        current: query.page,
+        pageSize: query.pageSize,
         filter: queryFilters.length > 0 ? queryFilters : [],
         ...(isCommissionList ? { is_commission: true } : {}),
       }),
@@ -395,10 +370,10 @@ export function OrderListPage() {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {userId && (
+        {qs.user_id && (
           <Badge variant="secondary" className="h-8 gap-1.5 pl-2.5 pr-1 font-normal">
             <span className="text-muted-foreground">{t("order.filter.userId")}</span>
-            <span className="font-mono tabular-nums">{userId}</span>
+            <span className="font-mono tabular-nums">{qs.user_id}</span>
             <button
               type="button"
               onClick={clearUserFilter}
@@ -414,20 +389,14 @@ export function OrderListPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("order.search.placeholder")}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            value={qs.trade_no}
+            onChange={(e) => setQs({ trade_no: e.target.value })}
             className="pl-9"
           />
         </div>
         <Select
-          value={typeFilter || "__all__"}
-          onValueChange={(v) => {
-            setTypeFilter(v === "__all__" ? "" : v);
-            setPage(1);
-          }}
+          value={qs.type || "__all__"}
+          onValueChange={(v) => setQs({ type: v === "__all__" ? "" : v })}
         >
           <SelectTrigger className="w-[130px]">
             <SelectValue placeholder={t("order.filter.allTypes")} />
@@ -441,11 +410,8 @@ export function OrderListPage() {
           </SelectContent>
         </Select>
         <Select
-          value={periodFilter || "__all__"}
-          onValueChange={(v) => {
-            setPeriodFilter(v === "__all__" ? "" : v);
-            setPage(1);
-          }}
+          value={qs.period || "__all__"}
+          onValueChange={(v) => setQs({ period: v === "__all__" ? "" : v })}
         >
           <SelectTrigger className="w-[130px]">
             <SelectValue placeholder={t("order.filter.allPeriods")} />
@@ -459,11 +425,8 @@ export function OrderListPage() {
           </SelectContent>
         </Select>
         <Select
-          value={statusFilter || "__all__"}
-          onValueChange={(v) => {
-            setStatusFilter(v === "__all__" ? "" : v);
-            setPage(1);
-          }}
+          value={qs.status || "__all__"}
+          onValueChange={(v) => setQs({ status: v === "__all__" ? "" : v })}
         >
           <SelectTrigger className="w-[130px]">
             <SelectValue placeholder={t("order.filter.allStatuses")} />
@@ -477,17 +440,10 @@ export function OrderListPage() {
           </SelectContent>
         </Select>
         <Select
-          value={commissionFilter || "__all__"}
-          onValueChange={(v) => {
-            const nextVal = v === "__all__" ? "" : v;
-            setCommissionFilter(nextVal);
-            setPage(1);
-            // 与 URL 同步，便于刷新/分享；清除时去掉参数
-            const next = new URLSearchParams(searchParams);
-            if (nextVal) next.set("commission_status", nextVal);
-            else next.delete("commission_status");
-            setSearchParams(next, { replace: true });
-          }}
+          value={qs.commission_status || "__all__"}
+          onValueChange={(v) =>
+            setQs({ commission_status: v === "__all__" ? "" : v })
+          }
         >
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder={t("order.filter.allCommissions")} />
@@ -842,14 +798,11 @@ export function OrderListPage() {
         </Table>
 
         <Pagination
-          page={page}
-          pageSize={pageSize}
+          page={qs.page}
+          pageSize={qs.pageSize}
           total={total}
-          onPageChange={setPage}
-          onPageSizeChange={(s) => {
-            setPageSize(s);
-            setPage(1);
-          }}
+          onPageChange={(p) => setQs({ page: p })}
+          onPageSizeChange={(s) => setQs({ pageSize: s, page: 1 })}
         />
       </div>
 

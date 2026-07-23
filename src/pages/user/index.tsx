@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import {
   MoreHorizontal,
   Search,
@@ -142,15 +143,12 @@ export function UserListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [searchParams] = useSearchParams();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [search, setSearch] = useState(searchParams.get("email") || "");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 500);
-    return () => clearTimeout(timer);
-  }, [search]);
+  // 保留 email 键名以兼容订单页等深链 ?email=
+  const [qs, setQs, query] = useUrlState(
+    listQuerySchema({
+      email: { type: "string", default: "", debounce: 500 },
+    }),
+  );
   const [selected, setSelected] = useState<number[]>([]);
 
   const [editing, setEditing] = useState<UserListItem | null>(null);
@@ -172,10 +170,10 @@ export function UserListPage() {
   );
 
   const filter: UserFilter = {
-    current: page,
-    pageSize,
-    filter: debouncedSearch
-      ? [{ id: "email", value: debouncedSearch, logic: "and" }]
+    current: query.page,
+    pageSize: query.pageSize,
+    filter: query.email
+      ? [{ id: "email", value: query.email, logic: "and" }]
       : [],
   };
 
@@ -241,11 +239,8 @@ export function UserListPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("user.filter.email_search")}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            value={qs.email}
+            onChange={(e) => setQs({ email: e.target.value })}
             className="pl-9"
           />
         </div>
@@ -727,14 +722,11 @@ export function UserListPage() {
         </Table>
 
         <Pagination
-          page={page}
-          pageSize={pageSize}
+          page={qs.page}
+          pageSize={qs.pageSize}
           total={total}
-          onPageChange={setPage}
-          onPageSizeChange={(s) => {
-            setPageSize(s);
-            setPage(1);
-          }}
+          onPageChange={(p) => setQs({ page: p })}
+          onPageSizeChange={(s) => setQs({ pageSize: s, page: 1 })}
           selectedCount={selected.length}
         />
       </div>
@@ -756,8 +748,8 @@ export function UserListPage() {
         open={mailOpen}
         onOpenChange={setMailOpen}
         filter={
-          debouncedSearch
-            ? [{ id: "email", value: debouncedSearch }]
+          query.email
+            ? [{ id: "email", value: query.email }]
             : undefined
         }
         ids={selected}
@@ -769,7 +761,7 @@ export function UserListPage() {
         onOpenChange={setConfirmBan}
         title={t("user.actions.confirm_ban.title")}
         description={
-          debouncedSearch
+          query.email
             ? t("user.actions.confirm_ban.filtered_description")
             : t("user.actions.confirm_ban.all_description")
         }
@@ -778,7 +770,7 @@ export function UserListPage() {
         onConfirm={async () => {
           try {
             await banUser({
-              filter: debouncedSearch ? { email: debouncedSearch } : undefined,
+              filter: query.email ? { email: query.email } : undefined,
             });
             toast.success(t("user.messages.batch_ban.success"));
             setSelected([]);

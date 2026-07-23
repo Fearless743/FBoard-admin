@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUrlState } from "@/hooks/use-url-state";
 import { Plus, Pencil, Trash2, Loader2, Gift, Download, ChevronDown, ChevronRight, X, GripVertical, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -60,13 +61,21 @@ const SORT_PAGE_SIZE = 1000;
 
 export function GiftCardPage() {
   const { t } = useTranslation();
+  // tab 进 URL，三面板各自用前缀键避免互相覆盖
+  const [qs, setQs] = useUrlState({
+    tab: {
+      type: "enum",
+      values: ["templates", "codes", "usages"] as const,
+      default: "templates",
+    },
+  });
   return (
     <>
       <PageHeader
         title={t("giftCard.title")}
         description={t("giftCard.description")}
       />
-      <Tabs defaultValue="templates">
+      <Tabs value={qs.tab} onValueChange={(v) => setQs({ tab: v })}>
         <TabsList>
           <TabsTrigger value="templates">{t("giftCard.tabs.templates")}</TabsTrigger>
           <TabsTrigger value="codes">{t("giftCard.tabs.codes")}</TabsTrigger>
@@ -94,28 +103,31 @@ function TemplatesPanel() {
   const [deleting, setDeleting] = useState<GiftCardTemplate | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingList, setPendingList] = useState<GiftCardTemplate[] | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(timer);
-  }, [search]);
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+  const [qs, setQs, query] = useUrlState({
+    t_page: { type: "number", default: 1, min: 1 },
+    t_pageSize: { type: "number", default: 20, min: 1 },
+    t_q: { type: "string", default: "", debounce: 400 },
+  });
 
-  const effectivePerPage = dragEnabled ? SORT_PAGE_SIZE : pageSize;
-  const effectivePage = dragEnabled ? 1 : page;
+  const effectivePerPage = dragEnabled ? SORT_PAGE_SIZE : query.t_pageSize;
+  const effectivePage = dragEnabled ? 1 : query.t_page;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["gift-card", "templates", { page: effectivePage, pageSize: effectivePerPage, debouncedSearch, dragEnabled }],
+    queryKey: [
+      "gift-card",
+      "templates",
+      {
+        page: effectivePage,
+        pageSize: effectivePerPage,
+        q: query.t_q,
+        dragEnabled,
+      },
+    ],
     queryFn: () =>
       fetchGiftCardTemplates({
         page: effectivePage,
         per_page: effectivePerPage,
-        search: debouncedSearch || undefined,
+        search: query.t_q || undefined,
       }),
   });
   const list: GiftCardTemplate[] = data?.data || [];
@@ -153,11 +165,10 @@ function TemplatesPanel() {
       }
     } else {
       setPendingList(null);
-      setSearch("");
-      setDebouncedSearch("");
+      setQs({ t_q: "", t_page: 1 });
       setDragEnabled(true);
     }
-  }, [dragEnabled, pendingList, finishSort]);
+  }, [dragEnabled, pendingList, finishSort, setQs]);
 
   return (
     <>
@@ -166,8 +177,8 @@ function TemplatesPanel() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("giftCard.common.search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={qs.t_q}
+            onChange={(e) => setQs({ t_q: e.target.value })}
             className="pl-9"
             disabled={dragEnabled}
           />
@@ -258,14 +269,11 @@ function TemplatesPanel() {
         </Table>
         {!dragEnabled && (
           <Pagination
-            page={page}
-            pageSize={pageSize}
+            page={qs.t_page}
+            pageSize={qs.t_pageSize}
             total={total}
-            onPageChange={setPage}
-            onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
-            }}
+            onPageChange={(p) => setQs({ t_page: p })}
+            onPageSizeChange={(s) => setQs({ t_pageSize: s, t_page: 1 })}
           />
         )}
       </div>
@@ -665,29 +673,30 @@ function CodesPanel() {
   const [open, setOpen] = useState(false);
   const [editCode, setEditCode] = useState<GiftCardCodeItem | null>(null);
   const [deleteCode, setDeleteCode] = useState<GiftCardCodeItem | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 500);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, statusFilter]);
+  const [qs, setQs, query] = useUrlState({
+    c_page: { type: "number", default: 1, min: 1 },
+    c_pageSize: { type: "number", default: 20, min: 1 },
+    c_q: { type: "string", default: "", debounce: 500 },
+    c_status: { type: "string", default: "all" },
+  });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["gift-card", "codes", { page, pageSize, debouncedSearch, statusFilter }],
+    queryKey: [
+      "gift-card",
+      "codes",
+      {
+        page: query.c_page,
+        pageSize: query.c_pageSize,
+        q: query.c_q,
+        status: query.c_status,
+      },
+    ],
     queryFn: () =>
       fetchGiftCardCodes({
-        page,
-        per_page: pageSize,
-        search: debouncedSearch || undefined,
-        status: statusFilter !== "all" ? Number(statusFilter) : undefined,
+        page: query.c_page,
+        per_page: query.c_pageSize,
+        search: query.c_q || undefined,
+        status: query.c_status !== "all" ? Number(query.c_status) : undefined,
       }),
   });
   const list: GiftCardCodeItem[] = data?.data || [];
@@ -709,12 +718,12 @@ function CodesPanel() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("giftCard.common.search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={qs.c_q}
+            onChange={(e) => setQs({ c_q: e.target.value })}
             className="pl-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={qs.c_status} onValueChange={(v) => setQs({ c_status: v })}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder={t("giftCard.code.table.columns.status")} />
           </SelectTrigger>
@@ -821,14 +830,11 @@ function CodesPanel() {
         </Table>
 
         <Pagination
-          page={page}
-          pageSize={pageSize}
+          page={qs.c_page}
+          pageSize={qs.c_pageSize}
           total={total}
-          onPageChange={setPage}
-          onPageSizeChange={(s) => {
-            setPageSize(s);
-            setPage(1);
-          }}
+          onPageChange={(p) => setQs({ c_page: p })}
+          onPageSizeChange={(s) => setQs({ c_pageSize: s, c_page: 1 })}
         />
       </div>
       <GenerateCodesDialog
@@ -1049,25 +1055,23 @@ function EditCodeDialog({
 
 function UsagesPanel() {
   const { t } = useTranslation();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(timer);
-  }, [search]);
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+  const [qs, setQs, query] = useUrlState({
+    u_page: { type: "number", default: 1, min: 1 },
+    u_pageSize: { type: "number", default: 20, min: 1 },
+    u_q: { type: "string", default: "", debounce: 400 },
+  });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["gift-card", "usages", { page, pageSize, debouncedSearch }],
+    queryKey: [
+      "gift-card",
+      "usages",
+      { page: query.u_page, pageSize: query.u_pageSize, q: query.u_q },
+    ],
     queryFn: () =>
       fetchGiftCardUsages({
-        page,
-        per_page: pageSize,
-        search: debouncedSearch || undefined,
+        page: query.u_page,
+        per_page: query.u_pageSize,
+        search: query.u_q || undefined,
       }),
   });
   const list: any[] = data?.data || [];
@@ -1080,8 +1084,8 @@ function UsagesPanel() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("giftCard.common.search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={qs.u_q}
+            onChange={(e) => setQs({ u_q: e.target.value })}
             className="pl-9"
           />
         </div>
@@ -1124,14 +1128,11 @@ function UsagesPanel() {
           </TableBody>
         </Table>
         <Pagination
-          page={page}
-          pageSize={pageSize}
+          page={qs.u_page}
+          pageSize={qs.u_pageSize}
           total={total}
-          onPageChange={setPage}
-          onPageSizeChange={(s) => {
-            setPageSize(s);
-            setPage(1);
-          }}
+          onPageChange={(p) => setQs({ u_page: p })}
+          onPageSizeChange={(s) => setQs({ u_pageSize: s, u_page: 1 })}
         />
       </div>
     </>

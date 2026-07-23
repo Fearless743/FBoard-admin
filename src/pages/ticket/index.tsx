@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import {
   Search,
   Eye,
@@ -80,10 +81,13 @@ function levelBadgeClass(level: number) {
 export function TicketListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("0");
+  // status 默认 "0"（处理中），与原先 Tabs 一致；空 URL 表示处理中
+  const [qs, setQs, query] = useUrlState(
+    listQuerySchema({
+      q: { type: "string", default: "", debounce: 400 },
+      status: { type: "enum", values: ["0", "1"] as const, default: "0" },
+    }),
+  );
   const [viewing, setViewing] = useState<TicketItem | null>(null);
   const [detailData, setDetailData] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -111,14 +115,22 @@ export function TicketListPage() {
   }, [detailData, viewing?.id]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["tickets", { page, pageSize, search, statusFilter }],
+    queryKey: [
+      "tickets",
+      {
+        page: query.page,
+        pageSize: query.pageSize,
+        q: query.q,
+        status: query.status,
+      },
+    ],
     queryFn: () =>
       fetchTickets({
-        current: page,
-        pageSize,
+        current: query.page,
+        pageSize: query.pageSize,
         filter: [
-          ...(search ? [{ id: "subject", value: search }] : []),
-          ...(statusFilter ? [{ id: "status", value: statusFilter }] : []),
+          ...(query.q ? [{ id: "subject", value: query.q }] : []),
+          ...(query.status ? [{ id: "status", value: query.status }] : []),
         ],
       }),
   });
@@ -229,11 +241,8 @@ export function TicketListPage() {
       />
 
       <Tabs
-        value={statusFilter}
-        onValueChange={(v) => {
-          setStatusFilter(v);
-          setPage(1);
-        }}
+        value={qs.status}
+        onValueChange={(v) => setQs({ status: v })}
         className="mb-4"
       >
         <TabsList>
@@ -247,11 +256,8 @@ export function TicketListPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("ticket.list.search_placeholder")}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            value={qs.q}
+            onChange={(e) => setQs({ q: e.target.value })}
             className="pl-9"
           />
         </div>
@@ -363,14 +369,11 @@ export function TicketListPage() {
         </Table>
 
         <Pagination
-          page={page}
-          pageSize={pageSize}
+          page={qs.page}
+          pageSize={qs.pageSize}
           total={total}
-          onPageChange={setPage}
-          onPageSizeChange={(s) => {
-            setPageSize(s);
-            setPage(1);
-          }}
+          onPageChange={(p) => setQs({ page: p })}
+          onPageSizeChange={(s) => setQs({ pageSize: s, page: 1 })}
         />
       </div>
 

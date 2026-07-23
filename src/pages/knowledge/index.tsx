@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import { Plus, Pencil, Trash2, Loader2, BookOpen, GripVertical, Search } from "lucide-react";
 import { toast } from "sonner";
 import ReactQuill from "react-quill";
@@ -61,30 +62,33 @@ export function KnowledgeListPage() {
   const [deleting, setDeleting] = useState<KnowledgeItem | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingList, setPendingList] = useState<KnowledgeItem[] | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(timer);
-  }, [search]);
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, categoryFilter]);
+  const [qs, setQs, query] = useUrlState(
+    listQuerySchema({
+      q: { type: "string", default: "", debounce: 400 },
+      category: { type: "string", default: "all" },
+    }),
+  );
 
-  const effectivePageSize = dragEnabled ? SORT_PAGE_SIZE : pageSize;
-  const effectivePage = dragEnabled ? 1 : page;
+  const effectivePageSize = dragEnabled ? SORT_PAGE_SIZE : query.pageSize;
+  const effectivePage = dragEnabled ? 1 : query.page;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["knowledge", { page: effectivePage, pageSize: effectivePageSize, debouncedSearch, categoryFilter, dragEnabled }],
+    queryKey: [
+      "knowledge",
+      {
+        page: effectivePage,
+        pageSize: effectivePageSize,
+        q: query.q,
+        category: query.category,
+        dragEnabled,
+      },
+    ],
     queryFn: () =>
       fetchKnowledges({
         current: effectivePage,
         pageSize: effectivePageSize,
-        search: debouncedSearch || undefined,
-        category: categoryFilter !== "all" ? categoryFilter : undefined,
+        search: query.q || undefined,
+        category: query.category !== "all" ? query.category : undefined,
       }),
   });
   const list: KnowledgeItem[] = data?.data || [];
@@ -124,12 +128,10 @@ export function KnowledgeListPage() {
       }
     } else {
       setPendingList(null);
-      setSearch("");
-      setDebouncedSearch("");
-      setCategoryFilter("all");
+      setQs({ q: "", category: "all", page: 1 });
       setDragEnabled(true);
     }
-  }, [dragEnabled, pendingList, finishSort]);
+  }, [dragEnabled, pendingList, finishSort, setQs]);
 
   return (
     <>
@@ -158,12 +160,12 @@ export function KnowledgeListPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("knowledge.toolbar.searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={qs.q}
+            onChange={(e) => setQs({ q: e.target.value })}
             className="pl-9"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <Select value={qs.category} onValueChange={(v) => setQs({ category: v })}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder={t("knowledge.toolbar.allCategories")} />
           </SelectTrigger>
@@ -249,14 +251,11 @@ export function KnowledgeListPage() {
         </Table>
         {!dragEnabled && (
           <Pagination
-            page={page}
-            pageSize={pageSize}
+            page={qs.page}
+            pageSize={qs.pageSize}
             total={total}
-            onPageChange={setPage}
-            onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
-            }}
+            onPageChange={(p) => setQs({ page: p })}
+            onPageSizeChange={(s) => setQs({ pageSize: s, page: 1 })}
           />
         )}
       </div>

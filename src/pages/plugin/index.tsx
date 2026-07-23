@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUrlState } from "@/hooks/use-url-state";
 import {
   Upload,
   Trash2,
@@ -88,19 +89,23 @@ export function PluginPage() {
   const [browsing, setBrowsing] = useState<{ code: string; name: string } | null>(
     null,
   );
-  const [typeFilter, setTypeFilter] = useState("feature");
-  const [page, setPage] = useState(1);
+  // pageSize 固定 20，不写 URL；type 默认 feature 与原先一致
   const pageSize = 20;
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(timer);
-  }, [search]);
+  const [qs, setQs, query] = useUrlState({
+    page: { type: "number" as const, default: 1, min: 1 },
+    q: { type: "string" as const, default: "", debounce: 400 },
+    type: { type: "string" as const, default: "feature" },
+  });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["plugins", typeFilter, page, debouncedSearch],
-    queryFn: () => fetchPlugins({ type: typeFilter, page, pageSize, search: debouncedSearch }),
+    queryKey: ["plugins", query.type, query.page, query.q],
+    queryFn: () =>
+      fetchPlugins({
+        type: query.type,
+        page: query.page,
+        pageSize,
+        search: query.q,
+      }),
   });
   const list: any[] = (data as any)?.data || [];
   const total = (data as any)?.total || 0;
@@ -167,17 +172,14 @@ export function PluginPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("plugin.toolbar.search")}
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            value={qs.q}
+            onChange={(e) => setQs({ q: e.target.value })}
             className="pl-9"
           />
         </div>
         <Select
-          value={typeFilter}
-          onValueChange={(v) => {
-            setTypeFilter(v);
-            setPage(1);
-          }}
+          value={qs.type}
+          onValueChange={(v) => setQs({ type: v })}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder={t("plugin.type.placeholder")} />
@@ -388,10 +390,10 @@ export function PluginPage() {
             );
           })}
           <Pagination
-            page={page}
+            page={qs.page}
             pageSize={pageSize}
             total={total}
-            onPageChange={setPage}
+            onPageChange={(p) => setQs({ page: p })}
           />
         </div>
       )}

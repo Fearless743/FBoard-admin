@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import { Plus, Pencil, Trash2, Loader2, GripVertical, Search, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -43,28 +44,23 @@ export function NoticeListPage() {
   const [deleting, setDeleting] = useState<NoticeItem | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingList, setPendingList] = useState<any[] | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(timer);
-  }, [search]);
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+  const [qs, setQs, query] = useUrlState(
+    listQuerySchema({
+      q: { type: "string", default: "", debounce: 400 },
+    }),
+  );
 
-  const effectivePageSize = dragEnabled ? SORT_PAGE_SIZE : pageSize;
-  const effectivePage = dragEnabled ? 1 : page;
+  // 拖拽排序临时拉大 pageSize，不写进 URL
+  const effectivePageSize = dragEnabled ? SORT_PAGE_SIZE : query.pageSize;
+  const effectivePage = dragEnabled ? 1 : query.page;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["notices", { page: effectivePage, pageSize: effectivePageSize, debouncedSearch, dragEnabled }],
+    queryKey: ["notices", { page: effectivePage, pageSize: effectivePageSize, q: query.q, dragEnabled }],
     queryFn: () =>
       fetchNotices({
         current: effectivePage,
         pageSize: effectivePageSize,
-        search: debouncedSearch || undefined,
+        search: query.q || undefined,
       }),
   });
   const list = data?.data || [];
@@ -103,11 +99,10 @@ export function NoticeListPage() {
       }
     } else {
       setPendingList(null);
-      setSearch("");
-      setDebouncedSearch("");
+      setQs({ q: "", page: 1 });
       setDragEnabled(true);
     }
-  }, [dragEnabled, pendingList, finishSort]);
+  }, [dragEnabled, pendingList, finishSort, setQs]);
 
   return (
     <>
@@ -136,8 +131,8 @@ export function NoticeListPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("notice.table.toolbar.search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={qs.q}
+            onChange={(e) => setQs({ q: e.target.value })}
             className="pl-9"
             disabled={dragEnabled}
           />
@@ -216,14 +211,11 @@ export function NoticeListPage() {
         </Table>
         {!dragEnabled && (
           <Pagination
-            page={page}
-            pageSize={pageSize}
+            page={qs.page}
+            pageSize={qs.pageSize}
             total={total}
-            onPageChange={setPage}
-            onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
-            }}
+            onPageChange={(p) => setQs({ page: p })}
+            onPageSizeChange={(s) => setQs({ pageSize: s, page: 1 })}
           />
         )}
       </div>

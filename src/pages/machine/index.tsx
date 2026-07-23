@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import {
   Plus, Pencil, Trash2, Loader2, Server, Copy, Check, Eye, EyeOff,
   Activity, Terminal, Unlink, Link2, ExternalLink, ArrowRight, ArrowUpToLine, RotateCcw,
@@ -366,14 +367,13 @@ function CurrentLoadSummary({ load }: { load?: MachineLoadStatus | null }) {
 export function MachineListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(timer);
-  }, [search]);
+  // 机器列表默认每页 10 条（与其它列表 20 不同）
+  const [qs, setQs, query] = useUrlState(
+    listQuerySchema(
+      { q: { type: "string", default: "", debounce: 400 } },
+      { pageSize: 10 },
+    ),
+  );
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Machine | null>(null);
   const [deleting, setDeleting] = useState<Machine | null>(null);
@@ -386,8 +386,8 @@ export function MachineListPage() {
   const [batchUpgradeSubmitting, setBatchUpgradeSubmitting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["machines", { page, pageSize, search: debouncedSearch }],
-    queryFn: () => fetchMachines(page, pageSize, debouncedSearch),
+    queryKey: ["machines", { page: query.page, pageSize: query.pageSize, search: query.q }],
+    queryFn: () => fetchMachines(query.page, query.pageSize, query.q),
     refetchInterval: 30_000,
   });
   const list: Machine[] = data?.data || [];
@@ -479,8 +479,8 @@ export function MachineListPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("machine.toolbar.search")}
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            value={qs.q}
+            onChange={(e) => setQs({ q: e.target.value })}
             className="pl-9"
           />
         </div>
@@ -633,11 +633,11 @@ export function MachineListPage() {
       </div>
 
       <Pagination
-        page={page}
-        pageSize={pageSize}
+        page={qs.page}
+        pageSize={qs.pageSize}
         total={total}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        onPageChange={(p) => setQs({ page: p })}
+        onPageSizeChange={(s) => setQs({ pageSize: s, page: 1 })}
       />
 
       <MachineFormDialog
