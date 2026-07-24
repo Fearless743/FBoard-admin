@@ -31,6 +31,7 @@ import {
 import { StatCard } from "@/components/common/stat-card";
 import { PageHeader } from "@/components/common/page-header";
 import { FailedJobsDialog } from "@/components/common/failed-jobs-dialog";
+import { IdBadge } from "@/components/common/id-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -125,12 +126,12 @@ export function Dashboard() {
     [userTrafficRange],
   );
 
-  const { data: nodeRank } = useQuery({
+  const { data: nodeRank, isLoading: nodeRankLoading } = useQuery({
     queryKey: ["dashboard", "traffic-rank", trafficTs],
     queryFn: () => getTrafficRank("node", trafficTs.start, trafficTs.end),
   });
 
-  const { data: userRank } = useQuery({
+  const { data: userRank, isLoading: userRankLoading } = useQuery({
     queryKey: ["dashboard", "user-traffic-rank", userTrafficTs],
     queryFn: () => getTrafficRank("user", userTrafficTs.start, userTrafficTs.end),
   });
@@ -171,12 +172,16 @@ export function Dashboard() {
     [chartData],
   );
 
-  const topNodeRank = Array.isArray(nodeRank) ? nodeRank.slice(0, 10) : [];
-  const topUserRank = Array.isArray(userRank) ? userRank.slice(0, 10) : [];
+  const topNodeRank = useMemo(
+    () => (Array.isArray(nodeRank) ? nodeRank.slice(0, 10) : []),
+    [nodeRank],
+  );
+  const topUserRank = useMemo(
+    () => (Array.isArray(userRank) ? userRank.slice(0, 10) : []),
+    [userRank],
+  );
 
-  const maxNodeValue = Math.max(...topNodeRank.map((n) => Number(n.value)), 1);
-  const maxUserValue = Math.max(...topUserRank.map((u) => Number(u.value)), 1);
-
+  
   const workloads: QueueWorkloadItem[] = useMemo(() => {
     if (!queueWorkload) return [];
     return Array.isArray(queueWorkload) ? queueWorkload : [];
@@ -364,7 +369,7 @@ export function Dashboard() {
             </Select>
           </CardHeader>
           <CardContent>
-            {statsLoading && topNodeRank.length === 0 ? (
+            {nodeRankLoading && topNodeRank.length === 0 ? (
               <Skeleton className="h-[200px] rounded-lg" />
             ) : topNodeRank.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
@@ -375,19 +380,11 @@ export function Dashboard() {
                 {topNodeRank.map((node) => (
                   <div
                     key={node.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted/50"
+                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <span className="w-5 shrink-0 text-xs text-muted-foreground">
-                      #{node.id}
-                    </span>
+                    <IdBadge id={node.id} compact className="shrink-0" />
                     <span className="min-w-0 flex-1 truncate font-medium">{node.name}</span>
-                    <div className="h-2 w-20 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${(Number(node.value) / maxNodeValue) * 100}%` }}
-                      />
-                    </div>
-                    <span className="ml-1 shrink-0 tabular-nums text-muted-foreground">
+                    <span className="shrink-0 tabular-nums text-muted-foreground">
                       {formatBytes(Number(node.value))}
                     </span>
                   </div>
@@ -411,7 +408,7 @@ export function Dashboard() {
             </Select>
           </CardHeader>
           <CardContent>
-            {statsLoading && topUserRank.length === 0 ? (
+            {userRankLoading && topUserRank.length === 0 ? (
               <Skeleton className="h-[200px] rounded-lg" />
             ) : topUserRank.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
@@ -422,16 +419,10 @@ export function Dashboard() {
                 {topUserRank.map((u) => (
                   <div
                     key={u.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted/50"
+                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted/50"
                   >
                     <span className="min-w-0 flex-1 truncate">{u.name}</span>
-                    <div className="h-2 w-20 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${(Number(u.value) / maxUserValue) * 100}%` }}
-                      />
-                    </div>
-                    <span className="ml-1 shrink-0 tabular-nums text-muted-foreground">
+                    <span className="shrink-0 tabular-nums text-muted-foreground">
                       {formatBytes(Number(u.value))}
                     </span>
                   </div>

@@ -64,6 +64,9 @@ import { NetworkSettingsDialog } from "./network-settings-dialog";
 import { VirtualNodeList } from "./virtual-node-list";
 
 
+/** Radix Select 不允许 SelectItem value 为空字符串，用哨兵表示「无」 */
+const SELECT_NONE = "__none__";
+
 /** 判断 Laravel 规则字符串是否含无条件 required（required_if / required_with 不算星号） */
 function isUnconditionallyRequired(rule: string | string[] | undefined | null): boolean {
   if (!rule) return false;
@@ -224,6 +227,61 @@ export function ServerFormDialog({
   const selectedType = watch("type");
   const currentDef = protocolDefs.find((d) => d.type === selectedType);
   const selectedProto = protocolTypes.find((p) => p.type === selectedType);
+
+  /** 从协议定义递归收集 default，仅填充当前 protocol_settings 中缺失的键 */
+  const applyProtocolDefaults = useCallback(
+    (
+      fields: Record<string, ProtocolConfigField>,
+      current: Record<string, any> | undefined,
+      prefix = "",
+    ): Record<string, any> => {
+      const next: Record<string, any> = { ...(current || {}) };
+      for (const [key, field] of Object.entries(fields || {})) {
+        const path = prefix ? `${prefix}.${key}` : key;
+        if (field.type === "object" && field.fields) {
+          const nestedCurrent =
+            next[key] && typeof next[key] === "object" && !Array.isArray(next[key])
+              ? next[key]
+              : {};
+          next[key] = applyProtocolDefaults(field.fields, nestedCurrent, path);
+          continue;
+        }
+        // 历史 anytls padding_scheme 等曾以 string[] 存储，统一成多行 string
+        if (
+          field.type === "string" &&
+          Array.isArray(next[key])
+        ) {
+          next[key] = next[key].map((v: unknown) => String(v ?? "")).join("\n");
+        }
+        if (next[key] === undefined) {
+          // 仅在缺失时写入定义 default；显式 null/"" 保留
+          if (Object.prototype.hasOwnProperty.call(field, "default")) {
+            next[key] = field.default;
+          }
+        }
+      }
+      return next;
+    },
+    [],
+  );
+
+  // 新建节点或切换协议类型时，用协议定义 default 填充 TLS / 传输协议等缺失项
+  useEffect(() => {
+    if (!open || !selectedType || !currentDef) return;
+    // 编辑已有节点：只补缺失键，不覆盖已保存值
+    const current = watch("protocol_settings") || {};
+    const merged = applyProtocolDefaults(
+      currentDef.config_fields || {},
+      current,
+    );
+    // 浅比较：有变化再 set，避免循环
+    const changed =
+      JSON.stringify(current) !== JSON.stringify(merged);
+    if (changed) {
+      setValue("protocol_settings", merged, { shouldDirty: !server });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, selectedType, currentDef?.type]);
 
   // New Sudoku node: auto-generate master key pair when empty
   useEffect(() => {
@@ -581,9 +639,9 @@ export function ServerFormDialog({
                   name="machine_id"
                   render={({ field }) => (
                     <Select
-                      value={String(field.value ?? "")}
+                      value={field.value == null ? SELECT_NONE : String(field.value)}
                       onValueChange={(v) =>
-                        field.onChange(v ? Number(v) : null)
+                        field.onChange(v === SELECT_NONE ? null : Number(v))
                       }
                     >
                       <SelectTrigger>
@@ -592,7 +650,7 @@ export function ServerFormDialog({
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">
+                        <SelectItem value={SELECT_NONE}>
                           {t("server.form.machine.none")}
                         </SelectItem>
                         {(machines as any[]).map((m) => (
@@ -627,9 +685,9 @@ export function ServerFormDialog({
                   name="parent_id"
                   render={({ field }) => (
                     <Select
-                      value={String(field.value ?? "")}
+                      value={field.value == null ? SELECT_NONE : String(field.value)}
                       onValueChange={(v) =>
-                        field.onChange(v ? Number(v) : null)
+                        field.onChange(v === SELECT_NONE ? null : Number(v))
                       }
                     >
                       <SelectTrigger>
@@ -638,7 +696,7 @@ export function ServerFormDialog({
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">
+                        <SelectItem value={SELECT_NONE}>
                           {t("server.form.parent.none")}
                         </SelectItem>
                         {allNodes
@@ -906,10 +964,68 @@ function ProtocolConfigFields({
         }
 
         if (field.type === "object" && field.fields) {
+          const isEchObject =
+            key === "ech" &&
+            Object.prototype.hasOwnProperty.call(field.fields, "config") &&
+            Object.prototype.hasOwnProperty.call(field.fields, "key");
           return (
             <div key={key} className="space-y-2 rounded-md border p-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label className="text-sm font-medium">{fieldName}</Label>
+                {isEchObject ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 shrink-0"
+                    onClick={async () => {
+                      try {
+                        const { generateEchKey } = await import("@/api/server");
+                        // 优先用 query_server_name / 同级 server_name 作 public_name
+                        const qsn = watch(
+                          `protocol_settings.${fieldPath}.query_server_name`,
+                        ) as string | undefined;
+                        const parentPrefix = prefix || "";
+                        const sni =
+                          (watch(
+                            `protocol_settings.${parentPrefix ? `${parentPrefix}.` : ""}server_name`,
+                          ) as string | undefined) ||
+                          (watch("protocol_settings.tls_settings.server_name") as
+                            | string
+                            | undefined) ||
+                          (watch("protocol_settings.tls.server_name") as
+                            | string
+                            | undefined);
+                        const publicName =
+                          (qsn && String(qsn).trim()) ||
+                          (sni && String(sni).trim()) ||
+                          "ech.example.com";
+                        const res = await generateEchKey(publicName);
+                        setValue(
+                          `protocol_settings.${fieldPath}.key`,
+                          res.key,
+                          { shouldDirty: true, shouldValidate: true },
+                        );
+                        setValue(
+                          `protocol_settings.${fieldPath}.config`,
+                          res.config,
+                          { shouldDirty: true, shouldValidate: true },
+                        );
+                        setValue(
+                          `protocol_settings.${fieldPath}.enabled`,
+                          true,
+                          { shouldDirty: true },
+                        );
+                        toast.success(t("server.dynamic_form.ech.generateSuccess"));
+                      } catch {
+                        toast.error(t("server.dynamic_form.ech.generateFailed"));
+                      }
+                    }}
+                  >
+                    <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                    {t("server.dynamic_form.ech.generate")}
+                  </Button>
+                ) : null}
               </div>
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
               <ProtocolConfigFields
@@ -954,17 +1070,50 @@ function ProtocolConfigFields({
 
         if (field.options) {
           // uTLS 元选项 random / randomized 使用 i18n 文案，其它指纹沿用后端 label
+          // Radix SelectItem 禁止 value=""，后端 '' => '无/None' 映射为 SELECT_NONE
+          const hasEmptyOption = Object.prototype.hasOwnProperty.call(
+            field.options,
+            "",
+          );
           const entries = Object.entries(field.options).map(
             ([value, label]): [string, string] => {
+              const selectValue = value === "" ? SELECT_NONE : value;
               if (key === "fingerprint" && (value === "random" || value === "randomized")) {
                 const i18nKey = `server.dynamic_form.utls.fingerprint.${value}`;
                 const translated = t(i18nKey);
-                return [value, translated !== i18nKey ? translated : label];
+                return [selectValue, translated !== i18nKey ? translated : label];
               }
-              return [value, label];
+              return [selectValue, label];
             },
           );
+          const optionSelectValues = new Set(entries.map(([v]) => v));
+          const isNumericOptionField =
+            field.type === "integer" || field.type === "number";
           const isMulti = field.type === "array";
+
+          const toSelectValue = (raw: unknown): string | undefined => {
+            if (raw === undefined || raw === null || raw === "") {
+              return hasEmptyOption ? SELECT_NONE : undefined;
+            }
+            const s = String(raw);
+            // 已有匹配项（含 TLS 的 "0"/"1"）
+            if (optionSelectValues.has(s)) return s;
+            // 无匹配时不强制 value，避免触发器空白（显示 placeholder）
+            return undefined;
+          };
+
+          const fromSelectValue = (v: string) => {
+            if (v === SELECT_NONE) {
+              // 有空 option 时写回 ""（插件/流控等）；否则写 null
+              return hasEmptyOption ? "" : null;
+            }
+            if (isNumericOptionField) {
+              const n = Number(v);
+              return Number.isNaN(n) ? v : n;
+            }
+            return v;
+          };
+
           if (isMulti) {
             return (
               <div key={key} className="space-y-1.5">
@@ -1046,29 +1195,34 @@ function ProtocolConfigFields({
                       }
                     : undefined
                 }
-                render={({ field: controllerField }) => (
-                  <Select
-                    value={String(controllerField.value ?? "")}
-                    onValueChange={controllerField.onChange}
-                  >
-                    <SelectTrigger
-                      className={cn(
-                        errorFor(fieldPath) && "border-destructive",
-                      )}
+                render={({ field: controllerField }) => {
+                  const selectValue = toSelectValue(controllerField.value);
+                  return (
+                    <Select
+                      value={selectValue}
+                      onValueChange={(v) =>
+                        controllerField.onChange(fromSelectValue(v))
+                      }
                     >
-                      <SelectValue
-                        placeholder={field.placeholder || t("common.selectField", { name: fieldName })}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {entries.map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                      <SelectTrigger
+                        className={cn(
+                          errorFor(fieldPath) && "border-destructive",
+                        )}
+                      >
+                        <SelectValue
+                          placeholder={field.placeholder || t("common.selectField", { name: fieldName })}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {entries.map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                }}
               />
               {errorFor(fieldPath) ? (
                 <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
@@ -1183,7 +1337,16 @@ function ProtocolConfigFields({
                         res.private_key,
                         { shouldValidate: true, shouldDirty: true },
                       );
-                    } catch (e) {}
+                      if (res.short_id) {
+                        setValue(
+                          `protocol_settings.reality_settings.short_id`,
+                          res.short_id,
+                          { shouldValidate: true, shouldDirty: true },
+                        );
+                      }
+                    } catch {
+                      /* ignore */
+                    }
                   }}
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -1300,6 +1463,65 @@ function ProtocolConfigFields({
                   </p>
                 ) : null}
               </div>
+            </div>
+          );
+        }
+
+        // 多行 string（如 anytls padding_scheme 默认含换行）用 textarea
+        const isMultilineString =
+          field.type === "string" &&
+          (key === "padding_scheme" ||
+            (typeof field.default === "string" && field.default.includes("\n")));
+
+        if (isMultilineString) {
+          return (
+            <div key={key} className="space-y-1.5">
+              <Label>
+                {fieldName}
+                {requiredFor(fieldPath) ? (
+                  <span className="ml-0.5 text-destructive">*</span>
+                ) : null}
+              </Label>
+              {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
+              <Controller
+                control={control}
+                name={`protocol_settings.${fieldPath}`}
+                rules={
+                  requiredFor(fieldPath)
+                    ? {
+                        validate: (v) =>
+                          v !== undefined &&
+                          v !== null &&
+                          String(v).trim() !== "",
+                      }
+                    : undefined
+                }
+                render={({ field: controllerField }) => (
+                  <textarea
+                    className={cn(
+                      "flex w-full min-h-[140px] rounded-md border border-input bg-transparent px-3 py-2 text-xs font-mono",
+                      errorFor(fieldPath) && "border-destructive",
+                    )}
+                    placeholder={
+                      field.placeholder ||
+                      t("common.inputField", { name: fieldName })
+                    }
+                    value={
+                      Array.isArray(controllerField.value)
+                        ? controllerField.value
+                            .map((v: unknown) => String(v ?? ""))
+                            .join("\n")
+                        : (controllerField.value ?? "")
+                    }
+                    onChange={(e) => controllerField.onChange(e.target.value)}
+                    onBlur={controllerField.onBlur}
+                    ref={controllerField.ref}
+                  />
+                )}
+              />
+              {errorFor(fieldPath) ? (
+                <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+              ) : null}
             </div>
           );
         }

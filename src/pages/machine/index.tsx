@@ -31,6 +31,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -378,6 +379,7 @@ export function MachineListPage() {
   const [editing, setEditing] = useState<Machine | null>(null);
   const [deleting, setDeleting] = useState<Machine | null>(null);
   const [viewing, setViewing] = useState<Machine | null>(null);
+  const [viewingLogs, setViewingLogs] = useState<Machine | null>(null);
   const [upgrading, setUpgrading] = useState<Machine | null>(null);
   const [kernelOp, setKernelOp] = useState<{ machine: Machine; action: "start" | "stop" | "reload" | "restart" } | null>(null);
   const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
@@ -498,7 +500,7 @@ export function MachineListPage() {
               <TableHead className="w-28">{t("machine.columns.kernel")}</TableHead>
               <TableHead className="min-w-[160px]">{t("machine.columns.load")}</TableHead>
               <TableHead className="w-40">{t("machine.columns.lastSeen")}</TableHead>
-              <TableHead className="w-40 text-right">{t("machine.columns.actions")}</TableHead>
+              <TableHead className="w-20 text-right">{t("machine.columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -544,85 +546,77 @@ export function MachineListPage() {
                     {m.last_seen_at ? formatDate(m.last_seen_at) : t("machine.columns.never")}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => setViewing(m)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => { setEditing(m); setOpen(true); }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        disabled={!m.is_active || !m.is_online}
-                        title={t("machine.operations.upgrade")}
-                        onClick={() => setUpgrading(m)}
-                      >
-                        <ArrowUpToLine className="h-4 w-4" />
-                      </Button>
+                    <div className="flex items-center justify-end">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8"
-                            disabled={!m.is_active || !m.is_online}
-                            title={t("machine.operations.ops")}
+                            title={t("machine.columns.actions")}
                           >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => setViewing(m)}>
+                            <Eye className="h-4 w-4" />
+                            {t("machine.detail.title")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => { setEditing(m); setOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                            {t("machine.form.edit")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setViewingLogs(m)}>
+                            <ScrollText className="h-4 w-4" />
+                            {t("machine.logs.title")}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            disabled={!m.is_active || !m.is_online}
+                            onClick={() => setUpgrading(m)}
+                          >
+                            <ArrowUpToLine className="h-4 w-4" />
+                            {t("machine.operations.upgrade")}
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={kernelActionDisabled(m, "start")}
                             onClick={() => setKernelOp({ machine: m, action: "start" })}
                           >
-                            <Play className="mr-2 h-4 w-4" />
+                            <Play className="h-4 w-4" />
                             {t("machine.operations.start")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={kernelActionDisabled(m, "reload")}
                             onClick={() => setKernelOp({ machine: m, action: "reload" })}
                           >
-                            <RefreshCcw className="mr-2 h-4 w-4" />
+                            <RefreshCcw className="h-4 w-4" />
                             {t("machine.operations.reload")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={kernelActionDisabled(m, "restart")}
                             onClick={() => setKernelOp({ machine: m, action: "restart" })}
                           >
-                            <RotateCcw className="mr-2 h-4 w-4" />
+                            <RotateCcw className="h-4 w-4" />
                             {t("machine.operations.restart")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
                             disabled={kernelActionDisabled(m, "stop")}
                             onClick={() => setKernelOp({ machine: m, action: "stop" })}
                           >
-                            <Square className="mr-2 h-4 w-4" />
+                            <Square className="h-4 w-4" />
                             {t("machine.operations.stop")}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setDeleting(m)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            {t("machine.messages.deleteButton")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setDeleting(m)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -650,6 +644,11 @@ export function MachineListPage() {
       <MachineDetailDialog
         machine={viewing}
         onOpenChange={(v) => !v && setViewing(null)}
+      />
+
+      <MachineLogsDialog
+        machine={viewingLogs}
+        onOpenChange={(v) => !v && setViewingLogs(null)}
       />
 
       <ConfirmDialog
@@ -1250,16 +1249,6 @@ function MachineDetailDialog({
   const [historyLoading, setHistoryLoading] = useState(false);
   const [nodes, setNodes] = useState<any[] | null>(null);
   const [nodesLoading, setNodesLoading] = useState(false);
-  const [logLines, setLogLines] = useState<string[]>([]);
-  const [logsLoading, setLogsLoading] = useState(false);
-  const [logsMeta, setLogsMeta] = useState<{
-    online?: boolean;
-    stale?: boolean;
-    updated_at?: number | null;
-    message?: string;
-  }>({});
-  const logBoxRef = useRef<HTMLPreElement | null>(null);
-
   // Time range state
   const RANGES = [
     { label: "1h", hours: 1 },
@@ -1318,45 +1307,12 @@ function MachineDetailDialog({
     }
   }, [machine]);
 
-  const loadLogs = useCallback(
-    async (refresh = true) => {
-      if (!machine) return;
-      setLogsLoading(true);
-      try {
-        const res = await getMachineLogs(machine.id, { limit: 500, refresh });
-        const lines = Array.isArray(res?.lines) ? res.lines : [];
-        setLogLines(lines);
-        setLogsMeta({
-          online: res?.online,
-          stale: res?.stale,
-          updated_at: res?.updated_at,
-          message: res?.message,
-        });
-        // scroll after paint
-        requestAnimationFrame(() => {
-          if (logBoxRef.current) {
-            logBoxRef.current.scrollTop = logBoxRef.current.scrollHeight;
-          }
-        });
-      } catch (e) {
-        toast.error(t("machine.logs.fetchFailed"));
-      } finally {
-        setLogsLoading(false);
-      }
-    },
-    [machine, t],
-  );
-
   useEffect(() => {
     if (machine) {
       loadToken();
       loadCmd();
       loadHistory(RANGES[rangeIdx].hours);
       loadNodes();
-      loadLogs(true);
-    } else {
-      setLogLines([]);
-      setLogsMeta({});
     }
   }, [machine]);
 
@@ -1420,14 +1376,7 @@ function MachineDetailDialog({
                     </Badge>
                     <Badge
                       variant={!machine.is_active ? "secondary" : machine.is_online ? "success" : "destructive"}
-                      className="flex items-center gap-1"
                     >
-                      <span
-                        className={cn(
-                          "h-2 w-2 rounded-full",
-                          !machine.is_active ? "bg-muted-foreground" : machine.is_online ? "bg-emerald-500" : "bg-destructive",
-                        )}
-                      />
                       {!machine.is_active
                         ? t("machine.columns.inactive")
                         : machine.is_online
@@ -1706,94 +1655,7 @@ function MachineDetailDialog({
             </CardContent>
           </Card>
 
-          {/* ─── 卡片 5: 运行日志 ─── */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <ScrollText className="h-4 w-4 text-muted-foreground" />
-                  {t("machine.logs.title")}
-                </CardTitle>
-                <div className="flex flex-wrap items-center gap-2">
-                  {logsMeta.updated_at ? (
-                    <span className="text-xs text-muted-foreground font-mono">
-                      {t("machine.logs.updatedAt", {
-                        time: formatDate(logsMeta.updated_at),
-                      })}
-                    </span>
-                  ) : null}
-                  <Badge variant="secondary" className="text-xs font-mono">
-                    {t("machine.logs.lineCount", { count: logLines.length })}
-                  </Badge>
-                  {logsMeta.stale ? (
-                    <Badge variant="outline" className="text-xs">
-                      {t("machine.logs.stale")}
-                    </Badge>
-                  ) : null}
-                  {logsMeta.online === false ? (
-                    <Badge variant="destructive" className="text-xs">
-                      {t("machine.logs.offline")}
-                    </Badge>
-                  ) : null}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs"
-                    disabled={logsLoading}
-                    onClick={() => loadLogs(true)}
-                  >
-                    {logsLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    )}
-                    {t("machine.logs.refresh")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs"
-                    disabled={!logLines.length}
-                    onClick={async () => {
-                      try {
-                        await copyToClipboard(logLines.join("\n"));
-                        toast.success(t("machine.logs.copied"));
-                      } catch {
-                        toast.error(t("common.copy.failed"));
-                      }
-                    }}
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    {t("machine.logs.copy")}
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                {t("machine.logs.description")}
-              </p>
-              {logsMeta.message ? (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
-                  {logsMeta.message}
-                </p>
-              ) : null}
-              {logsLoading && logLines.length === 0 ? (
-                <Skeleton className="h-[240px] rounded-lg" />
-              ) : (
-                <pre
-                  ref={logBoxRef}
-                  className="h-[280px] overflow-auto rounded-lg border bg-foreground p-3 font-mono text-[11px] leading-5 text-background"
-                >
-                  {logLines.length === 0
-                    ? t("machine.logs.empty")
-                    : logLines.join("\n")}
-                </pre>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* ─── 卡片 6: 关联节点 ─── */}
+          {/* ─── 卡片 5: 关联节点 ─── */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1913,6 +1775,159 @@ function MachineDetailDialog({
               )}
             </CardContent>
           </Card>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ─── 运行日志弹窗 ─── */
+function MachineLogsDialog({
+  machine,
+  onOpenChange,
+}: {
+  machine: Machine | null;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const [logLines, setLogLines] = useState<string[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsMeta, setLogsMeta] = useState<{
+    online?: boolean;
+    stale?: boolean;
+    updated_at?: number | null;
+    message?: string;
+  }>({});
+  const logBoxRef = useRef<HTMLPreElement | null>(null);
+
+  const loadLogs = useCallback(
+    async (refresh = true) => {
+      if (!machine) return;
+      setLogsLoading(true);
+      try {
+        const res = await getMachineLogs(machine.id, { limit: 500, refresh });
+        const lines = Array.isArray(res?.lines) ? res.lines : [];
+        setLogLines(lines);
+        setLogsMeta({
+          online: res?.online,
+          stale: res?.stale,
+          updated_at: res?.updated_at,
+          message: res?.message,
+        });
+        requestAnimationFrame(() => {
+          if (logBoxRef.current) {
+            logBoxRef.current.scrollTop = logBoxRef.current.scrollHeight;
+          }
+        });
+      } catch {
+        toast.error(t("machine.logs.fetchFailed"));
+      } finally {
+        setLogsLoading(false);
+      }
+    },
+    [machine, t],
+  );
+
+  useEffect(() => {
+    if (machine) {
+      loadLogs(true);
+    } else {
+      setLogLines([]);
+      setLogsMeta({});
+    }
+  }, [machine, loadLogs]);
+
+  if (!machine) return null;
+
+  return (
+    <Dialog open={!!machine} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
+          <DialogTitle className="flex items-center gap-2">
+            <ScrollText className="h-5 w-5" />
+            {t("machine.logs.title")}
+          </DialogTitle>
+          <DialogDescription>
+            {machine.name}
+            {logsMeta.updated_at
+              ? ` · ${t("machine.logs.updatedAt", {
+                  time: formatDate(logsMeta.updated_at),
+                })}`
+              : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {t("machine.logs.description")}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary" className="text-xs font-mono">
+                {t("machine.logs.lineCount", { count: logLines.length })}
+              </Badge>
+              {logsMeta.stale ? (
+                <Badge variant="outline" className="text-xs">
+                  {t("machine.logs.stale")}
+                </Badge>
+              ) : null}
+              {logsMeta.online === false ? (
+                <Badge variant="destructive" className="text-xs">
+                  {t("machine.logs.offline")}
+                </Badge>
+              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs"
+                disabled={logsLoading}
+                onClick={() => loadLogs(true)}
+              >
+                {logsLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                {t("machine.logs.refresh")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs"
+                disabled={!logLines.length}
+                onClick={async () => {
+                  try {
+                    await copyToClipboard(logLines.join("\n"));
+                    toast.success(t("machine.logs.copied"));
+                  } catch {
+                    toast.error(t("common.copy.failed"));
+                  }
+                }}
+              >
+                <Copy className="h-3.5 w-3.5" />
+                {t("machine.logs.copy")}
+              </Button>
+            </div>
+          </div>
+
+          {logsMeta.message ? (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              {logsMeta.message}
+            </p>
+          ) : null}
+
+          {logsLoading && logLines.length === 0 ? (
+            <Skeleton className="h-[420px] rounded-lg" />
+          ) : (
+            <pre
+              ref={logBoxRef}
+              className="h-[min(60vh,520px)] overflow-auto rounded-lg border bg-foreground p-3 font-mono text-[11px] leading-5 text-background"
+            >
+              {logLines.length === 0
+                ? t("machine.logs.empty")
+                : logLines.join("\n")}
+            </pre>
+          )}
         </div>
       </DialogContent>
     </Dialog>

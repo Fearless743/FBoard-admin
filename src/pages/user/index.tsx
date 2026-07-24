@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,9 @@ import {
   Infinity as InfinityIcon,
   CheckCircle2,
   Download,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -124,11 +127,14 @@ function avatarTone(email?: string) {
   return tones[h];
 }
 
-function trafficTone(pct: number) {
-  if (pct >= 95) return "bg-destructive";
-  if (pct >= 80) return "bg-amber-500";
-  return "bg-primary";
-}
+/** 用户列表可排序字段（与后端 applySorting 的 id 对齐） */
+const USER_SORT_FIELDS = [
+  "total_used",
+  "balance",
+  "commission_balance",
+  "online_count",
+] as const;
+type UserSortField = (typeof USER_SORT_FIELDS)[number];
 
 function expireMeta(expiredAt?: number | null) {
   if (!expiredAt) return { kind: "permanent" as const, days: null as number | null };
@@ -147,6 +153,16 @@ export function UserListPage() {
   const [qs, setQs, query] = useUrlState(
     listQuerySchema({
       email: { type: "string", default: "", debounce: 500 },
+      sort: {
+        type: "enum",
+        values: ["", ...USER_SORT_FIELDS] as readonly string[],
+        default: "",
+      },
+      order: {
+        type: "enum",
+        values: ["", "asc", "desc"] as const,
+        default: "",
+      },
     }),
   );
   const [selected, setSelected] = useState<number[]>([]);
@@ -169,12 +185,36 @@ export function UserListPage() {
     null,
   );
 
+  const activeSortField =
+    query.sort && (USER_SORT_FIELDS as readonly string[]).includes(query.sort)
+      ? (query.sort as UserSortField)
+      : "";
+  const activeSortDesc =
+    activeSortField && query.order === "asc" ? false : activeSortField ? true : null;
+
+  const toggleSort = (field: UserSortField) => {
+    // 三态：未排序 → 降序 → 升序 → 未排序
+    if (activeSortField !== field) {
+      setQs({ sort: field, order: "desc", page: 1 });
+      return;
+    }
+    if (query.order !== "asc") {
+      setQs({ sort: field, order: "asc", page: 1 });
+      return;
+    }
+    setQs({ sort: "", order: "", page: 1 });
+  };
+
   const filter: UserFilter = {
     current: query.page,
     pageSize: query.pageSize,
     filter: query.email
       ? [{ id: "email", value: query.email, logic: "and" }]
       : [],
+    sort:
+      activeSortField && activeSortDesc != null
+        ? [{ id: activeSortField, desc: activeSortDesc }]
+        : undefined,
   };
 
   const { data, isLoading } = useQuery({
@@ -216,6 +256,47 @@ export function UserListPage() {
   const handleSelect = (id: number, checked: boolean) => {
     setSelected((s) =>
       checked ? [...new Set([...s, id])] : s.filter((x) => x !== id),
+    );
+  };
+
+  const SortableHead = ({
+    field,
+    children,
+    className,
+    align = "left",
+  }: {
+    field: UserSortField;
+    children: ReactNode;
+    className?: string;
+    align?: "left" | "center" | "right";
+  }) => {
+    const active = activeSortField === field;
+    const Icon = !active
+      ? ArrowUpDown
+      : query.order === "asc"
+        ? ArrowUp
+        : ArrowDown;
+    return (
+      <TableHead className={className}>
+        <button
+          type="button"
+          onClick={() => toggleSort(field)}
+          className={cn(
+            "inline-flex w-full items-center gap-1 text-xs font-medium transition-colors hover:text-foreground",
+            align === "center" && "justify-center",
+            align === "right" && "justify-end",
+            active ? "text-foreground" : "text-muted-foreground",
+          )}
+        >
+          <span>{children}</span>
+          <Icon
+            className={cn(
+              "h-3.5 w-3.5 shrink-0",
+              active ? "text-foreground" : "text-muted-foreground/70",
+            )}
+          />
+        </button>
+      </TableHead>
     );
   };
 
@@ -299,18 +380,36 @@ export function UserListPage() {
               </TableHead>
               <TableHead className="w-14">{t("user.columns.id")}</TableHead>
               <TableHead className="min-w-[220px]">{t("user.columns.email")}</TableHead>
-              <TableHead className="w-[88px] text-center">
+              <SortableHead
+                field="online_count"
+                className="w-[100px]"
+                align="center"
+              >
                 {t("user.columns.online_count")}
-              </TableHead>
+              </SortableHead>
               <TableHead className="w-[108px] text-center">
                 {t("user.columns.status")}
               </TableHead>
               <TableHead className="min-w-[120px]">{t("user.columns.subscription")}</TableHead>
               <TableHead className="min-w-[100px]">{t("user.columns.group")}</TableHead>
-              <TableHead className="min-w-[160px]">{t("user.columns.used_traffic")}</TableHead>
+              <SortableHead field="total_used" className="min-w-[140px]">
+                {t("user.columns.used_traffic")}
+              </SortableHead>
               <TableHead className="min-w-[120px]">{t("user.columns.expire_time")}</TableHead>
-              <TableHead className="text-right">{t("user.columns.balance")}</TableHead>
-              <TableHead className="text-right">{t("user.columns.commission")}</TableHead>
+              <SortableHead
+                field="balance"
+                className="min-w-[100px]"
+                align="right"
+              >
+                {t("user.columns.balance")}
+              </SortableHead>
+              <SortableHead
+                field="commission_balance"
+                className="min-w-[100px]"
+                align="right"
+              >
+                {t("user.columns.commission")}
+              </SortableHead>
               <TableHead className="min-w-[120px]">{t("user.columns.register_time")}</TableHead>
               <TableHead className="w-20 sticky right-0 z-10 bg-card text-right">
                 {t("user.columns.actions")}
@@ -341,9 +440,6 @@ export function UserListPage() {
               users.map((u) => {
                 const used = (u.u || 0) + (u.d || 0);
                 const totalBytes = u.transfer_enable || 0;
-                const pctNum =
-                  totalBytes > 0 ? Math.min(100, (used / totalBytes) * 100) : 0;
-                const pctLabel = pctNum.toFixed(1);
                 const expire = expireMeta(u.expired_at);
                 const online = Number(u.online_count || 0);
                 const selectedRow = selected.includes(u.id);
@@ -518,38 +614,13 @@ export function UserListPage() {
                     <TableCell>
                       <button
                         type="button"
-                        className="group/traffic w-full min-w-[140px] space-y-1 text-left"
+                        className="group/traffic w-full min-w-[120px] text-left"
                         onClick={() => setTrafficRecordsUser(u)}
                       >
                         <div className="flex items-baseline justify-between gap-2 text-xs tabular-nums">
                           <span className="font-medium group-hover/traffic:text-primary">
                             {formatBytes(used)}
                           </span>
-                          <span className="text-muted-foreground">
-                            {totalBytes > 0 ? formatBytes(totalBytes) : "∞"}
-                          </span>
-                        </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                          <div
-                            className={cn(
-                              "h-full rounded-full transition-all",
-                              totalBytes > 0
-                                ? trafficTone(pctNum)
-                                : "bg-muted-foreground/30",
-                            )}
-                            style={{
-                              width: `${
-                                totalBytes > 0
-                                  ? Math.max(pctNum, used > 0 ? 3 : 0)
-                                  : used > 0
-                                    ? 8
-                                    : 0
-                              }%`,
-                            }}
-                          />
-                        </div>
-                        <div className="text-[10px] tabular-nums text-muted-foreground">
-                          {totalBytes > 0 ? `${pctLabel}%` : "—"}
                         </div>
                       </button>
                     </TableCell>

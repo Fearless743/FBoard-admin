@@ -66,8 +66,20 @@ export async function getStatRecord(type?: string) {
   return adminGet<any>("/stat/getStatRecord", { type });
 }
 
-export async function getTrafficRank(type: "node" | "user", start_time: number, end_time: number) {
-  return adminGet<TrafficRankItem[]>("/stat/getTrafficRank", { type, start_time, end_time });
+export async function getTrafficRank(
+  type: "node" | "user",
+  start_time: number,
+  end_time: number,
+): Promise<TrafficRankItem[]> {
+  // 后端返回 { timestamp, data: TrafficRankItem[] }；api 层仅在 data 为非数组对象时自动解包，
+  // 数组 payload 会保留外层，这里统一抽成列表。
+  const res = await adminGet<TrafficRankItem[] | { data?: TrafficRankItem[] }>(
+    "/stat/getTrafficRank",
+    { type, start_time, end_time },
+  );
+  if (Array.isArray(res)) return res;
+  if (res && typeof res === "object" && Array.isArray(res.data)) return res.data;
+  return [];
 }
 
 export async function getServerLastRank() {

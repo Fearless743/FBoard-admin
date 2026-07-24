@@ -2415,6 +2415,8 @@ const translations: Translations = {
       "ech": {
         "description": "Включает Encrypted Client Hello для поддерживаемых TLS-клиентов. Если конфигурация пуста, будет выполнен DNS-запрос.",
         "generate": "Авто-генерация ECH ключей",
+        "generateSuccess": "Пара ключей ECH создана",
+        "generateFailed": "Не удалось сгенерировать ключи ECH",
         "config": {
           "label": "ECH Config (PEM)",
           "placeholder": "Вставьте конфигурацию ECH в формате PEM, по одной строке на строку",

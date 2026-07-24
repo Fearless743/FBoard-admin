@@ -211,14 +211,36 @@ export async function getChildNodes(parentId: number): Promise<Server[]> {
   return Array.isArray(res) ? res : (res as any)?.data || [];
 }
 
+/**
+ * Reality 密钥优先在前端本地生成（Web Crypto X25519）；
+ * 极少数不支持 X25519 的环境回退后端接口。
+ */
 export async function generateRealityKey() {
-  return adminGet<{ public_key: string; private_key: string }>("/server/manage/generate-reality-key");
+  try {
+    const { generateRealityKeyPair } = await import("@/lib/crypto-keys");
+    return await generateRealityKeyPair();
+  } catch {
+    return adminGet<{
+      public_key: string;
+      private_key: string;
+      short_id?: string;
+    }>("/server/manage/generate-reality-key");
+  }
 }
 
+/**
+ * Sudoku Master 密钥在前端本地生成（@noble/curves Ed25519）；
+ * 失败时回退后端接口。
+ */
 export async function generateSudokuKey() {
-  return adminGet<{ master_public_key: string; master_private_key: string }>(
-    "/server/manage/generate-sudoku-key",
-  );
+  try {
+    const { generateSudokuMasterKeyPair } = await import("@/lib/crypto-keys");
+    return generateSudokuMasterKeyPair();
+  } catch {
+    return adminGet<{ master_public_key: string; master_private_key: string }>(
+      "/server/manage/generate-sudoku-key",
+    );
+  }
 }
 
 export interface VirtualNode {
@@ -241,8 +263,19 @@ export async function sortServers(ids: number[]) {
   return adminPost<any>("/server/manage/sort", { ids });
 }
 
-export async function generateEchKey() {
-  return adminGet<any>("/server/manage/generateEchKey");
+/**
+ * ECH 密钥/配置在前端本地生成（draft-esni-18 PEM）；
+ * 失败时回退后端接口。
+ */
+export async function generateEchKey(publicName?: string) {
+  try {
+    const { generateEchKeyPair } = await import("@/lib/crypto-keys");
+    return generateEchKeyPair(publicName);
+  } catch {
+    return adminGet<{ key: string; config: string }>("/server/manage/generateEchKey", {
+      public_name: publicName || "ech.example.com",
+    });
+  }
 }
 
 /* ============ 协议定义 ============ */

@@ -2389,6 +2389,8 @@ const translations: Translations = {
       "ech": {
         "description": "为支持的 TLS 客户端启用 Encrypted Client Hello。留空配置时会尝试通过 DNS 查询。",
         "generate": "自动生成 ECH 密钥对",
+        "generateSuccess": "ECH 密钥对已生成",
+        "generateFailed": "生成 ECH 密钥失败",
         "config": {
           "label": "ECH 配置 (PEM)",
           "placeholder": "粘贴 PEM 格式的 ECH 配置，每行一段内容",
