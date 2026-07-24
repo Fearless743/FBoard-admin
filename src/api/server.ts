@@ -211,36 +211,16 @@ export async function getChildNodes(parentId: number): Promise<Server[]> {
   return Array.isArray(res) ? res : (res as any)?.data || [];
 }
 
-/**
- * Reality 密钥优先在前端本地生成（Web Crypto X25519）；
- * 极少数不支持 X25519 的环境回退后端接口。
- */
+/** Reality 密钥：浏览器本地生成（Web Crypto X25519 / noble 回退） */
 export async function generateRealityKey() {
-  try {
-    const { generateRealityKeyPair } = await import("@/lib/crypto-keys");
-    return await generateRealityKeyPair();
-  } catch {
-    return adminGet<{
-      public_key: string;
-      private_key: string;
-      short_id?: string;
-    }>("/server/manage/generate-reality-key");
-  }
+  const { generateRealityKeyPair } = await import("@/lib/crypto-keys");
+  return generateRealityKeyPair();
 }
 
-/**
- * Sudoku Master 密钥在前端本地生成（@noble/curves Ed25519）；
- * 失败时回退后端接口。
- */
+/** Sudoku Master 密钥：浏览器本地生成（@noble/curves Ed25519） */
 export async function generateSudokuKey() {
-  try {
-    const { generateSudokuMasterKeyPair } = await import("@/lib/crypto-keys");
-    return generateSudokuMasterKeyPair();
-  } catch {
-    return adminGet<{ master_public_key: string; master_private_key: string }>(
-      "/server/manage/generate-sudoku-key",
-    );
-  }
+  const { generateSudokuMasterKeyPair } = await import("@/lib/crypto-keys");
+  return generateSudokuMasterKeyPair();
 }
 
 export interface VirtualNode {
@@ -263,19 +243,18 @@ export async function sortServers(ids: number[]) {
   return adminPost<any>("/server/manage/sort", { ids });
 }
 
-/**
- * ECH 密钥/配置在前端本地生成（draft-esni-18 PEM）；
- * 失败时回退后端接口。
- */
+/** ECH 密钥/配置：浏览器本地生成（draft-esni-18 PEM） */
 export async function generateEchKey(publicName?: string) {
-  try {
-    const { generateEchKeyPair } = await import("@/lib/crypto-keys");
-    return generateEchKeyPair(publicName);
-  } catch {
-    return adminGet<{ key: string; config: string }>("/server/manage/generateEchKey", {
-      public_name: publicName || "ech.example.com",
-    });
-  }
+  const { generateEchKeyPair } = await import("@/lib/crypto-keys");
+  return generateEchKeyPair(publicName);
+}
+
+/** Mieru 流量特征伪装：浏览器本地生成 Base64 Traffic Pattern */
+export async function generateMieruTrafficPattern() {
+  const { generateMieruTrafficPattern: gen } = await import(
+    "@/lib/mieru-traffic-pattern"
+  );
+  return { traffic_pattern: gen() };
 }
 
 /* ============ 协议定义 ============ */

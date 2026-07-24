@@ -73,7 +73,7 @@ export interface RealityKeyPair {
  */
 export async function generateRealityKeyPair(): Promise<RealityKeyPair> {
   // 优先 Web Crypto；不可用时回退 noble x25519
-  if (globalThis.crypto?.subtle?.generateKey) {
+  if (globalThis.crypto?.subtle) {
     try {
       const keyPair = (await crypto.subtle.generateKey(
         { name: "X25519" } as AlgorithmIdentifier,
@@ -119,7 +119,7 @@ export interface SudokuMasterKeyPair {
 }
 
 /**
- * Sudoku Master 密钥：与后端 SudokuKey::generateMasterKeyPair 一致。
+ * Sudoku Master 密钥（与面板侧用户密钥派生算法一致）。
  * - private: reduce(64 random bytes) 的 32-byte 标量（hex）
  * - public:  P = x·B 压缩 Edwards 点（hex）
  * 不做 clamp（标量已是 canonical）。
@@ -150,7 +150,7 @@ export interface EchKeyPair {
 }
 
 /**
- * 生成 ECH 密钥/配置 PEM（draft-ietf-tls-esni-18），与后端 ManageController::generateEchKey 一致。
+ * 生成 ECH 密钥/配置 PEM（draft-ietf-tls-esni-18）。
  */
 export function generateEchKeyPair(
   publicName = "ech.example.com",

@@ -2836,9 +2836,11 @@ const translations: Translations = {
           "placeholder": "Select transport protocol"
         },
         "traffic_pattern": {
-          "label": "Traffic Pattern (Base64)",
-          "placeholder": "Enter Base64 string for network fine-tuning",
-          "success": "Traffic pattern generated"
+          "label": "Traffic fingerprint camouflage (Base64)",
+          "placeholder": "Leave empty for default, or click the button to generate",
+          "description": "Optional. Official mieru Traffic Pattern (Base64) for anti-DPI shaping such as TCP fragmentation / nonce prefix. Export via mita/mieru export traffic-pattern.",
+          "generate": "Generate traffic fingerprint camouflage",
+          "success": "Traffic fingerprint camouflage generated"
         }
       },
       "cert_config": {

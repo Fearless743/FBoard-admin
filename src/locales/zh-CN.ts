@@ -2810,9 +2810,11 @@ const translations: Translations = {
           "placeholder": "选择传输协议"
         },
         "traffic_pattern": {
-          "label": "流量 (Base64)",
-          "placeholder": "请输入 Base64 字符串用于微调网络行为",
-          "success": "流量模式已生成"
+          "label": "流量特征伪装 (Base64)",
+          "placeholder": "留空使用默认；或点击右侧按钮生成",
+          "description": "可选。官方 mieru Traffic Pattern 的 Base64 串，用于 TCP 分片 / Nonce 前缀等抗 DPI 流量整形；可用 mita/mieru export traffic-pattern 导出。",
+          "generate": "生成流量特征伪装",
+          "success": "流量特征伪装已生成"
         }
       },
       "cert_config": {

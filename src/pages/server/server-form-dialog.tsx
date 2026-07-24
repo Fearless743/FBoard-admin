@@ -964,69 +964,9 @@ function ProtocolConfigFields({
         }
 
         if (field.type === "object" && field.fields) {
-          const isEchObject =
-            key === "ech" &&
-            Object.prototype.hasOwnProperty.call(field.fields, "config") &&
-            Object.prototype.hasOwnProperty.call(field.fields, "key");
           return (
             <div key={key} className="space-y-2 rounded-md border p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label className="text-sm font-medium">{fieldName}</Label>
-                {isEchObject ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 shrink-0"
-                    onClick={async () => {
-                      try {
-                        const { generateEchKey } = await import("@/api/server");
-                        // 优先用 query_server_name / 同级 server_name 作 public_name
-                        const qsn = watch(
-                          `protocol_settings.${fieldPath}.query_server_name`,
-                        ) as string | undefined;
-                        const parentPrefix = prefix || "";
-                        const sni =
-                          (watch(
-                            `protocol_settings.${parentPrefix ? `${parentPrefix}.` : ""}server_name`,
-                          ) as string | undefined) ||
-                          (watch("protocol_settings.tls_settings.server_name") as
-                            | string
-                            | undefined) ||
-                          (watch("protocol_settings.tls.server_name") as
-                            | string
-                            | undefined);
-                        const publicName =
-                          (qsn && String(qsn).trim()) ||
-                          (sni && String(sni).trim()) ||
-                          "ech.example.com";
-                        const res = await generateEchKey(publicName);
-                        setValue(
-                          `protocol_settings.${fieldPath}.key`,
-                          res.key,
-                          { shouldDirty: true, shouldValidate: true },
-                        );
-                        setValue(
-                          `protocol_settings.${fieldPath}.config`,
-                          res.config,
-                          { shouldDirty: true, shouldValidate: true },
-                        );
-                        setValue(
-                          `protocol_settings.${fieldPath}.enabled`,
-                          true,
-                          { shouldDirty: true },
-                        );
-                        toast.success(t("server.dynamic_form.ech.generateSuccess"));
-                      } catch {
-                        toast.error(t("server.dynamic_form.ech.generateFailed"));
-                      }
-                    }}
-                  >
-                    <RefreshCw className="mr-1 h-3.5 w-3.5" />
-                    {t("server.dynamic_form.ech.generate")}
-                  </Button>
-                ) : null}
-              </div>
+              <Label className="text-sm font-medium">{fieldName}</Label>
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
               <ProtocolConfigFields
                 fields={field.fields}
@@ -1359,35 +1299,203 @@ function ProtocolConfigFields({
           );
         }
 
-        // Sudoku master keys: render once as a combined "one-click generate" block
+        // ECH 配置：多行 PEM + 输入框右上角刷新按钮，一键填 key/config 并启用 ECH
         if (
-          !prefix &&
-          (key === "master_public_key" || key === "master_private_key") &&
-          Object.prototype.hasOwnProperty.call(fields, "master_public_key") &&
-          Object.prototype.hasOwnProperty.call(fields, "master_private_key")
+          key === "config" &&
+          (prefix === "ech" || prefix.endsWith(".ech"))
         ) {
-          if (key === "master_private_key") {
-            return null; // rendered with public key block
-          }
           return (
-            <div
-              key="sudoku-master-keys"
-              className="space-y-3 rounded-md border p-3"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <Label className="text-sm font-medium">
-                    {t("server.dynamic_form.sudoku.keyPairTitle")}
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {t("server.dynamic_form.sudoku.keyPairDescription")}
-                  </p>
-                </div>
+            <div key={key} className="space-y-1.5">
+              <Label>
+                {fieldName}
+                {requiredFor(fieldPath) ? (
+                  <span className="ml-0.5 text-destructive">*</span>
+                ) : null}
+              </Label>
+              {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
+              <div className="relative">
+                <Controller
+                  control={control}
+                  name={`protocol_settings.${fieldPath}`}
+                  rules={
+                    requiredFor(fieldPath)
+                      ? {
+                          validate: (v) =>
+                            v !== undefined &&
+                            v !== null &&
+                            String(v).trim() !== "",
+                        }
+                      : undefined
+                  }
+                  render={({ field: controllerField }) => (
+                    <textarea
+                      className={cn(
+                        "flex w-full min-h-[140px] rounded-md border border-input bg-transparent px-3 py-2 pr-10 text-xs font-mono",
+                        errorFor(fieldPath) && "border-destructive",
+                      )}
+                      placeholder={
+                        field.placeholder ||
+                        t("common.inputField", { name: fieldName })
+                      }
+                      value={controllerField.value ?? ""}
+                      onChange={(e) => controllerField.onChange(e.target.value)}
+                      onBlur={controllerField.onBlur}
+                      ref={controllerField.ref}
+                    />
+                  )}
+                />
                 <Button
                   type="button"
-                  variant="default"
-                  size="sm"
-                  className="shrink-0"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+                  title={
+                    t("server.dynamic_form.ech.generate") ||
+                    t("server.form.virtualNode.generateKeyPair")
+                  }
+                  onClick={async () => {
+                    try {
+                      const { generateEchKey } = await import("@/api/server");
+                      // 优先用 query_server_name / 同级 server_name 作 public_name
+                      const qsn = watch(
+                        `protocol_settings.${prefix}.query_server_name`,
+                      ) as string | undefined;
+                      const parentPrefix = prefix.includes(".")
+                        ? prefix.slice(0, prefix.lastIndexOf("."))
+                        : "";
+                      const sni =
+                        (watch(
+                          `protocol_settings.${parentPrefix ? `${parentPrefix}.` : ""}server_name`,
+                        ) as string | undefined) ||
+                        (watch(
+                          "protocol_settings.tls_settings.server_name",
+                        ) as string | undefined) ||
+                        (watch("protocol_settings.tls.server_name") as
+                          | string
+                          | undefined);
+                      const publicName =
+                        (qsn && String(qsn).trim()) ||
+                        (sni && String(sni).trim()) ||
+                        "ech.example.com";
+                      const res = await generateEchKey(publicName);
+                      setValue(`protocol_settings.${prefix}.key`, res.key, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      setValue(
+                        `protocol_settings.${prefix}.config`,
+                        res.config,
+                        { shouldDirty: true, shouldValidate: true },
+                      );
+                      setValue(`protocol_settings.${prefix}.enabled`, true, {
+                        shouldDirty: true,
+                      });
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+              {errorFor(fieldPath) ? (
+                <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+              ) : null}
+            </div>
+          );
+        }
+
+        // Mieru 流量特征伪装：与 Reality 公钥同款 — 输入框内嵌刷新按钮生成 Base64
+        if (key === "traffic_pattern" && !prefix) {
+          return (
+            <div key={key} className="space-y-1.5">
+              <Label>
+                {fieldName}
+                {requiredFor(fieldPath) ? (
+                  <span className="ml-0.5 text-destructive">*</span>
+                ) : null}
+              </Label>
+              {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
+              <div className="relative">
+                <Input
+                  placeholder={
+                    field.placeholder ||
+                    t("common.inputField", { name: fieldName })
+                  }
+                  className="pr-10 font-mono text-xs"
+                  {...register(`protocol_settings.${fieldPath}`, {
+                    ...(requiredFor(fieldPath)
+                      ? {
+                          required: true,
+                          validate: (v: any) => !!String(v ?? "").trim(),
+                        }
+                      : {}),
+                  })}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
+                  title={t("server.dynamic_form.mieru.traffic_pattern.generate")}
+                  onClick={async () => {
+                    try {
+                      const { generateMieruTrafficPattern } =
+                        await import("@/api/server");
+                      const res = await generateMieruTrafficPattern();
+                      setValue(
+                        "protocol_settings.traffic_pattern",
+                        res.traffic_pattern,
+                        { shouldValidate: true, shouldDirty: true },
+                      );
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+              {errorFor(fieldPath) ? (
+                <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+              ) : null}
+            </div>
+          );
+        }
+
+        // Sudoku master public key：与 Reality 公钥同款 — 输入框内嵌刷新按钮，一键填公私钥
+        if (key === "master_public_key" && !prefix) {
+          return (
+            <div key={key} className="space-y-1.5">
+              <Label>
+                {fieldName}
+                {requiredFor(fieldPath) ? (
+                  <span className="ml-0.5 text-destructive">*</span>
+                ) : null}
+              </Label>
+              {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
+              <div className="relative">
+                <Input
+                  placeholder={
+                    field.placeholder ||
+                    t("common.inputField", { name: fieldName })
+                  }
+                  className="pr-10"
+                  {...register(`protocol_settings.${fieldPath}`, {
+                    ...(requiredFor(fieldPath)
+                      ? {
+                          required: true,
+                          validate: (v: any) => !!String(v ?? "").trim(),
+                        }
+                      : {}),
+                  })}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
+                  title={t("server.form.virtualNode.generateKeyPair")}
                   onClick={async () => {
                     try {
                       const { generateSudokuKey } =
@@ -1396,81 +1504,36 @@ function ProtocolConfigFields({
                       setValue(
                         "protocol_settings.master_public_key",
                         res.master_public_key,
-                        { shouldDirty: true },
+                        { shouldValidate: true, shouldDirty: true },
                       );
                       setValue(
                         "protocol_settings.master_private_key",
                         res.master_private_key,
-                        { shouldDirty: true },
+                        { shouldValidate: true, shouldDirty: true },
                       );
-                      toast.success(t("server.dynamic_form.sudoku.generateSuccess"));
-                    } catch (e) {
-                      toast.error(t("server.dynamic_form.sudoku.generateFailed"));
+                    } catch {
+                      /* ignore */
                     }
                   }}
                 >
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                  {t("server.dynamic_form.sudoku.generate")}
+                  <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="space-y-1.5">
-                <Label>
-                  Master Public Key
-                  {requiredFor("master_public_key") ? (
-                    <span className="ml-0.5 text-destructive">*</span>
-                  ) : null}
-                </Label>
-                <Input
-                  placeholder={t("server.dynamic_form.sudoku.publicPlaceholder")}
-                  className="font-mono text-xs"
-                  {...register("protocol_settings.master_public_key", {
-                    ...(requiredFor("master_public_key")
-                      ? {
-                          required: true,
-                          validate: (v: any) => !!String(v ?? "").trim(),
-                        }
-                      : {}),
-                  })}
-                />
-                {errorFor("master_public_key") ? (
-                  <p className="text-xs text-destructive">
-                    {errorFor("master_public_key")}
-                  </p>
-                ) : null}
-              </div>
-              <div className="space-y-1.5">
-                <Label>
-                  Master Private Key
-                  {requiredFor("master_private_key") ? (
-                    <span className="ml-0.5 text-destructive">*</span>
-                  ) : null}
-                </Label>
-                <Input
-                  placeholder={t("server.dynamic_form.sudoku.privatePlaceholder")}
-                  className="font-mono text-xs"
-                  {...register("protocol_settings.master_private_key", {
-                    ...(requiredFor("master_private_key")
-                      ? {
-                          required: true,
-                          validate: (v: any) => !!String(v ?? "").trim(),
-                        }
-                      : {}),
-                  })}
-                />
-                {errorFor("master_private_key") ? (
-                  <p className="text-xs text-destructive">
-                    {errorFor("master_private_key")}
-                  </p>
-                ) : null}
-              </div>
+              {errorFor(fieldPath) ? (
+                <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+              ) : null}
             </div>
           );
         }
 
-        // 多行 string（如 anytls padding_scheme 默认含换行）用 textarea
+        // 多行 string（anytls padding_scheme / ECH PEM 等）用 textarea
+        const isEchPemField =
+          (key === "config" || key === "key") &&
+          (prefix === "ech" || prefix.endsWith(".ech"));
         const isMultilineString =
           field.type === "string" &&
           (key === "padding_scheme" ||
+            isEchPemField ||
             (typeof field.default === "string" && field.default.includes("\n")));
 
         if (isMultilineString) {
