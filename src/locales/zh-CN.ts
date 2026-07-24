@@ -863,6 +863,8 @@ const translations: Translations = {
           "success": "删除成功"
         },
         "price_period": {
+          "hourly": "时付",
+          "daily": "日付",
           "monthly": "月付",
           "quarterly": "季付",
           "half_yearly": "半年付",
@@ -873,6 +875,8 @@ const translations: Translations = {
           "reset_traffic": "重置包",
           "no_price": "无价格",
           "unit": {
+            "hour": "元/时",
+            "day": "元/天",
             "month": "元/月",
             "quarter": "元/季",
             "half_year": "元/半年",
@@ -1292,6 +1296,8 @@ const translations: Translations = {
             "success": "删除成功"
           },
           "price_period": {
+            "hourly": "时付",
+            "daily": "日付",
             "monthly": "月付",
             "quarterly": "季付",
             "half_yearly": "半年付",
@@ -1301,6 +1307,8 @@ const translations: Translations = {
             "onetime": "流量包",
             "reset_traffic": "重置包",
             "unit": {
+              "hour": "元/时",
+              "day": "元/天",
               "month": "元/月",
               "quarter": "元/季",
               "half_year": "元/半年",
@@ -3098,6 +3106,8 @@ const translations: Translations = {
       }
     },
     "period": {
+      "hourly": "小时",
+      "daily": "天",
       "monthly": "月",
       "quarterly": "季度",
       "half_yearly": "半年",
@@ -3908,6 +3918,8 @@ const translations: Translations = {
       "RESET_FLOW": "流量重置"
     },
     "period": {
+      "hour_price": "时付",
+      "day_price": "日付",
       "month_price": "月付",
       "quarter_price": "季付",
       "half_year_price": "半年付",
@@ -3916,6 +3928,8 @@ const translations: Translations = {
       "three_year_price": "三年付",
       "onetime_price": "一次性",
       "reset_price": "流量重置包",
+      "hourly": "小时",
+      "daily": "天",
       "monthly": "月",
       "quarterly": "季度",
       "half_yearly": "半年",

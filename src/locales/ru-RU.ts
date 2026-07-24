@@ -863,6 +863,8 @@ const translations: Translations = {
           "success": "Тариф успешно удален"
         },
         "price_period": {
+          "hourly": "Почасово",
+          "daily": "Ежедневно",
           "monthly": "Ежемесячно",
           "quarterly": "Ежеквартально",
           "half_yearly": "Раз в полгода",
@@ -873,6 +875,8 @@ const translations: Translations = {
           "reset_traffic": "Сброс трафика",
           "no_price": "Нет цены",
           "unit": {
+            "hour": "/час",
+            "day": "/день",
             "month": "/мес",
             "quarter": "/квартал",
             "half_year": "/полгода",
@@ -1403,6 +1407,8 @@ const translations: Translations = {
             "success": "Удалено"
           },
           "price_period": {
+            "hourly": "Час",
+            "daily": "День",
             "monthly": "Месяц",
             "quarterly": "Квартал",
             "half_yearly": "Полгода",
@@ -1412,6 +1418,8 @@ const translations: Translations = {
             "onetime": "Единоразово",
             "reset_traffic": "Сброс трафика",
             "unit": {
+              "hour": "/час",
+              "day": "/день",
               "month": "/мес",
               "quarter": "/кв",
               "half_year": "/п-года",
@@ -3099,6 +3107,8 @@ const translations: Translations = {
       }
     },
     "period": {
+      "hourly": "Почасово",
+      "daily": "Ежедневно",
       "monthly": "Ежемесячно",
       "quarterly": "Ежеквартально",
       "half_yearly": "Раз в полгода",
@@ -3910,6 +3920,8 @@ const translations: Translations = {
       "RESET_FLOW": "Сброс трафика"
     },
     "period": {
+      "hour_price": "Почасово",
+      "day_price": "Ежедневно",
       "month_price": "Ежемесячно",
       "quarter_price": "Ежеквартально",
       "half_year_price": "Раз в полгода",
@@ -3918,6 +3930,8 @@ const translations: Translations = {
       "three_year_price": "Раз в 3 года",
       "onetime_price": "Единоразово",
       "reset_price": "Пакет сброса",
+      "hourly": "Почасово",
+      "daily": "Ежедневно",
       "half_yearly": "Раз в полгода",
       "monthly": "Ежемесячно",
       "onetime": "Единоразово",

@@ -16,6 +16,8 @@ export interface Plan {
   reset_traffic_method?: number | null;
   content?: string | null;
   prices?: Record<string, number | null>;
+  hour_price?: number | null;
+  day_price?: number | null;
   month_price?: number | null;
   quarter_price?: number | null;
   half_year_price?: number | null;

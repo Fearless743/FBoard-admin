@@ -863,6 +863,8 @@ const translations: Translations = {
           "success": "Successfully deleted"
         },
         "price_period": {
+          "hourly": "Hourly",
+          "daily": "Daily",
           "monthly": "Monthly",
           "quarterly": "Quarterly",
           "half_yearly": "Half Yearly",
@@ -873,6 +875,8 @@ const translations: Translations = {
           "reset_traffic": "Reset Traffic",
           "no_price": "No Price",
           "unit": {
+            "hour": "/hour",
+            "day": "/day",
             "month": "/month",
             "quarter": "/quarter",
             "half_year": "/half year",
@@ -1403,6 +1407,8 @@ const translations: Translations = {
             "success": "Successfully deleted"
           },
           "price_period": {
+            "hourly": "Hourly",
+            "daily": "Daily",
             "monthly": "Monthly",
             "quarterly": "Quarterly",
             "half_yearly": "Half Yearly",
@@ -1412,6 +1418,8 @@ const translations: Translations = {
             "onetime": "One Time",
             "reset_traffic": "Reset Traffic",
             "unit": {
+              "hour": "/hour",
+              "day": "/day",
               "month": "/month",
               "quarter": "/quarter",
               "half_year": "/half year",
@@ -3099,6 +3107,8 @@ const translations: Translations = {
       }
     },
     "period": {
+      "hourly": "Hourly",
+      "daily": "Daily",
       "monthly": "Monthly",
       "quarterly": "Quarterly",
       "half_yearly": "Half Yearly",
@@ -3909,6 +3919,8 @@ const translations: Translations = {
       "RESET_FLOW": "Reset Traffic"
     },
     "period": {
+      "hour_price": "Hourly",
+      "day_price": "Daily",
       "month_price": "Monthly",
       "quarter_price": "Quarterly",
       "half_year_price": "Semi-annually",
@@ -3917,6 +3929,8 @@ const translations: Translations = {
       "three_year_price": "3 Years",
       "onetime_price": "One-time",
       "reset_price": "Reset Package",
+      "hourly": "Hourly",
+      "daily": "Daily",
       "half_yearly": "Semi-annually",
       "monthly": "Monthly",
       "onetime": "One-time",

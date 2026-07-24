@@ -139,6 +139,8 @@ const commissionVariant: Record<
 
 /** 筛选用 period value → 展示用长 label key */
 const PERIOD_FILTERS: Array<{ value: string; labelKey: string }> = [
+  { value: "hourly", labelKey: "order.period.hour_price" },
+  { value: "daily", labelKey: "order.period.day_price" },
   { value: "monthly", labelKey: "order.period.month_price" },
   { value: "quarterly", labelKey: "order.period.quarter_price" },
   { value: "half_yearly", labelKey: "order.period.half_year_price" },
@@ -150,6 +152,8 @@ const PERIOD_FILTERS: Array<{ value: string; labelKey: string }> = [
 ];
 
 const ASSIGN_PERIODS = [
+  "hour_price",
+  "day_price",
   "month_price",
   "quarter_price",
   "half_year_price",

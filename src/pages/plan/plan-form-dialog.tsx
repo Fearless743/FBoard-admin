@@ -52,6 +52,8 @@ const RESET_METHOD_OPTIONS: readonly { key: string; value: number | null }[] = [
 const PRICE_FIELDS: {
   key: keyof FormValues;
   period:
+    | "hourly"
+    | "daily"
     | "monthly"
     | "quarterly"
     | "half_yearly"
@@ -61,6 +63,8 @@ const PRICE_FIELDS: {
     | "onetime"
     | "reset_traffic";
 }[] = [
+  { key: "hour_price", period: "hourly" },
+  { key: "day_price", period: "daily" },
   { key: "month_price", period: "monthly" },
   { key: "quarter_price", period: "quarterly" },
   { key: "half_year_price", period: "half_yearly" },
@@ -79,6 +83,8 @@ interface FormValues {
   device_limit: number | null;
   capacity_limit: number | null;
   group_id: number | null;
+  hour_price: number | null;
+  day_price: number | null;
   month_price: number | null;
   quarter_price: number | null;
   half_year_price: number | null;
@@ -104,6 +110,8 @@ function emptyValues(): FormValues {
     device_limit: null,
     capacity_limit: null,
     group_id: null,
+    hour_price: null,
+    day_price: null,
     month_price: null,
     quarter_price: null,
     half_year_price: null,
@@ -184,6 +192,8 @@ export function PlanFormDialog({
       capacity_limit: plan?.capacity_limit ?? null,
       group_id: plan?.group_id ?? null,
       // 价格 0 表示免费，需与 null（未设置）区分
+      hour_price: priceFromApi(pr.hourly),
+      day_price: priceFromApi(pr.daily),
       month_price: priceFromApi(pr.monthly),
       quarter_price: priceFromApi(pr.quarterly),
       half_year_price: priceFromApi(pr.half_yearly),
@@ -232,6 +242,8 @@ export function PlanFormDialog({
         renew: values.renew ? 1 : 0,
         content: values.content || "",
         prices: {
+          hourly: cleanPrice(values.hour_price),
+          daily: cleanPrice(values.day_price),
           monthly: cleanPrice(values.month_price),
           quarterly: cleanPrice(values.quarter_price),
           half_yearly: cleanPrice(values.half_year_price),

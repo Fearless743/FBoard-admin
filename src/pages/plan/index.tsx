@@ -240,11 +240,31 @@ export function PlanListPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex flex-col items-end gap-0.5 text-xs">
-                        {/* 0 为合法免费价，不能用 truthy 判断 */}
-                        {p.prices?.monthly != null ? (
+                        {/* 0 为合法免费价，不能用 truthy 判断；优先展示更短周期 */}
+                        {p.prices?.hourly != null ? (
                           <span>
+                            {t("subscribe.plan.columns.price_period.hourly")}:{" "}
+                            <b className="tabular-nums">¥{Number(p.prices.hourly).toFixed(2)}</b>
+                          </span>
+                        ) : null}
+                        {p.prices?.daily != null ? (
+                          <span className={p.prices?.hourly != null ? "text-muted-foreground" : undefined}>
+                            {t("subscribe.plan.columns.price_period.daily")}:{" "}
+                            {p.prices?.hourly == null ? (
+                              <b className="tabular-nums">¥{Number(p.prices.daily).toFixed(2)}</b>
+                            ) : (
+                              <>¥{Number(p.prices.daily).toFixed(2)}</>
+                            )}
+                          </span>
+                        ) : null}
+                        {p.prices?.monthly != null ? (
+                          <span className={p.prices?.hourly != null || p.prices?.daily != null ? "text-muted-foreground" : undefined}>
                             {t("subscribe.plan.form.price.period.monthly")}:{" "}
-                            <b className="tabular-nums">¥{Number(p.prices.monthly).toFixed(2)}</b>
+                            {p.prices?.hourly == null && p.prices?.daily == null ? (
+                              <b className="tabular-nums">¥{Number(p.prices.monthly).toFixed(2)}</b>
+                            ) : (
+                              <>¥{Number(p.prices.monthly).toFixed(2)}</>
+                            )}
                           </span>
                         ) : null}
                         {p.prices?.quarterly != null ? (
@@ -265,7 +285,9 @@ export function PlanListPage() {
                             ¥{Number(p.prices.yearly).toFixed(2)}
                           </span>
                         ) : null}
-                        {p.prices?.monthly == null &&
+                        {p.prices?.hourly == null &&
+                        p.prices?.daily == null &&
+                        p.prices?.monthly == null &&
                         p.prices?.quarterly == null &&
                         p.prices?.half_yearly == null &&
                         p.prices?.yearly == null ? (

@@ -68,7 +68,7 @@ export async function markAsPaid(trade_no: string) {
 export interface AssignOrderPayload {
   email: string;
   plan_id: number;
-  period: "month_price" | "quarter_price" | "half_year_price" | "year_price" | "two_year_price" | "three_year_price" | "onetime_price" | "reset_price";
+  period: "hour_price" | "day_price" | "month_price" | "quarter_price" | "half_year_price" | "year_price" | "two_year_price" | "three_year_price" | "onetime_price" | "reset_price";
   total_amount: number;
 }
 

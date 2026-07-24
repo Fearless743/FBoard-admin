@@ -106,6 +106,8 @@ export function UserAssignOrderDialog({ open, onOpenChange, user, onDone }: Prop
               </SelectTrigger>
               <SelectContent>
                 {[
+                  "hour_price",
+                  "day_price",
                   "month_price",
                   "quarter_price",
                   "half_year_price",
