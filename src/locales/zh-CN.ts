@@ -1268,6 +1268,29 @@ const translations: Translations = {
         "title": "新用户默认开启流量提醒",
         "description": "开启后新注册用户默认启用流量不足提醒，可在用户管理单独调整。"
       },
+      "deposit_enable": {
+        "title": "开启余额充值",
+        "description": "开启后用户可在前台创建余额充值订单并完成支付入账。"
+      },
+      "deposit_commission_enable": {
+        "title": "余额充值参与邀请返佣",
+        "description": "开启后余额充值订单将按邀请规则计算佣金。"
+      },
+      "deposit_min_amount": {
+        "title": "最低充值金额（分）",
+        "description": "用户单笔充值的最低金额，单位为分。例如 100 表示 1 元。",
+        "placeholder": "100"
+      },
+      "deposit_max_amount": {
+        "title": "最高充值金额（分）",
+        "description": "用户单笔充值的最高金额，单位为分。",
+        "placeholder": "999999900"
+      },
+      "deposit_bonus": {
+        "title": "充值赠送阶梯",
+        "description": "格式为「门槛元:赠送元」，例如 100:10 表示充值满 100 元赠送 10 元。取满足门槛的最大赠送。",
+        "placeholder": "100:10"
+      },
       "saving": "保存中...",
       "plan": {
         "title": "订阅套餐",
@@ -3915,7 +3938,8 @@ const translations: Translations = {
       "NEW": "新购",
       "RENEWAL": "续费",
       "UPGRADE": "升级",
-      "RESET_FLOW": "流量重置"
+      "RESET_FLOW": "流量重置",
+      "DEPOSIT": "余额充值"
     },
     "period": {
       "hour_price": "时付",
@@ -3928,6 +3952,7 @@ const translations: Translations = {
       "three_year_price": "三年付",
       "onetime_price": "一次性",
       "reset_price": "流量重置包",
+      "deposit": "余额充值",
       "hourly": "小时",
       "daily": "天",
       "monthly": "月",

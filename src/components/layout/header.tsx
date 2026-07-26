@@ -30,6 +30,7 @@ import { flatNav } from "@/lib/navigation";
 
 const languageLabels: Record<string, string> = {
   "zh-CN": "简体中文",
+  "zh-TW": "繁體中文",
   "en-US": "English",
   "ru-RU": "Русский",
 };
@@ -74,6 +75,17 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
         onClick={onMobileMenu}
       >
         <Menu className="h-5 w-5" />
+      </Button>
+
+      {/* 窄屏搜索入口（命令面板） */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="sm:hidden"
+        onClick={() => setSearchOpen(true)}
+        aria-label={t("search.placeholder")}
+      >
+        <Search className="h-5 w-5" />
       </Button>
 
       {/* 搜索框（触发命令面板） */}

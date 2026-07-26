@@ -110,6 +110,7 @@ const typeKey: Record<number, string> = {
   2: "RENEWAL",
   3: "UPGRADE",
   4: "RESET_FLOW",
+  5: "DEPOSIT",
 };
 
 /** 类型徽章样式：弱色区分，不抢状态列视觉 */
@@ -118,6 +119,7 @@ const typeTone: Record<number, string> = {
   2: "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300",
   3: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   4: "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
+  5: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 };
 
 const commissionKey: Record<number, string> = {
@@ -149,6 +151,7 @@ const PERIOD_FILTERS: Array<{ value: string; labelKey: string }> = [
   { value: "three_yearly", labelKey: "order.period.three_year_price" },
   { value: "onetime", labelKey: "order.period.onetime_price" },
   { value: "reset_traffic", labelKey: "order.period.reset_price" },
+  { value: "deposit", labelKey: "order.period.deposit" },
 ];
 
 const ASSIGN_PERIODS = [
@@ -169,6 +172,7 @@ const TYPE_FILTERS = [
   { value: "2", type: 2 },
   { value: "3", type: 3 },
   { value: "4", type: 4 },
+  { value: "5", type: 5 },
 ] as const;
 
 const STATUS_FILTERS = [
@@ -366,14 +370,14 @@ export function OrderListPage() {
         title={t("order.title")}
         description={t("order.description")}
         actions={
-          <Button onClick={() => setAddOpen(true)}>
+          <Button onClick={() => setAddOpen(true)} className="w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             {t("order.dialog.addOrder")}
           </Button>
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 space-y-2">
         {qs.user_id && (
           <Badge variant="secondary" className="h-8 gap-1.5 pl-2.5 pr-1 font-normal">
             <span className="text-muted-foreground">{t("order.filter.userId")}</span>
@@ -389,7 +393,7 @@ export function OrderListPage() {
             </button>
           </Badge>
         )}
-        <div className="relative min-w-[200px] max-w-sm flex-1">
+        <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("order.search.placeholder")}
@@ -398,95 +402,109 @@ export function OrderListPage() {
             className="pl-9"
           />
         </div>
-        <Select
-          value={qs.type || "__all__"}
-          onValueChange={(v) => setQs({ type: v === "__all__" ? "" : v })}
-        >
-          <SelectTrigger className="w-[130px]">
-            <SelectValue placeholder={t("order.filter.allTypes")} />
-          </SelectTrigger>
-          <SelectContent>
-            {typeOptions.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={qs.period || "__all__"}
-          onValueChange={(v) => setQs({ period: v === "__all__" ? "" : v })}
-        >
-          <SelectTrigger className="w-[130px]">
-            <SelectValue placeholder={t("order.filter.allPeriods")} />
-          </SelectTrigger>
-          <SelectContent>
-            {periodOptions.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={qs.status || "__all__"}
-          onValueChange={(v) => setQs({ status: v === "__all__" ? "" : v })}
-        >
-          <SelectTrigger className="w-[130px]">
-            <SelectValue placeholder={t("order.filter.allStatuses")} />
-          </SelectTrigger>
-          <SelectContent>
-            {statusOptions.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={qs.commission_status || "__all__"}
-          onValueChange={(v) =>
-            setQs({ commission_status: v === "__all__" ? "" : v })
-          }
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder={t("order.filter.allCommissions")} />
-          </SelectTrigger>
-          <SelectContent>
-            {commissionOptions.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9 gap-1.5 text-muted-foreground"
-            onClick={clearAllFilters}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <Select
+            value={qs.type || "__all__"}
+            onValueChange={(v) => setQs({ type: v === "__all__" ? "" : v })}
           >
-            <FilterX className="h-4 w-4" />
-            {t("order.filter.clearAll")}
-          </Button>
-        )}
+            <SelectTrigger className="w-full min-w-0 sm:w-[130px]">
+              <SelectValue placeholder={t("order.filter.allTypes")} />
+            </SelectTrigger>
+            <SelectContent>
+              {typeOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={qs.period || "__all__"}
+            onValueChange={(v) => setQs({ period: v === "__all__" ? "" : v })}
+          >
+            <SelectTrigger className="w-full min-w-0 sm:w-[130px]">
+              <SelectValue placeholder={t("order.filter.allPeriods")} />
+            </SelectTrigger>
+            <SelectContent>
+              {periodOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={qs.status || "__all__"}
+            onValueChange={(v) => setQs({ status: v === "__all__" ? "" : v })}
+          >
+            <SelectTrigger className="w-full min-w-0 sm:w-[130px]">
+              <SelectValue placeholder={t("order.filter.allStatuses")} />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={qs.commission_status || "__all__"}
+            onValueChange={(v) =>
+              setQs({ commission_status: v === "__all__" ? "" : v })
+            }
+          >
+            <SelectTrigger className="w-full min-w-0 sm:w-[150px]">
+              <SelectValue placeholder={t("order.filter.allCommissions")} />
+            </SelectTrigger>
+            <SelectContent>
+              {commissionOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="col-span-2 h-9 gap-1.5 justify-self-start text-muted-foreground sm:col-span-1"
+              onClick={clearAllFilters}
+            >
+              <FilterX className="h-4 w-4" />
+              {t("order.filter.clearAll")}
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="whitespace-nowrap">
+              <TableHead className="min-w-0 whitespace-nowrap">
                 {t("order.table.columns.tradeNo")}
               </TableHead>
-              <TableHead>{t("order.table.columns.type")}</TableHead>
-              <TableHead>{t("order.table.columns.user")}</TableHead>
-              <TableHead>{t("order.table.columns.plan")}</TableHead>
-              <TableHead className="text-right">{t("order.table.columns.amount")}</TableHead>
-              <TableHead>{t("order.table.columns.status")}</TableHead>
-              <TableHead>{t("order.table.columns.commission")}</TableHead>
-              <TableHead className="w-[56px] text-right">
+              <TableHead className="hidden sm:table-cell">
+                {t("order.table.columns.type")}
+              </TableHead>
+              <TableHead className="hidden min-w-0 md:table-cell">
+                {t("order.table.columns.user")}
+              </TableHead>
+              <TableHead className="min-w-0">
+                {t("order.table.columns.plan")}
+              </TableHead>
+              <TableHead className="text-right whitespace-nowrap">
+                {t("order.table.columns.amount")}
+              </TableHead>
+              <TableHead className="hidden sm:table-cell">
+                {t("order.table.columns.status")}
+              </TableHead>
+              <TableHead className="hidden lg:table-cell">
+                {t("order.table.columns.commission")}
+              </TableHead>
+              <TableHead className="w-12 text-right sm:w-[56px]">
                 {t("order.table.columns.actions")}
               </TableHead>
             </TableRow>
@@ -496,7 +514,15 @@ export function OrderListPage() {
               Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
                   {Array.from({ length: COL_COUNT }).map((_, j) => (
-                    <TableCell key={j}>
+                    <TableCell
+                      key={j}
+                      className={cn(
+                        j === 1 && "hidden sm:table-cell",
+                        j === 2 && "hidden md:table-cell",
+                        j === 5 && "hidden sm:table-cell",
+                        j === 6 && "hidden lg:table-cell",
+                      )}
+                    >
                       <Skeleton
                         className={cn("h-4 w-full", j === 0 && "h-9 w-44")}
                       />
@@ -525,6 +551,64 @@ export function OrderListPage() {
                   commissionAction?.trade_no === o.trade_no ||
                   !!destructiveAction;
 
+                const typeBadge = (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-5 shrink-0 whitespace-nowrap border px-1.5 text-[11px] font-normal sm:px-2.5 sm:text-xs",
+                      typeTone[o.type as number],
+                    )}
+                  >
+                    {t(
+                      `order.type.${typeKey[o.type as number] ?? o.type}`,
+                      String(o.type),
+                    )}
+                  </Badge>
+                );
+
+                const statusBadge = (
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 shrink-0 rounded-full",
+                        statusDot[o.status as number] ?? "bg-muted-foreground",
+                      )}
+                    />
+                    <Badge
+                      variant={
+                        statusVariant[o.status as number] ?? "secondary"
+                      }
+                      className="h-5 shrink-0 whitespace-nowrap px-1.5 text-[11px] font-normal sm:px-2.5 sm:text-xs"
+                    >
+                      {t(
+                        `order.status.${statusKey[o.status as number] ?? o.status}`,
+                        String(o.status),
+                      )}
+                    </Badge>
+                  </div>
+                );
+
+                const userCell = email ? (
+                  <button
+                    type="button"
+                    className="max-w-full truncate text-left text-sm text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-ring rounded"
+                    title={email}
+                    onClick={() =>
+                      navigate(
+                        `${adminPath("user")}?email=${encodeURIComponent(email)}`,
+                      )
+                    }
+                  >
+                    {email}
+                  </button>
+                ) : o.user_id ? (
+                  <span className="font-mono text-xs text-muted-foreground">
+                    #{o.user_id}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                );
+
                 return (
                   <TableRow
                     key={o.id}
@@ -534,12 +618,12 @@ export function OrderListPage() {
                       o.status === 3 && "bg-emerald-500/[0.02]",
                     )}
                   >
-                    <TableCell className="whitespace-nowrap">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1">
+                    <TableCell className="align-top sm:align-middle">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex min-w-0 items-center gap-1">
                           <button
                             type="button"
-                            className="font-mono text-xs text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-ring rounded whitespace-nowrap"
+                            className="max-w-[11rem] truncate font-mono text-xs text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-ring rounded sm:max-w-none sm:whitespace-nowrap"
                             title={o.trade_no}
                             onClick={() => openDetail(o)}
                           >
@@ -550,7 +634,7 @@ export function OrderListPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                                className="hidden h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 sm:inline-flex"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   void copyTradeNo(o.trade_no);
@@ -567,48 +651,24 @@ export function OrderListPage() {
                         <p className="text-[11px] text-muted-foreground tabular-nums">
                           {formatDate(o.created_at)}
                         </p>
+                        {/* 窄屏：类型/状态/用户并入订单号列 */}
+                        <div className="flex flex-wrap items-center gap-1 pt-0.5 sm:hidden">
+                          {typeBadge}
+                          {statusBadge}
+                        </div>
+                        <div className="min-w-0 md:hidden">{userCell}</div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "h-5 border font-normal",
-                          typeTone[o.type as number],
-                        )}
-                      >
-                        {t(
-                          `order.type.${typeKey[o.type as number] ?? o.type}`,
-                          String(o.type),
-                        )}
-                      </Badge>
+                    <TableCell className="hidden sm:table-cell">
+                      {typeBadge}
                     </TableCell>
-                    <TableCell>
-                      {email ? (
-                        <button
-                          type="button"
-                          className="max-w-[160px] truncate text-left text-sm text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-ring rounded"
-                          title={email}
-                          onClick={() =>
-                            navigate(
-                              `${adminPath("user")}?email=${encodeURIComponent(email)}`,
-                            )
-                          }
-                        >
-                          {email}
-                        </button>
-                      ) : o.user_id ? (
-                        <span className="font-mono text-xs text-muted-foreground">
-                          #{o.user_id}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
+                    <TableCell className="hidden min-w-0 md:table-cell">
+                      <div className="max-w-[180px] truncate">{userCell}</div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-0 align-top sm:align-middle">
                       <div className="min-w-0 space-y-0.5">
                         <p
-                          className="truncate text-sm font-medium"
+                          className="line-clamp-2 text-sm font-medium sm:line-clamp-1 sm:truncate"
                           title={
                             o.plan?.name ||
                             (o.plan_id ? `#${o.plan_id}` : undefined)
@@ -622,33 +682,27 @@ export function OrderListPage() {
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <span className="tabular-nums text-sm font-semibold tracking-tight">
-                        {formatCurrency(amount)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={cn(
-                            "h-1.5 w-1.5 shrink-0 rounded-full",
-                            statusDot[o.status as number] ?? "bg-muted-foreground",
-                          )}
-                        />
-                        <Badge
-                          variant={
-                            statusVariant[o.status as number] ?? "secondary"
-                          }
-                          className="h-5 font-normal"
-                        >
-                          {t(
-                            `order.status.${statusKey[o.status as number] ?? o.status}`,
-                            String(o.status),
-                          )}
-                        </Badge>
+                    <TableCell className="text-right align-top sm:align-middle">
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="tabular-nums text-sm font-semibold tracking-tight">
+                          {formatCurrency(amount)}
+                        </span>
+                        {/* 窄屏：佣金并入金额列 */}
+                        {hasCommission && (
+                          <span className="max-w-[6.5rem] truncate text-[11px] text-muted-foreground tabular-nums lg:hidden">
+                            {formatCurrency(commission)} ·{" "}
+                            {t(
+                              `order.commission.${commissionKey[o.commission_status as number] ?? o.commission_status}`,
+                              String(o.commission_status),
+                            )}
+                          </span>
+                        )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {statusBadge}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       {hasCommission ? (
                         <div className="space-y-1">
                           <p className="tabular-nums text-sm font-medium">
@@ -660,7 +714,7 @@ export function OrderListPage() {
                                 o.commission_status as number
                               ] ?? "secondary"
                             }
-                            className="h-5 font-normal"
+                            className="h-5 whitespace-nowrap font-normal"
                           >
                             {t(
                               `order.commission.${commissionKey[o.commission_status as number] ?? o.commission_status}`,
@@ -672,7 +726,7 @@ export function OrderListPage() {
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right align-top sm:align-middle">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button

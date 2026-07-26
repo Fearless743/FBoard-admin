@@ -1,4 +1,4 @@
-export const supportedLngs = ["zh-CN", "en-US", "ru-RU"] as const;
+export const supportedLngs = ["zh-CN", "zh-TW", "en-US", "ru-RU"] as const;
 export type AppLanguage = (typeof supportedLngs)[number];
 
 export async function loadLocale(lang: string): Promise<Record<string, any>> {

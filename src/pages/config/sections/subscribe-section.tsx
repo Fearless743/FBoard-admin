@@ -13,6 +13,8 @@ const switchKeys: Array<{ key: string; i18n: string }> = [
   { key: "show_protocol_to_server_enable", i18n: "show_protocol_to_server" },
   { key: "default_remind_expire", i18n: "default_remind_expire" },
   { key: "default_remind_traffic", i18n: "default_remind_traffic" },
+  { key: "deposit_enable", i18n: "deposit_enable" },
+  { key: "deposit_commission_enable", i18n: "deposit_commission_enable" },
 ];
 
 const baseFields: FieldDef[] = [
@@ -21,6 +23,9 @@ const baseFields: FieldDef[] = [
   { key: "new_order_event_id", type: "select", label: "", options: [] },
   { key: "renew_order_event_id", type: "select", label: "", options: [] },
   { key: "change_order_event_id", type: "select", label: "", options: [] },
+  { key: "deposit_min_amount", type: "number", label: "", placeholder: "100", min: 1 },
+  { key: "deposit_max_amount", type: "number", label: "", placeholder: "999999900", min: 1 },
+  { key: "deposit_bonus", type: "tags", label: "", placeholder: "100:10" },
 ];
 
 const I18N_OVERRIDE: Record<string, string> = {
@@ -114,6 +119,23 @@ function resolve(f: FieldDef, t: (k: string, opts?: any) => string): FieldDef {
         { value: 0, label: t("settings.subscribe.new_order_event.options.no_action") },
         { value: 1, label: t("settings.subscribe.new_order_event.options.reset_traffic") },
       ],
+    };
+  }
+  if (f.key === "deposit_min_amount" || f.key === "deposit_max_amount") {
+    return {
+      ...base,
+      type: "number" as const,
+      min: 1,
+      placeholder: String(f.placeholder ?? ""),
+    };
+  }
+  if (f.key === "deposit_bonus") {
+    return {
+      ...base,
+      type: "tags" as const,
+      placeholder: t("settings.subscribe.deposit_bonus.placeholder", {
+        defaultValue: "100:10",
+      }),
     };
   }
   return base;

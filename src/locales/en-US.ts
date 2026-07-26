@@ -1379,6 +1379,29 @@ const translations: Translations = {
         "title": "Enable Traffic Reminder by Default",
         "description": "When enabled, newly registered users will have low-traffic reminders turned on by default. Adjustable per user."
       },
+      "deposit_enable": {
+        "title": "Enable Balance Deposit",
+        "description": "When enabled, users can create balance deposit orders and top up after payment."
+      },
+      "deposit_commission_enable": {
+        "title": "Deposit Orders Earn Invite Commission",
+        "description": "When enabled, balance deposit orders are included in invite commission calculation."
+      },
+      "deposit_min_amount": {
+        "title": "Minimum Deposit Amount (cents)",
+        "description": "Minimum amount per deposit, in cents. For example, 100 means 1.00.",
+        "placeholder": "100"
+      },
+      "deposit_max_amount": {
+        "title": "Maximum Deposit Amount (cents)",
+        "description": "Maximum amount per deposit, in cents.",
+        "placeholder": "999999900"
+      },
+      "deposit_bonus": {
+        "title": "Deposit Bonus Tiers",
+        "description": "Format is threshold:bonus in major units, e.g. 100:10 means deposit 100 get 10 bonus. The highest matching tier is used.",
+        "placeholder": "100:10"
+      },
       "saving": "Saving...",
       "plan": {
         "title": "Subscription Plans",
@@ -3916,7 +3939,8 @@ const translations: Translations = {
       "NEW": "New Purchase",
       "RENEWAL": "Renewal",
       "UPGRADE": "Upgrade",
-      "RESET_FLOW": "Reset Traffic"
+      "RESET_FLOW": "Reset Traffic",
+      "DEPOSIT": "Balance Deposit"
     },
     "period": {
       "hour_price": "Hourly",
@@ -3929,6 +3953,7 @@ const translations: Translations = {
       "three_year_price": "3 Years",
       "onetime_price": "One-time",
       "reset_price": "Reset Package",
+      "deposit": "Balance Deposit",
       "hourly": "Hourly",
       "daily": "Daily",
       "half_yearly": "Semi-annually",

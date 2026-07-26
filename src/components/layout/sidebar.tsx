@@ -12,7 +12,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const { t } = useTranslation();
   const location = useLocation();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -28,7 +28,11 @@ export function Sidebar() {
     <aside className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       {/* Logo / 站点名 */}
       <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-5">
-        <Link to={adminPath("dashboard")} className="flex items-center gap-2.5">
+        <Link
+          to={adminPath("dashboard")}
+          onClick={onNavigate}
+          className="flex items-center gap-2.5"
+        >
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
             {logo ? (
               <img src={logo} alt="logo" className="h-6 w-6 object-contain" />
@@ -46,10 +50,16 @@ export function Sidebar() {
           // 单项分组不显示分组标题
           if (group.items.length === 1) {
             const item = group.items[0];
-            return <SidebarItem key={item.path} item={item} active={isActive(location, item)} />;
+            return (
+              <SidebarItem
+                key={item.path}
+                item={item}
+                active={isActive(location, item)}
+                onNavigate={onNavigate}
+              />
+            );
           }
           const collapsed = collapsedGroups[group.key];
-          const anyActive = group.items.some((it) => isActive(location, it));
           return (
             <Collapsible key={group.key} open={!collapsed}>
               <CollapsibleTrigger asChild>
@@ -72,6 +82,7 @@ export function Sidebar() {
                     key={item.path}
                     item={item}
                     active={isActive(location, item)}
+                    onNavigate={onNavigate}
                   />
                 ))}
               </CollapsibleContent>
@@ -109,15 +120,18 @@ function isActive(location: ReturnType<typeof useLocation>, item: (typeof flatNa
 function SidebarItem({
   item,
   active,
+  onNavigate,
 }: {
   item: (typeof flatNav)[number];
   active: boolean;
+  onNavigate?: () => void;
 }) {
   const { t } = useTranslation();
   const Icon = item.icon;
   return (
     <Link
       to={adminPath(item.path)}
+      onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
         active

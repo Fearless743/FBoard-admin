@@ -155,6 +155,13 @@ export function TicketListPage() {
     setReply("");
     setDetailLoading(true);
     setDetailData(null);
+    // 手机端打开工单时收起列表，避免双栏挤占聊天区
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches
+    ) {
+      setSidebarOpen(false);
+    }
     try {
       const d = await getTicketDetail(tk.id);
       setDetailData(d);
@@ -183,6 +190,8 @@ export function TicketListPage() {
     setDetailData(null);
     setReply("");
     setSidebarSearch("");
+    // 关闭后恢复默认展开，下次在桌面打开仍是双栏
+    setSidebarOpen(true);
     lastScrollTicketId.current = null;
   }, []);
 
@@ -263,22 +272,22 @@ export function TicketListPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-20">{t("ticket.columns.id")}</TableHead>
-              <TableHead>{t("ticket.columns.subject")}</TableHead>
-              <TableHead className="w-24">
+              <TableHead className="w-14 sm:w-20">{t("ticket.columns.id")}</TableHead>
+              <TableHead className="min-w-0">{t("ticket.columns.subject")}</TableHead>
+              <TableHead className="hidden w-24 sm:table-cell">
                 {t("ticket.columns.level")}
               </TableHead>
-              <TableHead className="w-24">
+              <TableHead className="hidden w-24 sm:table-cell">
                 {t("ticket.columns.status")}
               </TableHead>
-              <TableHead className="w-40">
+              <TableHead className="hidden w-40 md:table-cell">
                 {t("ticket.columns.updated_at")}
               </TableHead>
-              <TableHead className="w-12"></TableHead>
+              <TableHead className="w-16 sm:w-20"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -286,7 +295,13 @@ export function TicketListPage() {
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={i}>
                   {Array.from({ length: 6 }).map((_, j) => (
-                    <TableCell key={j}>
+                    <TableCell
+                      key={j}
+                      className={cn(
+                        (j === 2 || j === 3) && "hidden sm:table-cell",
+                        j === 4 && "hidden md:table-cell",
+                      )}
+                    >
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
                   ))}
@@ -302,68 +317,97 @@ export function TicketListPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              list.map((tk) => (
-                <TableRow
-                  key={tk.id}
-                  className={cn(
-                    tk.status !== 1 && tk.reply_status !== 1 && "bg-destructive/[0.02]",
-                  )}
-                >
-                  <TableCell><IdBadge id={tk.id} compact /></TableCell>
-                  <TableCell className="font-medium">{tk.subject}</TableCell>
-                  <TableCell>
+              list.map((tk) => {
+                const statusBadge =
+                  tk.status === 1 ? (
                     <Badge
-                      variant="outline"
-                      className={cn("h-5 font-normal", levelBadgeClass(tk.level))}
+                      variant="secondary"
+                      className="h-5 shrink-0 whitespace-nowrap px-1.5 text-[11px] font-normal sm:px-2.5 sm:text-xs"
                     >
-                      {t(`ticket.level.${levelKey[tk.level] ?? tk.level}`)}
+                      {t("ticket.status.closed")}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {tk.status === 1 ? (
-                      <Badge variant="secondary" className="h-5 font-normal">
-                        {t("ticket.status.closed")}
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant={
-                          tk.reply_status === 1 ? "success" : "destructive"
-                        }
-                        className="h-5 font-normal"
-                      >
-                        {tk.reply_status === 1
-                          ? t("ticket.status.replied")
-                          : t("ticket.status.unreplied")}
-                      </Badge>
+                  ) : (
+                    <Badge
+                      variant={
+                        tk.reply_status === 1 ? "success" : "destructive"
+                      }
+                      className="h-5 shrink-0 whitespace-nowrap px-1.5 text-[11px] font-normal sm:px-2.5 sm:text-xs"
+                    >
+                      {tk.reply_status === 1
+                        ? t("ticket.status.replied")
+                        : t("ticket.status.unreplied")}
+                    </Badge>
+                  );
+                const levelBadge = (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-5 shrink-0 whitespace-nowrap px-1.5 text-[11px] font-normal sm:px-2.5 sm:text-xs",
+                      levelBadgeClass(tk.level),
                     )}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground tabular-nums">
-                    {formatDate(tk.updated_at)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => void openTicket(tk)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {tk.status !== 1 && (
+                  >
+                    {t(`ticket.level.${levelKey[tk.level] ?? tk.level}`)}
+                  </Badge>
+                );
+
+                return (
+                  <TableRow
+                    key={tk.id}
+                    className={cn(
+                      tk.status !== 1 &&
+                        tk.reply_status !== 1 &&
+                        "bg-destructive/[0.02]",
+                    )}
+                  >
+                    <TableCell className="align-top sm:align-middle">
+                      <IdBadge id={tk.id} compact />
+                    </TableCell>
+                    <TableCell className="min-w-0 font-medium">
+                      <div className="space-y-1.5">
+                        <span className="line-clamp-2 break-words sm:line-clamp-1 sm:truncate">
+                          {tk.subject}
+                        </span>
+                        {/* 窄屏：状态/优先级并入主题行，避免独立列被挤换行 */}
+                        <div className="flex flex-wrap items-center gap-1 sm:hidden">
+                          {statusBadge}
+                          {levelBadge}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {levelBadge}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {statusBadge}
+                    </TableCell>
+                    <TableCell className="hidden text-xs text-muted-foreground tabular-nums md:table-cell">
+                      {formatDate(tk.updated_at)}
+                    </TableCell>
+                    <TableCell className="text-right align-top sm:align-middle">
+                      <div className="flex justify-end gap-0.5 sm:gap-1">
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => setClosing(tk)}
+                          className="h-8 w-8"
+                          onClick={() => void openTicket(tk)}
                         >
-                          <X className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                        {tk.status !== 1 && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setClosing(tk)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -384,13 +428,32 @@ export function TicketListPage() {
           if (!v) closeChat();
         }}
       >
-        <DialogContent className="flex h-[min(88vh,900px)] max-w-5xl flex-col gap-0 overflow-hidden p-0 sm:rounded-xl">
-          <div className="flex min-h-0 flex-1">
-            {/* 左侧：工单列表 */}
+        <DialogContent className="flex h-[min(92dvh,900px)] w-[calc(100%-1rem)] max-w-5xl flex-col gap-0 overflow-hidden p-0 sm:w-[calc(100%-2rem)] sm:rounded-xl max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-none max-md:rounded-none">
+          <div className="relative flex min-h-0 flex-1">
+            {/* 手机端列表遮罩 */}
+            {sidebarOpen ? (
+              <button
+                type="button"
+                aria-label={t("ticket.list.collapse")}
+                className="absolute inset-0 z-10 bg-black/40 md:hidden"
+                onClick={() => setSidebarOpen(false)}
+              />
+            ) : null}
+
+            {/* 左侧：工单列表（桌面占位；手机叠层抽屉） */}
             <aside
               className={cn(
-                "flex min-h-0 shrink-0 flex-col border-r bg-muted/20 transition-[width] duration-200",
-                sidebarOpen ? "w-[280px]" : "w-0 overflow-hidden border-r-0",
+                "flex min-h-0 flex-col border-r bg-background transition-all duration-200",
+                // 桌面：宽度伸缩
+                "md:relative md:z-auto md:shrink-0 md:bg-muted/20 md:shadow-none",
+                sidebarOpen
+                  ? "md:w-[280px]"
+                  : "md:w-0 md:overflow-hidden md:border-r-0",
+                // 手机：绝对定位叠在聊天区上
+                "absolute inset-y-0 left-0 z-20 w-[min(280px,85vw)] shadow-xl md:static",
+                sidebarOpen
+                  ? "translate-x-0"
+                  : "pointer-events-none -translate-x-full md:pointer-events-auto md:translate-x-0",
               )}
             >
               <div className="shrink-0 space-y-2 border-b px-3 py-3">
@@ -401,6 +464,16 @@ export function TicketListPage() {
                       ({total})
                     </span>
                   </span>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                    aria-label={t("ticket.list.collapse")}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -408,7 +481,7 @@ export function TicketListPage() {
                     value={sidebarSearch}
                     onChange={(e) => setSidebarSearch(e.target.value)}
                     placeholder={t("ticket.list.search_placeholder")}
-                    className="h-8 bg-background pl-8 text-xs"
+                    className="h-8 bg-background pl-8 text-xs md:bg-background"
                   />
                 </div>
               </div>
@@ -432,7 +505,16 @@ export function TicketListPage() {
                           unreplied && !active && "bg-destructive/[0.03]",
                         )}
                         onClick={() => {
-                          if (viewing?.id === tk.id) return;
+                          if (viewing?.id === tk.id) {
+                            // 手机端点当前项也收起列表，回到聊天
+                            if (
+                              typeof window !== "undefined" &&
+                              window.matchMedia("(max-width: 767px)").matches
+                            ) {
+                              setSidebarOpen(false);
+                            }
+                            return;
+                          }
                           void openTicket(tk);
                         }}
                       >
@@ -488,8 +570,8 @@ export function TicketListPage() {
             {/* 右侧：聊天区 */}
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               {/* 头部 */}
-              <div className="shrink-0 border-b bg-background/80 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-5">
-                <div className="flex items-start gap-2 pr-8">
+              <div className="shrink-0 border-b bg-background/80 px-3 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-5 sm:py-3">
+                <div className="flex items-start gap-1.5 pr-8 sm:gap-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -514,8 +596,8 @@ export function TicketListPage() {
                   </Tooltip>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <DialogTitle className="truncate text-base sm:text-lg">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <DialogTitle className="line-clamp-2 text-sm leading-snug sm:line-clamp-1 sm:truncate sm:text-lg">
                         {viewing?.subject}
                       </DialogTitle>
                       {viewing && (
@@ -556,9 +638,9 @@ export function TicketListPage() {
                       )}
                     </div>
                     <DialogDescription className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                      <span className="inline-flex items-center gap-1.5 font-mono">
-                        <User className="h-3 w-3 text-muted-foreground" />
-                        {currentEmail}
+                      <span className="inline-flex max-w-full items-center gap-1.5 font-mono">
+                        <User className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate">{currentEmail}</span>
                       </span>
                       {viewing && (
                         <>
@@ -568,8 +650,10 @@ export function TicketListPage() {
                           </span>
                           {detailData?.created_at || viewing.created_at ? (
                             <>
-                              <span className="text-muted-foreground/50">·</span>
-                              <span className="tabular-nums text-muted-foreground">
+                              <span className="hidden text-muted-foreground/50 sm:inline">
+                                ·
+                              </span>
+                              <span className="hidden tabular-nums text-muted-foreground sm:inline">
                                 {t("ticket.detail.created_at")}{" "}
                                 {formatDate(
                                   detailData?.created_at || viewing.created_at,
@@ -605,7 +689,7 @@ export function TicketListPage() {
                           type="button"
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8"
+                          className="hidden h-8 w-8 sm:inline-flex"
                           onClick={() => setShowTrafficRecords(true)}
                         >
                           <Activity className="h-4 w-4" />
@@ -621,7 +705,7 @@ export function TicketListPage() {
                           type="button"
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8"
+                          className="hidden h-8 w-8 sm:inline-flex"
                           onClick={() => setShowOrders(true)}
                         >
                           <ClipboardList className="h-4 w-4" />
@@ -636,7 +720,7 @@ export function TicketListPage() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="ml-1 h-8 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        className="ml-0.5 h-8 gap-1.5 border-destructive/30 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive sm:ml-1 sm:px-3"
                         onClick={() => setClosing(viewing)}
                       >
                         <X className="h-3.5 w-3.5" />
@@ -646,6 +730,29 @@ export function TicketListPage() {
                       </Button>
                     )}
                   </div>
+                </div>
+                {/* 手机端次要操作：流量 / 订单 */}
+                <div className="mt-2 flex items-center gap-1.5 pl-9 sm:hidden">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 px-2 text-xs"
+                    onClick={() => setShowTrafficRecords(true)}
+                  >
+                    <Activity className="h-3.5 w-3.5" />
+                    {t("ticket.detail.traffic_records")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 px-2 text-xs"
+                    onClick={() => setShowOrders(true)}
+                  >
+                    <ClipboardList className="h-3.5 w-3.5" />
+                    {t("ticket.detail.order_records")}
+                  </Button>
                 </div>
               </div>
 
@@ -781,7 +888,7 @@ export function TicketListPage() {
                     </span>
                   </Button>
                 </div>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                <p className="mt-1.5 hidden text-[11px] text-muted-foreground sm:block">
                   {t("ticket.detail.input.shortcut_hint")}
                 </p>
               </div>

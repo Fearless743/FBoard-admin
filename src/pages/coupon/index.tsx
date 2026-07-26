@@ -45,6 +45,8 @@ import {
 } from "@/components/ui/select";
 import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, type CouponItem } from "@/api/misc";
 
+const COL_COUNT = 8;
+
 export function CouponListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -90,15 +92,21 @@ export function CouponListPage() {
         title={t("coupon.title")}
         description={t("coupon.description")}
         actions={
-          <Button onClick={() => { setEditing(null); setOpen(true); }}>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+            className="w-full sm:w-auto"
+          >
             <Plus className="h-4 w-4" />
             {t("coupon.form.add")}
           </Button>
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative max-w-sm flex-1">
+      <div className="mb-4 space-y-2">
+        <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("coupon.table.toolbar.search")}
@@ -107,11 +115,8 @@ export function CouponListPage() {
             className="pl-9"
           />
         </div>
-        <Select
-          value={qs.type}
-          onValueChange={(v) => setQs({ type: v })}
-        >
-          <SelectTrigger className="w-[140px]">
+        <Select value={qs.type} onValueChange={(v) => setQs({ type: v })}>
+          <SelectTrigger className="w-full min-w-0 sm:w-[140px]">
             <SelectValue placeholder={t("coupon.table.toolbar.type")} />
           </SelectTrigger>
           <SelectContent>
@@ -122,32 +127,61 @@ export function CouponListPage() {
         </Select>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-16">{t("coupon.table.columns.id")}</TableHead>
-              <TableHead className="w-16 text-center">{t("coupon.table.columns.show")}</TableHead>
-              <TableHead>{t("coupon.table.columns.name")}</TableHead>
-              <TableHead className="min-w-[9.5rem]">{t("coupon.table.columns.type")}</TableHead>
-              <TableHead className="w-40">{t("coupon.table.columns.code")}</TableHead>
-              <TableHead className="w-24 text-right">{t("coupon.table.columns.limitUse")}</TableHead>
-              <TableHead className="w-40">{t("coupon.table.columns.validity")}</TableHead>
-              <TableHead className="w-24 text-right">{t("coupon.table.columns.actions")}</TableHead>
+              <TableHead className="hidden w-16 md:table-cell">
+                {t("coupon.table.columns.id")}
+              </TableHead>
+              <TableHead className="hidden w-16 text-center sm:table-cell">
+                {t("coupon.table.columns.show")}
+              </TableHead>
+              <TableHead className="min-w-0">
+                {t("coupon.table.columns.name")}
+              </TableHead>
+              <TableHead className="hidden min-w-[9.5rem] sm:table-cell">
+                {t("coupon.table.columns.type")}
+              </TableHead>
+              <TableHead className="hidden w-40 md:table-cell">
+                {t("coupon.table.columns.code")}
+              </TableHead>
+              <TableHead className="hidden w-24 text-right lg:table-cell">
+                {t("coupon.table.columns.limitUse")}
+              </TableHead>
+              <TableHead className="hidden w-40 md:table-cell">
+                {t("coupon.table.columns.validity")}
+              </TableHead>
+              <TableHead className="w-12 text-right sm:w-24">
+                {t("coupon.table.columns.actions")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 8 }).map((_, j) => (
-                    <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                  {Array.from({ length: COL_COUNT }).map((_, j) => (
+                    <TableCell
+                      key={j}
+                      className={cn(
+                        // 0 id, 1 show, 2 name, 3 type, 4 code, 5 limit, 6 validity, 7 actions
+                        j === 0 && "hidden md:table-cell",
+                        j === 1 && "hidden sm:table-cell",
+                        j === 3 && "hidden sm:table-cell",
+                        j === 4 && "hidden md:table-cell",
+                        j === 5 && "hidden lg:table-cell",
+                        j === 6 && "hidden md:table-cell",
+                      )}
+                    >
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : list.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={8}>
+                <TableCell colSpan={COL_COUNT}>
                   <EmptyState
                     icon={<TicketPercent className="h-10 w-10" />}
                     message={t("common.table.noData")}
@@ -157,93 +191,154 @@ export function CouponListPage() {
             ) : (
               list.map((c) => {
                 const validity = validityMeta(t, c);
-                return (
-                <TableRow key={c.id} className="group">
-                  <TableCell><IdBadge id={c.id} compact /></TableCell>
-                  <TableCell className="text-center">
-                    <Switch
-                      checked={!!c.show}
-                      onCheckedChange={() => handleToggleShow(c)}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{c.name}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "max-w-full whitespace-nowrap font-normal px-2 py-0.5 leading-5",
-                        c.type === 1
-                          ? "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300"
-                          : "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300",
-                      )}
-                    >
-                      <span className="truncate">
-                        {t(`coupon.table.toolbar.types.${c.type}`)}
-                      </span>
-                      <span className="ml-1 shrink-0 tabular-nums">
-                        {c.type === 1
-                          ? `¥${(c.value / 100).toFixed(0)}`
-                          : `${c.value}%`}
-                      </span>
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex min-w-0 items-center gap-1">
-                      <span className="truncate font-mono text-xs" title={c.code}>{c.code}</span>
-                      {c.code && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                              onClick={async () => {
-                                try {
-                                  await copyToClipboard(c.code);
-                                  toast.success(t("common.copy.success"));
-                                } catch {
-                                  toast.error(t("common.copy.failed"));
-                                }
-                              }}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>{t("common.copy.success")}</TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {c.limit_use ?? "∞"}
-                  </TableCell>
-                  <TableCell>
-                    <span className={cn("text-xs", validity.className)}>
-                      {validity.label}
+                const typeBadge = (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "max-w-full whitespace-nowrap px-1.5 py-0.5 text-[11px] font-normal leading-5 sm:px-2 sm:text-xs",
+                      c.type === 1
+                        ? "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300"
+                        : "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300",
+                    )}
+                  >
+                    <span className="truncate">
+                      {t(`coupon.table.toolbar.types.${c.type}`)}
                     </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => { setEditing(c); setOpen(true); }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setDeleting(c)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
+                    <span className="ml-1 shrink-0 tabular-nums">
+                      {c.type === 1
+                        ? `¥${(c.value / 100).toFixed(0)}`
+                        : `${c.value}%`}
+                    </span>
+                  </Badge>
+                );
+
+                const codeCell = (
+                  <div className="flex min-w-0 items-center gap-1">
+                    <span
+                      className="truncate font-mono text-xs"
+                      title={c.code}
+                    >
+                      {c.code || "—"}
+                    </span>
+                    {c.code ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                            onClick={async () => {
+                              try {
+                                await copyToClipboard(c.code);
+                                toast.success(t("common.copy.success"));
+                              } catch {
+                                toast.error(t("common.copy.failed"));
+                              }
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("common.copy.success")}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                  </div>
+                );
+
+                return (
+                  <TableRow key={c.id} className="group">
+                    <TableCell className="hidden md:table-cell">
+                      <IdBadge id={c.id} compact />
+                    </TableCell>
+                    <TableCell className="hidden text-center sm:table-cell">
+                      <Switch
+                        checked={!!c.show}
+                        onCheckedChange={() => handleToggleShow(c)}
+                        aria-label={t("coupon.table.columns.show")}
+                      />
+                    </TableCell>
+                    <TableCell className="min-w-0 align-top sm:align-middle">
+                      <div className="min-w-0 space-y-1.5">
+                        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                          <span className="md:hidden">
+                            <IdBadge id={c.id} compact />
+                          </span>
+                          <p
+                            className="min-w-0 truncate font-medium"
+                            title={c.name}
+                          >
+                            {c.name}
+                          </p>
+                        </div>
+                        {/* 窄屏：显示开关 / 类型 / 券码 / 有效期 并入名称列 */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:hidden">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] text-muted-foreground">
+                              {t("coupon.table.columns.show")}
+                            </span>
+                            <Switch
+                              checked={!!c.show}
+                              onCheckedChange={() => handleToggleShow(c)}
+                              aria-label={t("coupon.table.columns.show")}
+                            />
+                          </div>
+                          {typeBadge}
+                        </div>
+                        <div className="md:hidden">{codeCell}</div>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
+                          <span className={cn("md:hidden", validity.className)}>
+                            {validity.label}
+                          </span>
+                          <span className="tabular-nums text-muted-foreground lg:hidden">
+                            {t("coupon.table.columns.limitUse")}:{" "}
+                            {c.limit_use ?? "∞"}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {typeBadge}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {codeCell}
+                    </TableCell>
+                    <TableCell className="hidden text-right tabular-nums lg:table-cell">
+                      {c.limit_use ?? "∞"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <span className={cn("text-xs", validity.className)}>
+                        {validity.label}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right align-top sm:align-middle">
+                      <div className="flex items-center justify-end gap-0.5 sm:gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditing(c);
+                            setOpen(true);
+                          }}
+                          aria-label={t("coupon.form.edit")}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => setDeleting(c)}
+                          aria-label={t("coupon.table.actions.deleteConfirm.title")}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
               })
             )}
           </TableBody>
@@ -393,7 +488,7 @@ function CouponFormDialog({
             <Label>{t("coupon.form.name.label")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2">
             <div className="space-y-1.5">
               <Label>{t("coupon.form.type.label")}</Label>
               <Select value={String(type)} onValueChange={(v) => setType(Number(v) as 1 | 2)}>
@@ -420,7 +515,7 @@ function CouponFormDialog({
             <Label>{t("coupon.form.code.label")}</Label>
             <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("coupon.form.code.placeholder")} />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2">
             <div className="space-y-1.5">
               <Label>{t("coupon.form.limitUse.label")}</Label>
               <Input type="number" value={limitUse} onChange={(e) => setLimitUse(e.target.value)} />
@@ -430,7 +525,7 @@ function CouponFormDialog({
               <Input type="number" value={limitUseWithUser} onChange={(e) => setLimitUseWithUser(e.target.value)} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2">
             <div className="space-y-1.5">
               <Label>
                 {t("coupon.form.validity.label")} ({t("common.start")})

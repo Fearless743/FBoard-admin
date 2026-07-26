@@ -306,8 +306,11 @@ export function UserListPage() {
         title={t("user.manage.title")}
         description={t("user.manage.description")}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={() => setCreateOpen(true)}>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <Button
+              onClick={() => setCreateOpen(true)}
+              className="w-full sm:w-auto"
+            >
               <UserPlus className="h-4 w-4" />
               {t("user.generate.button")}
             </Button>
@@ -315,8 +318,8 @@ export function UserListPage() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[220px] max-w-md flex-1">
+      <div className="mb-4 space-y-2">
+        <div className="relative w-full max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("user.filter.email_search")}
@@ -326,12 +329,12 @@ export function UserListPage() {
           />
         </div>
         {selected.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5">
+          <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5">
             <Badge variant="secondary" className="h-7 gap-1.5 px-2.5 font-normal">
               <Users className="h-3.5 w-3.5" />
               {t("user.filter.selected", { count: selected.length })}
             </Badge>
-            <div className="h-4 w-px bg-border" />
+            <div className="hidden h-4 w-px bg-border sm:block" />
             <Button
               size="sm"
               variant="outline"
@@ -353,7 +356,7 @@ export function UserListPage() {
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 w-7 px-0"
+              className="ml-auto h-7 w-7 px-0 sm:ml-0"
               onClick={() => setSelected([])}
               title={t("user.filter.clear_selection")}
             >
@@ -367,7 +370,7 @@ export function UserListPage() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-10 sticky left-0 z-10 bg-card">
+              <TableHead className="sticky left-0 z-10 w-10 bg-card">
                 <Checkbox
                   checked={
                     users.length > 0 &&
@@ -378,40 +381,55 @@ export function UserListPage() {
                   aria-label={t("common.selectAll")}
                 />
               </TableHead>
-              <TableHead className="w-14">{t("user.columns.id")}</TableHead>
-              <TableHead className="min-w-[220px]">{t("user.columns.email")}</TableHead>
+              <TableHead className="hidden w-14 md:table-cell">
+                {t("user.columns.id")}
+              </TableHead>
+              <TableHead className="min-w-0 sm:min-w-[180px] md:min-w-[220px]">
+                {t("user.columns.email")}
+              </TableHead>
               <SortableHead
                 field="online_count"
-                className="w-[100px]"
+                className="hidden w-[100px] lg:table-cell"
                 align="center"
               >
                 {t("user.columns.online_count")}
               </SortableHead>
-              <TableHead className="w-[108px] text-center">
+              <TableHead className="hidden w-[108px] text-center sm:table-cell">
                 {t("user.columns.status")}
               </TableHead>
-              <TableHead className="min-w-[120px]">{t("user.columns.subscription")}</TableHead>
-              <TableHead className="min-w-[100px]">{t("user.columns.group")}</TableHead>
-              <SortableHead field="total_used" className="min-w-[140px]">
+              <TableHead className="hidden min-w-[120px] md:table-cell">
+                {t("user.columns.subscription")}
+              </TableHead>
+              <TableHead className="hidden min-w-[100px] xl:table-cell">
+                {t("user.columns.group")}
+              </TableHead>
+              <SortableHead
+                field="total_used"
+                className="hidden min-w-[120px] sm:table-cell"
+              >
                 {t("user.columns.used_traffic")}
               </SortableHead>
-              <TableHead className="min-w-[120px]">{t("user.columns.expire_time")}</TableHead>
+              <TableHead className="hidden min-w-[120px] lg:table-cell">
+                {t("user.columns.expire_time")}
+              </TableHead>
               <SortableHead
                 field="balance"
-                className="min-w-[100px]"
+                className="hidden min-w-[100px] xl:table-cell"
                 align="right"
               >
                 {t("user.columns.balance")}
               </SortableHead>
               <SortableHead
                 field="commission_balance"
-                className="min-w-[100px]"
+                className="hidden min-w-[100px] xl:table-cell"
                 align="right"
               >
                 {t("user.columns.commission")}
               </SortableHead>
-              <TableHead className="min-w-[120px]">{t("user.columns.register_time")}</TableHead>
-              <TableHead className="w-20 sticky right-0 z-10 bg-card text-right">
+              <TableHead className="hidden min-w-[120px] xl:table-cell">
+                {t("user.columns.register_time")}
+              </TableHead>
+              <TableHead className="sticky right-0 z-10 w-12 bg-card text-right sm:w-20">
                 {t("user.columns.actions")}
               </TableHead>
             </TableRow>
@@ -421,8 +439,27 @@ export function UserListPage() {
               Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
                   {Array.from({ length: COL_COUNT }).map((_, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className={cn("h-4", j === 2 ? "h-9 w-44" : "w-full")} />
+                    <TableCell
+                      key={j}
+                      className={cn(
+                        // 0 checkbox, 1 id, 2 email, 3 online, 4 status,
+                        // 5 plan, 6 group, 7 traffic, 8 expire,
+                        // 9 balance, 10 commission, 11 register, 12 actions
+                        j === 1 && "hidden md:table-cell",
+                        j === 3 && "hidden lg:table-cell",
+                        j === 4 && "hidden sm:table-cell",
+                        j === 5 && "hidden md:table-cell",
+                        j === 6 && "hidden xl:table-cell",
+                        j === 7 && "hidden sm:table-cell",
+                        j === 8 && "hidden lg:table-cell",
+                        j === 9 && "hidden xl:table-cell",
+                        j === 10 && "hidden xl:table-cell",
+                        j === 11 && "hidden xl:table-cell",
+                      )}
+                    >
+                      <Skeleton
+                        className={cn("h-4 w-full", j === 2 && "h-9 w-44")}
+                      />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -456,6 +493,77 @@ export function UserListPage() {
                     ? "bg-destructive/[0.03]"
                     : "bg-card";
 
+                const statusBadge = (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-5 shrink-0 whitespace-nowrap border-transparent px-1.5 text-[11px] font-normal sm:px-2 sm:text-xs",
+                      u.banned
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+                    )}
+                  >
+                    {u.banned
+                      ? t("user.columns.status_text.banned")
+                      : t("user.columns.status_text.normal")}
+                  </Badge>
+                );
+
+                const planBadge = planName ? (
+                  <Badge
+                    variant="secondary"
+                    className="max-w-[160px] truncate font-normal"
+                    title={planName}
+                  >
+                    {planName}
+                  </Badge>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                );
+
+                const expireCell =
+                  expire.kind === "permanent" ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      <InfinityIcon className="h-3.5 w-3.5" />
+                      {t("user.columns.expire_status.permanent")}
+                    </span>
+                  ) : (
+                    <div className="space-y-0.5">
+                      <p
+                        className={cn(
+                          "text-xs tabular-nums",
+                          expire.kind === "expired" &&
+                            "font-medium text-destructive",
+                          expire.kind === "soon" &&
+                            "font-medium text-amber-600 dark:text-amber-400",
+                          expire.kind === "active" && "text-muted-foreground",
+                        )}
+                      >
+                        {formatDate(u.expired_at, false)}
+                      </p>
+                      {expire.days != null && (
+                        <p
+                          className={cn(
+                            "text-[10px]",
+                            expire.kind === "expired" && "text-destructive/80",
+                            expire.kind === "soon" &&
+                              "text-amber-600/80 dark:text-amber-400/80",
+                            expire.kind === "active" &&
+                              "text-muted-foreground/80",
+                          )}
+                        >
+                          {expire.kind === "expired"
+                            ? t("user.columns.expire_status.expired", {
+                                days: Math.abs(expire.days),
+                              })
+                            : t("user.columns.expire_status.remaining", {
+                                days: expire.days,
+                              })}
+                        </p>
+                      )}
+                    </div>
+                  );
+
                 return (
                   <TableRow
                     key={u.id}
@@ -467,7 +575,7 @@ export function UserListPage() {
                   >
                     <TableCell
                       className={cn(
-                        "sticky left-0 z-10 group-hover:bg-muted/50",
+                        "sticky left-0 z-10 align-top group-hover:bg-muted/50 sm:align-middle",
                         stickyBg,
                       )}
                     >
@@ -477,12 +585,12 @@ export function UserListPage() {
                         aria-label={`select ${u.email}`}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <IdBadge id={u.id} compact />
                     </TableCell>
-                    <TableCell>
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <Avatar className="h-8 w-8 shrink-0">
+                    <TableCell className="min-w-0 align-top sm:align-middle">
+                      <div className="flex min-w-0 items-start gap-2 sm:items-center sm:gap-2.5">
+                        <Avatar className="mt-0.5 h-8 w-8 shrink-0 sm:mt-0">
                           <AvatarFallback
                             className={cn(
                               "text-xs font-semibold",
@@ -505,7 +613,7 @@ export function UserListPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-6 w-6 shrink-0 opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+                                  className="hidden h-6 w-6 shrink-0 opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 sm:inline-flex"
                                   onClick={async (e) => {
                                     e.stopPropagation();
                                     try {
@@ -525,6 +633,9 @@ export function UserListPage() {
                             </Tooltip>
                           </div>
                           <div className="flex flex-wrap items-center gap-1">
+                            <span className="md:hidden">
+                              <IdBadge id={u.id} compact />
+                            </span>
                             {u.is_admin && (
                               <Badge
                                 variant="destructive"
@@ -542,17 +653,43 @@ export function UserListPage() {
                               </Badge>
                             )}
                           </div>
+                          {/* 窄屏：在独立列出现前，把关键信息并入邮箱列 */}
+                          <div className="flex flex-wrap items-center gap-1 pt-0.5 md:hidden">
+                            <span className="sm:hidden">{statusBadge}</span>
+                            {planName ? (
+                              <Badge
+                                variant="secondary"
+                                className="max-w-[9rem] truncate px-1.5 text-[10px] font-normal"
+                                title={planName}
+                              >
+                                {planName}
+                              </Badge>
+                            ) : null}
+                          </div>
+                          <button
+                            type="button"
+                            className="text-left text-[11px] tabular-nums text-muted-foreground underline-offset-2 hover:text-primary hover:underline sm:hidden"
+                            onClick={() => setTrafficRecordsUser(u)}
+                          >
+                            {formatBytes(used)}
+                            {online > 0
+                              ? ` · ${online}/${u.device_limit ?? "∞"}`
+                              : ""}
+                          </button>
+                          <div className="text-[11px] lg:hidden">{expireCell}</div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="hidden text-center lg:table-cell">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="inline-flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1 text-xs tabular-nums">
                             <span
                               className={cn(
                                 "h-1.5 w-1.5 rounded-full",
-                                online > 0 ? "bg-emerald-500" : "bg-muted-foreground/40",
+                                online > 0
+                                  ? "bg-emerald-500"
+                                  : "bg-muted-foreground/40",
                               )}
                             />
                             <span className="font-medium text-foreground">
@@ -570,35 +707,13 @@ export function UserListPage() {
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
-                    <TableCell className="text-center whitespace-nowrap">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "h-5 shrink-0 whitespace-nowrap border-transparent px-2 font-normal",
-                          u.banned
-                            ? "bg-destructive/10 text-destructive"
-                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-                        )}
-                      >
-                        {u.banned
-                          ? t("user.columns.status_text.banned")
-                          : t("user.columns.status_text.normal")}
-                      </Badge>
+                    <TableCell className="hidden text-center whitespace-nowrap sm:table-cell">
+                      {statusBadge}
                     </TableCell>
-                    <TableCell>
-                      {planName ? (
-                        <Badge
-                          variant="secondary"
-                          className="max-w-[160px] truncate font-normal"
-                          title={planName}
-                        >
-                          {planName}
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
+                    <TableCell className="hidden md:table-cell">
+                      {planBadge}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden xl:table-cell">
                       {groupName ? (
                         <Badge
                           variant="outline"
@@ -611,10 +726,10 @@ export function UserListPage() {
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <button
                         type="button"
-                        className="group/traffic w-full min-w-[120px] text-left"
+                        className="group/traffic w-full min-w-0 text-left sm:min-w-[100px]"
                         onClick={() => setTrafficRecordsUser(u)}
                       >
                         <div className="flex items-baseline justify-between gap-2 text-xs tabular-nums">
@@ -624,60 +739,21 @@ export function UserListPage() {
                         </div>
                       </button>
                     </TableCell>
-                    <TableCell>
-                      {expire.kind === "permanent" ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                          <InfinityIcon className="h-3.5 w-3.5" />
-                          {t("user.columns.expire_status.permanent")}
-                        </span>
-                      ) : (
-                        <div className="space-y-0.5">
-                          <p
-                            className={cn(
-                              "text-xs tabular-nums",
-                              expire.kind === "expired" &&
-                                "font-medium text-destructive",
-                              expire.kind === "soon" &&
-                                "font-medium text-amber-600 dark:text-amber-400",
-                              expire.kind === "active" && "text-muted-foreground",
-                            )}
-                          >
-                            {formatDate(u.expired_at, false)}
-                          </p>
-                          {expire.days != null && (
-                            <p
-                              className={cn(
-                                "text-[10px]",
-                                expire.kind === "expired" && "text-destructive/80",
-                                expire.kind === "soon" &&
-                                  "text-amber-600/80 dark:text-amber-400/80",
-                                expire.kind === "active" && "text-muted-foreground/80",
-                              )}
-                            >
-                              {expire.kind === "expired"
-                                ? t("user.columns.expire_status.expired", {
-                                    days: Math.abs(expire.days),
-                                  })
-                                : t("user.columns.expire_status.remaining", {
-                                    days: expire.days,
-                                  })}
-                            </p>
-                          )}
-                        </div>
-                      )}
+                    <TableCell className="hidden lg:table-cell">
+                      {expireCell}
                     </TableCell>
-                    <TableCell className="text-right text-xs tabular-nums font-medium">
+                    <TableCell className="hidden text-right text-xs tabular-nums font-medium xl:table-cell">
                       {formatCurrency(u.balance)}
                     </TableCell>
-                    <TableCell className="text-right text-xs tabular-nums text-muted-foreground">
+                    <TableCell className="hidden text-right text-xs tabular-nums text-muted-foreground xl:table-cell">
                       {formatCurrency(u.commission_balance)}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground tabular-nums">
+                    <TableCell className="hidden text-xs text-muted-foreground tabular-nums xl:table-cell">
                       {u.created_at ? formatDate(u.created_at) : "—"}
                     </TableCell>
                     <TableCell
                       className={cn(
-                        "sticky right-0 z-10 text-right group-hover:bg-muted/50",
+                        "sticky right-0 z-10 align-top text-right group-hover:bg-muted/50 sm:align-middle",
                         stickyBg,
                       )}
                     >
@@ -687,7 +763,7 @@ export function UserListPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="hidden h-8 w-8 sm:inline-flex"
                               onClick={() => setEditing(u)}
                             >
                               <Pencil className="h-4 w-4" />
@@ -708,6 +784,13 @@ export function UserListPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                              className="sm:hidden"
+                              onClick={() => setEditing(u)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                              {t("user.columns.actions_menu.edit")}
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={async () => {
                                 try {
