@@ -3305,6 +3305,11 @@ const translations: Translations = {
     "toolbar": {
       "search": "搜索服務器名稱或備註...",
       "status": "狀態",
+      "status_all": "全部狀態",
+      "status_online": "在線",
+      "status_offline": "離線",
+      "status_inactive": "已禁用",
+      "status_high_load": "高負載",
       "nodes": "節點",
       "with_nodes": "已承載節點",
       "idle_nodes": "空閒服務器",

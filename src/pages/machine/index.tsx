@@ -44,6 +44,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,6 +88,44 @@ import {
 function usagePercent(used?: number, total?: number): number | null {
   if (used == null || total == null || total <= 0) return null;
   return Math.min(100, Math.round((used / total) * 1000) / 10);
+}
+
+/** 机器状态筛选（与后端 fetch 的 status 参数对齐） */
+const MACHINE_STATUS_OPTIONS = [
+  "all",
+  "online",
+  "offline",
+  "inactive",
+  "high_load",
+] as const;
+type MachineStatusFilterKey = (typeof MACHINE_STATUS_OPTIONS)[number];
+
+/** 与后端 summary 一致：CPU / 内存 / 磁盘任一 ≥ 70% 视为高负载 */
+function isHighLoadMachine(m: Machine): boolean {
+  const load = m.load_status;
+  if (!load) return false;
+  const cpu = load.cpu == null ? null : Math.min(100, load.cpu);
+  const mem = usagePercent(load.mem?.used, load.mem?.total);
+  const disk = usagePercent(load.disk?.used, load.disk?.total);
+  return [cpu, mem, disk].some((v) => v != null && v >= 70);
+}
+
+/** 状态过滤：后端已粗筛，这里做精确判断（在线走 Redis 活跃缓存，高负载走阈值） */
+function matchesStatusFilter(m: Machine, status: MachineStatusFilterKey): boolean {
+  switch (status) {
+    case "all":
+      return true;
+    case "online":
+      return m.is_active === true && m.is_online === true;
+    case "offline":
+      return m.is_active === true && m.is_online !== true;
+    case "inactive":
+      return m.is_active === false;
+    case "high_load":
+      return m.is_active === true && m.is_online === true && isHighLoadMachine(m);
+    default:
+      return true;
+  }
 }
 
 function loadLevelClass(value: number | null | undefined): string {
@@ -371,10 +416,22 @@ export function MachineListPage() {
   // 机器列表默认每页 10 条（与其它列表 20 不同）
   const [qs, setQs, query] = useUrlState(
     listQuerySchema(
-      { q: { type: "string", default: "", debounce: 400 } },
+      {
+        q: { type: "string", default: "", debounce: 400 },
+        status: {
+          type: "enum",
+          values: MACHINE_STATUS_OPTIONS as readonly string[],
+          default: "all",
+        },
+      },
       { pageSize: 10 },
     ),
   );
+  const statusFilter = (MACHINE_STATUS_OPTIONS as readonly string[]).includes(
+    query.status,
+  )
+    ? (query.status as MachineStatusFilterKey)
+    : "all";
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Machine | null>(null);
   const [deleting, setDeleting] = useState<Machine | null>(null);
@@ -388,11 +445,19 @@ export function MachineListPage() {
   const [batchUpgradeSubmitting, setBatchUpgradeSubmitting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["machines", { page: query.page, pageSize: query.pageSize, search: query.q }],
-    queryFn: () => fetchMachines(query.page, query.pageSize, query.q),
+    queryKey: [
+      "machines",
+      { page: query.page, pageSize: query.pageSize, search: query.q, status: statusFilter },
+    ],
+    queryFn: () =>
+      fetchMachines(query.page, query.pageSize, query.q, statusFilter),
     refetchInterval: 30_000,
   });
-  const list: Machine[] = data?.data || [];
+  // 后端只做 SQL 粗筛，这里二次精确过滤（在线/高负载）
+  const list: Machine[] = useMemo(
+    () => (data?.data || []).filter((m) => matchesStatusFilter(m, statusFilter)),
+    [data?.data, statusFilter],
+  );
   const total = data?.total || 0;
 
   const summary: MachineSummary = useMemo(
@@ -486,6 +551,23 @@ export function MachineListPage() {
             className="pl-9"
           />
         </div>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) =>
+            setQs({ status: v as MachineStatusFilterKey, page: 1 })
+          }
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {MACHINE_STATUS_OPTIONS.map((s) => (
+              <SelectItem key={s} value={s}>
+                {t(`machine.toolbar.status_${s}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-lg border bg-card">

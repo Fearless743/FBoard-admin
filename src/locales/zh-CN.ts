@@ -3305,6 +3305,11 @@ const translations: Translations = {
     "toolbar": {
       "search": "搜索服务器名称或备注...",
       "status": "状态",
+      "status_all": "全部状态",
+      "status_online": "在线",
+      "status_offline": "离线",
+      "status_inactive": "已禁用",
+      "status_high_load": "高负载",
       "nodes": "节点",
       "with_nodes": "已承载节点",
       "idle_nodes": "空闲服务器",

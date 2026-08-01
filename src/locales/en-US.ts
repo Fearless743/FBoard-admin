@@ -3306,6 +3306,11 @@ const translations: Translations = {
     "toolbar": {
       "search": "Search by server name, notes or SID...",
       "status": "Status",
+      "status_all": "All Status",
+      "status_online": "Online",
+      "status_offline": "Offline",
+      "status_inactive": "Disabled",
+      "status_high_load": "High Load",
       "nodes": "Nodes",
       "nodesHosted": "Nodes",
       "nodesIdle": "idle",

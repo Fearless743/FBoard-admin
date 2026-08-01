@@ -358,15 +358,19 @@ export interface MachineListResponse {
   summary?: MachineSummary;
 }
 
+export type MachineStatusFilter = "all" | "online" | "offline" | "inactive" | "high_load";
+
 export async function fetchMachines(
   current = 1,
   pageSize = 10,
   search = "",
+  status: MachineStatusFilter = "all",
 ): Promise<MachineListResponse> {
   return adminGet<MachineListResponse>("/server/machine/fetch", {
     current,
     pageSize,
     ...(search ? { search } : {}),
+    ...(status !== "all" ? { status } : {}),
   });
 }
 
