@@ -105,7 +105,7 @@ import { UserTrafficResetDialog } from "./user-traffic-reset-dialog";
 import { UserAssignOrderDialog } from "./user-assign-order-dialog";
 import { UserLoginHistoryDialog } from "./user-login-history-dialog";
 
-const COL_COUNT = 13;
+const COL_COUNT = 12;
 
 function emailInitial(email?: string) {
   const ch = (email || "?").trim().charAt(0).toUpperCase();
@@ -414,21 +414,18 @@ export function UserListPage() {
               </TableHead>
               <SortableHead
                 field="balance"
-                className="hidden min-w-[100px] xl:table-cell"
+                className="hidden min-w-[100px] lg:table-cell"
                 align="right"
               >
                 {t("user.columns.balance")}
               </SortableHead>
               <SortableHead
                 field="commission_balance"
-                className="hidden min-w-[100px] xl:table-cell"
+                className="hidden min-w-[100px] lg:table-cell"
                 align="right"
               >
                 {t("user.columns.commission")}
               </SortableHead>
-              <TableHead className="hidden min-w-[120px] xl:table-cell">
-                {t("user.columns.register_time")}
-              </TableHead>
               <TableHead className="sticky right-0 z-10 w-12 bg-card text-right sm:w-20">
                 {t("user.columns.actions")}
               </TableHead>
@@ -444,7 +441,7 @@ export function UserListPage() {
                       className={cn(
                         // 0 checkbox, 1 id, 2 email, 3 online, 4 status,
                         // 5 plan, 6 group, 7 traffic, 8 expire,
-                        // 9 balance, 10 commission, 11 register, 12 actions
+                        // 9 balance, 10 commission, 11 actions
                         j === 1 && "hidden md:table-cell",
                         j === 3 && "hidden lg:table-cell",
                         j === 4 && "hidden sm:table-cell",
@@ -452,9 +449,8 @@ export function UserListPage() {
                         j === 6 && "hidden xl:table-cell",
                         j === 7 && "hidden sm:table-cell",
                         j === 8 && "hidden lg:table-cell",
-                        j === 9 && "hidden xl:table-cell",
-                        j === 10 && "hidden xl:table-cell",
-                        j === 11 && "hidden xl:table-cell",
+                        j === 9 && "hidden lg:table-cell",
+                        j === 10 && "hidden lg:table-cell",
                       )}
                     >
                       <Skeleton
@@ -653,6 +649,9 @@ export function UserListPage() {
                               </Badge>
                             )}
                           </div>
+                          <div className="hidden text-[11px] tabular-nums text-muted-foreground lg:block">
+                            {u.created_at ? formatDate(u.created_at) : "—"}
+                          </div>
                           {/* 窄屏：在独立列出现前，把关键信息并入邮箱列 */}
                           <div className="flex flex-wrap items-center gap-1 pt-0.5 md:hidden">
                             <span className="sm:hidden">{statusBadge}</span>
@@ -742,14 +741,11 @@ export function UserListPage() {
                     <TableCell className="hidden lg:table-cell">
                       {expireCell}
                     </TableCell>
-                    <TableCell className="hidden text-right text-xs tabular-nums font-medium xl:table-cell">
+                    <TableCell className="hidden text-right text-xs tabular-nums font-medium lg:table-cell">
                       {formatCurrencyYuan(u.balance)}
                     </TableCell>
-                    <TableCell className="hidden text-right text-xs tabular-nums text-muted-foreground xl:table-cell">
+                    <TableCell className="hidden text-right text-xs tabular-nums text-muted-foreground lg:table-cell">
                       {formatCurrencyYuan(u.commission_balance)}
-                    </TableCell>
-                    <TableCell className="hidden text-xs text-muted-foreground tabular-nums xl:table-cell">
-                      {u.created_at ? formatDate(u.created_at) : "—"}
                     </TableCell>
                     <TableCell
                       className={cn(
