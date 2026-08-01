@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/empty-state";
 import { adminGet } from "@/api/client";
-import { formatBytes, formatDate } from "@/lib/utils";
+import { formatCurrency, formatCurrencyYuan, formatDate } from "@/lib/utils";
 import type { UserListItem } from "@/api/user";
 
 /** 通用：用户关联数据弹窗（订单 / 流量记录 / 邀请） */
@@ -166,7 +166,7 @@ export function UserInvitesDialog({
       url="/user/inviteList"
       columns={[
         { key: "invitee_email", label: t("user.columns.invitee_email") },
-        { key: "commission_balance", label: t("user.columns.commission"), align: "right", render: (r) => formatBytes(r.commission_balance ?? 0) },
+        { key: "commission_balance", label: t("user.columns.commission"), align: "right", render: (r) => formatCurrencyYuan(r.commission_balance ?? 0) },
         { key: "created_at", label: t("user.columns.register_time"), render: (r) => formatDate(r.created_at) },
       ]}
     />

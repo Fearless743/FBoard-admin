@@ -62,8 +62,12 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
   const { data: plans } = usePlanOptions();
   const GB = 1073741824;
 
-  /** 流量数字：空/非法 → 0（用户清空输入时按 0 处理） */
-  const trafficAsNumber = (v: unknown): number => {
+  /**
+   * 数字输入：空/非法 → 0。
+   * 余额/佣金：后端列表已返回「元」，更新接口再 yuanToCents，表单按元读写。
+   * 流量：表单内是 GB，提交时再 * GB。
+   */
+  const asNumber = (v: unknown): number => {
     if (v === "" || v === null || v === undefined) return 0;
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
@@ -114,11 +118,12 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
         ...values,
         password: values.password || undefined,
         // 流量类空值一律按 0 提交（register setValueAs 已兜底，此处再保险）
-        transfer_enable: Math.round(trafficAsNumber(values.transfer_enable) * GB),
-        balance: trafficAsNumber(values.balance),
-        commission_balance: trafficAsNumber(values.commission_balance),
-        u: Math.round(trafficAsNumber(values.u) * GB),
-        d: Math.round(trafficAsNumber(values.d) * GB),
+        transfer_enable: Math.round(asNumber(values.transfer_enable) * GB),
+        // 元 → 后端 update 再 yuanToCents
+        balance: asNumber(values.balance),
+        commission_balance: asNumber(values.commission_balance),
+        u: Math.round(asNumber(values.u) * GB),
+        d: Math.round(asNumber(values.d) * GB),
         expired_at: values.expired_at
           ? Math.floor(new Date(values.expired_at).getTime() / 1000)
           : null,
@@ -180,20 +185,22 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
             <Field label={t("user.edit.form.balance")}>
               <Input
                 type="number"
-                {...register("balance", { setValueAs: trafficAsNumber })}
+                step="0.01"
+                {...register("balance", { setValueAs: asNumber })}
               />
             </Field>
             <Field label={t("user.edit.form.commission_balance")}>
               <Input
                 type="number"
-                {...register("commission_balance", { setValueAs: trafficAsNumber })}
+                step="0.01"
+                {...register("commission_balance", { setValueAs: asNumber })}
               />
             </Field>
             <Field label={t("user.edit.form.total_traffic") + " (GB)"}>
               <Input
                 type="number"
                 step="0.01"
-                {...register("transfer_enable", { setValueAs: trafficAsNumber })}
+                {...register("transfer_enable", { setValueAs: asNumber })}
               />
             </Field>
             <Field label={t("user.edit.form.expire_time")}>
@@ -277,14 +284,14 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
               <Input
                 type="number"
                 step="0.01"
-                {...register("u", { setValueAs: trafficAsNumber })}
+                {...register("u", { setValueAs: asNumber })}
               />
             </Field>
             <Field label={t("user.edit.form.download") + " (GB)"}>
               <Input
                 type="number"
                 step="0.01"
-                {...register("d", { setValueAs: trafficAsNumber })}
+                {...register("d", { setValueAs: asNumber })}
               />
             </Field>
             <Field label={t("user.dialog.fields.registerIp")}>

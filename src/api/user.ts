@@ -5,7 +5,9 @@ export interface UserListItem {
   email: string;
   uuid: string;
   token?: string;
+  /** 余额（元；列表接口已 /100，编辑提交也按元，后端再转分） */
   balance: number;
+  /** 佣金余额（元；同上） */
   commission_balance: number;
   transfer_enable: number;
   u: number; // 上行 bytes

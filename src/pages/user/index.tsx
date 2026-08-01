@@ -91,7 +91,7 @@ import {
 import {
   formatBytes,
   formatDate,
-  formatCurrency,
+  formatCurrencyYuan,
   cn,
   copyToClipboard,
 } from "@/lib/utils";
@@ -743,10 +743,10 @@ export function UserListPage() {
                       {expireCell}
                     </TableCell>
                     <TableCell className="hidden text-right text-xs tabular-nums font-medium xl:table-cell">
-                      {formatCurrency(u.balance)}
+                      {formatCurrencyYuan(u.balance)}
                     </TableCell>
                     <TableCell className="hidden text-right text-xs tabular-nums text-muted-foreground xl:table-cell">
-                      {formatCurrency(u.commission_balance)}
+                      {formatCurrencyYuan(u.commission_balance)}
                     </TableCell>
                     <TableCell className="hidden text-xs text-muted-foreground tabular-nums xl:table-cell">
                       {u.created_at ? formatDate(u.created_at) : "—"}

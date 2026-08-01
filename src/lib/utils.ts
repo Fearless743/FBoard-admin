@@ -24,10 +24,22 @@ export function bytesToGb(bytes: number): number {
   return bytes / 1024 / 1024 / 1024;
 }
 
-/** 格式化金额 */
+/**
+ * 格式化金额（库内单位：分）。
+ * 订单金额、仪表盘收入等仍存「分」的字段用这个。
+ */
 export function formatCurrency(amount: number, symbol = "¥"): string {
-  if (amount === null || amount === undefined) return `${symbol}0`;
+  if (amount === null || amount === undefined) return `${symbol}0.00`;
   return `${symbol}${(amount / 100).toFixed(2)}`;
+}
+
+/**
+ * 格式化金额（API 已返回「元」）。
+ * 管理端用户列表/详情的 balance、commission_balance 已在后端 /100，勿再除。
+ */
+export function formatCurrencyYuan(amount: number, symbol = "¥"): string {
+  if (amount === null || amount === undefined) return `${symbol}0.00`;
+  return `${symbol}${Number(amount).toFixed(2)}`;
 }
 
 /** 格式化日期时间 */
