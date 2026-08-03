@@ -830,6 +830,7 @@ const translations: Translations = {
     "userManagement": "Пользователи",
     "trafficResetLogs": "Логи сброса трафика",
     "ticketManagement": "Тикеты",
+    "withdrawalManagement": "Выплаты",
     "pluginApps": "Приложения плагинов",
     "pluginMenuDemo": "Меню плагина (демо)"
   },
@@ -3272,6 +3273,72 @@ const translations: Translations = {
       "expand": "Развернуть список"
     }
   },
+    "withdrawal": {
+    "title": "Управление выплатами",
+    "description": "Управление заявками на выплату комиссии пользователей, поддержка подтверждения и отклонения.",
+    "columns": {
+      "id": "ID",
+      "user": "Пользователь",
+      "method": "Способ",
+      "account": "Счёт",
+      "amount": "Сумма",
+      "status": "Статус",
+      "created_at": "Создано",
+      "actions": "Действия"
+    },
+    "status": {
+      "pending": "Ожидает",
+      "confirmed": "Подтверждено",
+      "closed": "Закрыто"
+    },
+    "filter": {
+      "all": "Все"
+    },
+    "actions": {
+      "view": "Подробнее",
+      "confirm": "Подтвердить",
+      "close": "Закрыть",
+      "user_info": "Инфо о пользователе",
+      "confirm_title": "Подтвердить выплату",
+      "confirm_description": "Подтверждение закроет заявку. Убедитесь, что платёж обработан.",
+      "confirm_button": "Подтвердить",
+      "confirm_success": "Выплата подтверждена",
+      "close_confirm_title": "Закрыть выплату",
+      "close_confirm_description": "Закрытие вернёт комиссию на счёт пользователя.",
+      "close_confirm_button": "Закрыть",
+      "close_success": "Выплата закрыта, комиссия возвращена",
+      "reply_success": "Ответ отправлен"
+    },
+    "list": {
+      "search_placeholder": "Поиск счёта выплаты...",
+      "no_withdrawals": "Нет записей о выплатах",
+      "no_open_withdrawals": "Нет ожидающих выплат",
+      "title": "Список выплат",
+      "collapse": "Свернуть",
+      "expand": "Развернуть"
+    },
+    "detail": {
+      "created_at": "Создано",
+      "user_info": "Инфо о пользователе",
+      "traffic_records": "Трафик",
+      "order_records": "Заказы",
+      "no_messages": "Нет сообщений",
+      "operator": "Оператор",
+      "remark": "Примечание",
+      "remark_placeholder": "Введите примечание (необязательно)",
+      "sender_user": "Пользователь",
+      "sender_admin": "Администратор",
+      "input": {
+        "closed_hint": "Этот запрос на вывод уже обработан, ответы недоступны",
+        "reply_placeholder": "Введите сообщение...",
+        "closed_reply_placeholder": "Этот запрос на вывод уже обработан",
+        "send": "Отправить",
+        "sending": "Отправка...",
+        "shortcut_hint": "Enter для отправки, Shift+Enter для новой строки"
+      }
+    }
+  },
+
   "machine": {
     "title": "Управление серверами",
     "description": "Просматривайте состояние сервера, нагрузку и размещённые узлы, а также управляйте службой Fboard-Node.",

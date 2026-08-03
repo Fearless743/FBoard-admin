@@ -76,6 +76,11 @@ const TicketListPage = lazy(() =>
     default: TicketListPage,
   })),
 );
+const WithdrawalListPage = lazy(() =>
+  import("@/pages/withdrawal").then(({ WithdrawalListPage }) => ({
+    default: WithdrawalListPage,
+  })),
+);
 const NotFound = lazy(() =>
   import("@/pages/not-found").then(({ NotFound }) => ({ default: NotFound })),
 );
@@ -103,6 +108,7 @@ export const router = createHashRouter([
       { path: "user", element: lazyElement(<UserListPage />) },
       { path: "order", element: lazyElement(<OrderListPage />) },
       { path: "ticket", element: lazyElement(<TicketListPage />) },
+      { path: "withdrawal", element: lazyElement(<WithdrawalListPage />) },
 
       { path: "plan", element: lazyElement(<PlanListPage />) },
       { path: "coupon", element: lazyElement(<CouponListPage />) },

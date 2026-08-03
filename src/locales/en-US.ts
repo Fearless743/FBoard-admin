@@ -830,6 +830,7 @@ const translations: Translations = {
     "userManagement": "User Management",
     "trafficResetLogs": "Traffic Reset Logs",
     "ticketManagement": "Ticket Management",
+    "withdrawalManagement": "Withdrawal Management",
     "pluginApps": "Plugin Apps",
     "pluginMenuDemo": "Plugin Menu (Demo)"
   },
@@ -3272,6 +3273,74 @@ const translations: Translations = {
       "expand": "Expand list"
     }
   },
+    "withdrawal": {
+    "title": "Withdrawal Management",
+    "description": "Manage user commission withdrawal requests, support confirmation and rejection operations.",
+    "columns": {
+      "id": "ID",
+      "user": "User",
+      "method": "Method",
+      "account": "Account",
+      "amount": "Amount",
+      "status": "Status",
+      "created_at": "Created",
+      "actions": "Actions"
+    },
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "closed": "Closed"
+    },
+    "filter": {
+      "all": "All"
+    },
+    "actions": {
+      "view": "View Details",
+      "confirm": "Confirm",
+      "close": "Close",
+      "user_info": "User Info",
+      "confirm_title": "Confirm Withdrawal",
+      "confirm_description": "Confirming will close this withdrawal request. Please ensure payment is processed.",
+      "confirm_button": "Confirm",
+      "confirm_success": "Withdrawal confirmed",
+      "close_confirm_title": "Close Withdrawal",
+      "close_confirm_description": "Closing will refund the commission to the user account.",
+      "close_confirm_button": "Confirm Close",
+      "close_success": "Withdrawal closed, commission refunded",
+      "reply_success": "Reply sent",
+      "confirm_desc": "Confirming will close this withdrawal request. Please ensure payment is processed.",
+      "close_desc": "Closing will refund the commission to the user account. Continue?"
+    },
+    "list": {
+      "search_placeholder": "Search withdrawal account...",
+      "no_withdrawals": "No withdrawal records",
+      "no_open_withdrawals": "No pending withdrawals",
+      "title": "Withdrawal List",
+      "collapse": "Collapse",
+      "expand": "Expand"
+    },
+    "detail": {
+      "created_at": "Created",
+      "user_info": "User Info",
+      "traffic_records": "Traffic",
+      "order_records": "Orders",
+      "no_messages": "No messages yet",
+      "operator": "Operator",
+      "remark": "Remark",
+      "remark_placeholder": "Enter remark (optional)",
+      "sender_user": "User",
+      "sender_admin": "Admin",
+      "input": {
+        "closed_hint": "This withdrawal has been processed, no further replies allowed",
+        "reply_placeholder": "Type a message...",
+        "closed_reply_placeholder": "This withdrawal has been processed",
+        "send": "Send",
+        "sending": "Sending...",
+        "shortcut_hint": "Enter to send, Shift+Enter for new line"
+      }
+    }
+  },
+
   "machine": {
     "title": "Server Management",
     "description": "Review server health, load, and hosted nodes, then manage the Fboard-Node service from an operations view.",

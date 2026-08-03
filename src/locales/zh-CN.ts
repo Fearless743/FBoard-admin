@@ -830,6 +830,7 @@ const translations: Translations = {
     "giftCardManagement": "礼品卡管理",
     "userManagement": "用户管理",
     "ticketManagement": "工单管理",
+    "withdrawalManagement": "提现管理",
     "trafficResetLogs": "流量重置日志",
     "pluginApps": "插件应用"
   },
@@ -3271,6 +3272,74 @@ const translations: Translations = {
       "expand": "展开列表"
     }
   },
+    "withdrawal": {
+    "title": "提现管理",
+    "description": "管理用户的佣金提现申请，支持确认提现和拒绝提现操作。",
+    "columns": {
+      "id": "提现单号",
+      "user": "用户",
+      "method": "提现方式",
+      "account": "提现账号",
+      "amount": "金额",
+      "status": "状态",
+      "created_at": "创建时间",
+      "actions": "操作"
+    },
+    "status": {
+      "pending": "待处理",
+      "confirmed": "已确认",
+      "closed": "已拒绝"
+    },
+    "filter": {
+      "all": "全部"
+    },
+    "actions": {
+      "view": "查看详情",
+      "confirm": "确认提现",
+      "close": "关闭提现",
+      "user_info": "用户信息",
+      "confirm_title": "确认提现",
+      "confirm_description": "确认后将关闭该提现单，请确保款项已处理。",
+      "confirm_button": "确认提现",
+      "confirm_success": "提现已确认",
+      "close_confirm_title": "关闭提现",
+      "close_confirm_description": "关闭后将把佣金返还给用户账户。",
+      "close_confirm_button": "确认关闭",
+      "close_success": "提现已关闭，佣金已返还",
+      "reply_success": "回复成功",
+      "confirm_desc": "确认后将关闭该提现单，请确保款项已处理。",
+      "close_desc": "关闭后将把佣金返还给用户账户，是否继续？"
+    },
+    "list": {
+      "search_placeholder": "搜索提现账号...",
+      "no_withdrawals": "暂无提现记录",
+      "no_open_withdrawals": "暂无待处理提现",
+      "title": "提现列表",
+      "collapse": "收起列表",
+      "expand": "展开列表"
+    },
+    "detail": {
+      "created_at": "创建时间",
+      "user_info": "用户信息",
+      "traffic_records": "流量记录",
+      "order_records": "订单记录",
+      "no_messages": "暂无聊天记录",
+      "operator": "操作员",
+      "remark": "备注",
+      "remark_placeholder": "输入备注（可选）",
+      "sender_user": "用户",
+      "sender_admin": "管理员",
+      "input": {
+        "closed_hint": "该提现单已处理，无法继续回复",
+        "reply_placeholder": "输入消息...",
+        "closed_reply_placeholder": "该提现单已处理",
+        "send": "发送",
+        "sending": "发送中...",
+        "shortcut_hint": "回车发送，Shift+回车换行"
+      }
+    }
+  },
+
   "machine": {
     "title": "服务器管理",
     "description": "用于查看服务器健康、负载与承载节点，并从运维视角管理 Fboard-Node 服务。",

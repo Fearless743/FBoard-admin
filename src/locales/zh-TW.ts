@@ -830,6 +830,7 @@ const translations: Translations = {
     "giftCardManagement": "禮品卡管理",
     "userManagement": "用戶管理",
     "ticketManagement": "工單管理",
+    "withdrawalManagement": "提现管理",
     "trafficResetLogs": "流量重置日誌",
     "pluginApps": "插件應用"
   },
@@ -3271,6 +3272,74 @@ const translations: Translations = {
       "expand": "展開列表"
     }
   },
+    "withdrawal": {
+    "title": "提現管理",
+    "description": "管理用戶佣金提現申請，支持確認提現和拒絕提現操作。",
+    "columns": {
+      "id": "提現單號",
+      "user": "用戶",
+      "method": "提現方式",
+      "account": "提現帳號",
+      "amount": "金額",
+      "status": "狀態",
+      "created_at": "建立時間",
+      "actions": "操作"
+    },
+    "status": {
+      "pending": "待處理",
+      "confirmed": "已確認",
+      "closed": "已拒絕"
+    },
+    "filter": {
+      "all": "全部"
+    },
+    "actions": {
+      "view": "查看詳情",
+      "confirm": "確認提現",
+      "close": "關閉提現",
+      "user_info": "用戶資訊",
+      "confirm_title": "確認提現",
+      "confirm_description": "確認後將關閉該提現單，請確保款項已處理。",
+      "confirm_button": "確認提現",
+      "confirm_success": "提現已確認",
+      "close_confirm_title": "關閉提現",
+      "close_confirm_description": "關閉後將把佣金返還給用戶帳戶。",
+      "close_confirm_button": "確認關閉",
+      "close_success": "提現已關閉，佣金已返還",
+      "reply_success": "回覆成功",
+      "confirm_desc": "確認後將關閉該提現單，請確保款項已處理。",
+      "close_desc": "關閉後將把佣金返還給用戶帳戶，是否繼續？"
+    },
+    "list": {
+      "search_placeholder": "搜索提現帳號...",
+      "no_withdrawals": "暫無提現記錄",
+      "no_open_withdrawals": "暫無待處理提現",
+      "title": "提現列表",
+      "collapse": "收起列表",
+      "expand": "展開列表"
+    },
+    "detail": {
+      "created_at": "建立時間",
+      "user_info": "用戶資訊",
+      "traffic_records": "流量記錄",
+      "order_records": "訂單記錄",
+      "no_messages": "暫無聊天記錄",
+      "operator": "操作員",
+      "remark": "備註",
+      "remark_placeholder": "輸入備註（可選）",
+      "sender_user": "用戶",
+      "sender_admin": "管理員",
+      "input": {
+        "closed_hint": "該提現單已處理，無法繼續回覆",
+        "reply_placeholder": "輸入消息...",
+        "closed_reply_placeholder": "該提現單已處理",
+        "send": "發送",
+        "sending": "發送中...",
+        "shortcut_hint": "回車發送，Shift+回車換行"
+      }
+    }
+  },
+
   "machine": {
     "title": "服務器管理",
     "description": "用於查看服務器健康、負載與承載節點，並從運維視角管理 Fboard-Node 服務。",

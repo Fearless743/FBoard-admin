@@ -16,6 +16,7 @@ import {
   Puzzle,
   HardDrive,
   Gauge,
+  Banknote,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ export const navigation: NavGroup[] = [
       { path: "user", key: "nav.userManagement", icon: Users },
       { path: "order", key: "nav.orderManagement", icon: ShoppingBag },
       { path: "ticket", key: "nav.ticketManagement", icon: TicketIcon },
+      { path: "withdrawal", key: "nav.withdrawalManagement", icon: Banknote },
     ],
   },
   {
