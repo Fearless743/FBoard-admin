@@ -2,3 +2,4 @@ dist/
 node_modules/
 scripts/
 tsconfig.tsbuildinfo
+.claude/
