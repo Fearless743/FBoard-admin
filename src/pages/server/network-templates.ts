@@ -83,7 +83,6 @@ const TEMPLATES: Record<string, NetworkTemplate[]> = {
       table_type: "prefer_entropy",
       enable_pure_downlink: true,
       handshake_timeout: 5,
-      multiplex: "off",
       httpmask: { disable: false, mode: "legacy" },
     }),
   ],
