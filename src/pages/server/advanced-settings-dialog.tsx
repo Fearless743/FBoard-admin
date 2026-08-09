@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { BookmarkPlus, Check, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import type { UseFormSetValue, UseFormWatch } from "react-hook-form";
 import {
   Dialog,
@@ -23,6 +26,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import {
+  dropCertTemplate,
+  fetchCertTemplates,
+  saveCertTemplate,
+  type CertTemplate,
+} from "@/api/server";
 
 export type CertConfig = {
   cert_mode?: string;
@@ -185,10 +194,19 @@ export function AdvancedSettingsDialog({
   setValue: UseFormSetValue<any>;
 }) {
   const { t } = useTranslation();
+  const qc = useQueryClient();
 
   const [tab, setTab] = useState("tls");
   const [certConfig, setCertConfig] = useState<CertConfig>({ cert_mode: "none" });
   const [dnsEnvText, setDnsEnvText] = useState("");
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [showSaveTemplateForm, setShowSaveTemplateForm] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [deletingTemplateId, setDeletingTemplateId] = useState<number | null>(
+    null,
+  );
   const [multiplex, setMultiplex] = useState<MultiplexConfig>({
     ...DEFAULT_MULTIPLEX,
   });
@@ -196,6 +214,17 @@ export function AdvancedSettingsDialog({
   const [routesText, setRoutesText] = useState("[]");
   const [outboundsError, setOutboundsError] = useState("");
   const [routesError, setRoutesError] = useState("");
+
+  const {
+    data: certTemplates = [],
+    isLoading: certTemplatesLoading,
+    refetch: refetchCertTemplates,
+  } = useQuery({
+    queryKey: ["server", "cert-templates", templateSearch || ""],
+    queryFn: () => fetchCertTemplates(templateSearch),
+    enabled: open,
+    staleTime: 30_000,
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -231,6 +260,10 @@ export function AdvancedSettingsDialog({
     setRoutesText(jsonToText(watch("custom_routes")));
     setOutboundsError("");
     setRoutesError("");
+    setTemplateSearch("");
+    setShowSaveTemplateForm(false);
+    setTemplateName("");
+    setTemplateDescription("");
     setTab("tls");
   }, [open, watch]);
 
@@ -253,6 +286,77 @@ export function AdvancedSettingsDialog({
     };
     return descMap[certMode] || t("server.dynamic_form.cert_config.cert_mode.description");
   }, [certMode, t]);
+
+  const applyCertTemplate = (tmpl: CertTemplate) => {
+    setCertConfig((prev) => ({
+      ...prev,
+      cert_mode: "content",
+      cert_content: tmpl.cert_content,
+      key_content: tmpl.key_content,
+    }));
+    toast.success(
+      t("server.dynamic_form.cert_config.templates.applied", {
+        name: tmpl.name,
+      }),
+    );
+  };
+
+  const handleSaveCertTemplate = async () => {
+    const name = templateName.trim();
+    if (!name) {
+      toast.error(
+        t("server.dynamic_form.cert_config.templates.name_required"),
+      );
+      return;
+    }
+    if (!certConfig.cert_content || !certConfig.key_content) {
+      toast.error(
+        t("server.dynamic_form.cert_config.templates.empty_content"),
+      );
+      return;
+    }
+    setSavingTemplate(true);
+    try {
+      await saveCertTemplate({
+        name,
+        description: templateDescription.trim() || null,
+        cert_content: certConfig.cert_content,
+        key_content: certConfig.key_content,
+      });
+      setTemplateName("");
+      setTemplateDescription("");
+      setShowSaveTemplateForm(false);
+      await qc.invalidateQueries({ queryKey: ["server", "cert-templates"] });
+      await refetchCertTemplates();
+      toast.success(
+        t("server.dynamic_form.cert_config.templates.saved"),
+      );
+    } catch {
+      toast.error(
+        t("server.dynamic_form.cert_config.templates.save_failed"),
+      );
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const handleDeleteCertTemplate = async (id: number) => {
+    setDeletingTemplateId(id);
+    try {
+      await dropCertTemplate(id);
+      await qc.invalidateQueries({ queryKey: ["server", "cert-templates"] });
+      await refetchCertTemplates();
+      toast.success(
+        t("server.dynamic_form.cert_config.templates.deleted"),
+      );
+    } catch {
+      toast.error(
+        t("server.dynamic_form.cert_config.templates.delete_failed"),
+      );
+    } finally {
+      setDeletingTemplateId(null);
+    }
+  };
 
   const applyAndClose = () => {
     const outParsed = parseJsonArray(outboundsText, t);
@@ -470,6 +574,161 @@ export function AdvancedSettingsDialog({
 
                   {certMode === "content" && (
                     <>
+                      {/* 证书模板：一键应用 / 保存 / 删除 */}
+                      <div className="space-y-2 rounded-md border p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label className="text-sm font-medium">
+                            {t(
+                              "server.dynamic_form.cert_config.templates.title",
+                            )}
+                          </Label>
+                          <Button
+                            type="button"
+                            variant="link"
+                            size="sm"
+                            className="h-auto p-0 text-xs"
+                            onClick={() =>
+                              setShowSaveTemplateForm((v) => !v)
+                            }
+                          >
+                            <BookmarkPlus className="h-3.5 w-3.5" />
+                            {t(
+                              "server.dynamic_form.cert_config.templates.save_current",
+                            )}
+                          </Button>
+                        </div>
+
+                        {showSaveTemplateForm && (
+                          <div className="flex flex-col gap-2 rounded-md border p-3">
+                            <Input
+                              placeholder={t(
+                                "server.dynamic_form.cert_config.templates.name_placeholder",
+                              )}
+                              value={templateName}
+                              onChange={(e) => setTemplateName(e.target.value)}
+                            />
+                            <Input
+                              placeholder={t(
+                                "server.dynamic_form.cert_config.templates.description_placeholder",
+                              )}
+                              value={templateDescription}
+                              onChange={(e) =>
+                                setTemplateDescription(e.target.value)
+                              }
+                            />
+                            <div className="flex gap-2 shrink-0">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={savingTemplate}
+                                onClick={() => {
+                                  setShowSaveTemplateForm(false);
+                                  setTemplateName("");
+                                  setTemplateDescription("");
+                                }}
+                              >
+                                {t("server.common.cancel")}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={savingTemplate}
+                                onClick={() => void handleSaveCertTemplate()}
+                              >
+                                {savingTemplate && (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                )}
+                                {t(
+                                  "server.dynamic_form.cert_config.templates.save",
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          <Input
+                            className="h-8 text-xs"
+                            placeholder={t(
+                              "server.dynamic_form.cert_config.templates.search_placeholder",
+                            )}
+                            value={templateSearch}
+                            onChange={(e) => setTemplateSearch(e.target.value)}
+                          />
+                        </div>
+
+                        {certTemplatesLoading ? (
+                          <div className="flex items-center justify-center gap-2 rounded-md border border-dashed px-3 py-4 text-xs text-muted-foreground">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            {t("common.loading")}
+                          </div>
+                        ) : certTemplates.length === 0 ? (
+                          <p className="rounded-md border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
+                            {t(
+                              "server.dynamic_form.cert_config.templates.empty",
+                            )}
+                          </p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {certTemplates.map((tmpl) => (
+                              <div
+                                key={tmpl.id}
+                                className="flex items-start justify-between gap-3 rounded-md border px-3 py-2"
+                              >
+                                <div className="min-w-0 space-y-0.5">
+                                  <span className="block truncate text-sm font-medium">
+                                    {tmpl.name}
+                                  </span>
+                                  {tmpl.description ? (
+                                    <p className="line-clamp-1 text-xs text-muted-foreground">
+                                      {tmpl.description}
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                    disabled={
+                                      deletingTemplateId === Number(tmpl.id)
+                                    }
+                                    title={t(
+                                      "server.dynamic_form.cert_config.templates.delete",
+                                    )}
+                                    onClick={() =>
+                                      void handleDeleteCertTemplate(
+                                        Number(tmpl.id),
+                                      )
+                                    }
+                                  >
+                                    {deletingTemplateId === Number(tmpl.id) ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7"
+                                    onClick={() => applyCertTemplate(tmpl)}
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                    {t(
+                                      "server.dynamic_form.cert_config.templates.use",
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
                       <div className="space-y-1.5">
                         <Label>
                           {t("server.dynamic_form.cert_config.cert_content.label")}

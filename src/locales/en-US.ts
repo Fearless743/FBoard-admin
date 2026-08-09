@@ -2575,6 +2575,24 @@ const translations: Translations = {
             "placeholder": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
             "description": "Paste full private key PEM body, not a file path"
           },
+          "templates": {
+            "title": "Cert Templates",
+            "save_current": "Save current as template",
+            "save": "Save template",
+            "saved": "Cert template saved",
+            "save_failed": "Failed to save cert template",
+            "deleted": "Cert template deleted",
+            "delete_failed": "Failed to delete cert template",
+            "delete": "Delete template",
+            "use": "Apply",
+            "applied": "Applied cert template: {{name}}",
+            "name_required": "Please enter a template name",
+            "name_placeholder": "Template name, e.g. production cert",
+            "description_placeholder": "Template description (optional)",
+            "search_placeholder": "Search templates by name or description…",
+            "empty_content": "Fill in certificate and private key content first, then save as template",
+            "empty": "No cert templates yet"
+          },
           "none_desc": "TLS config disabled"
         }
       },
@@ -2910,6 +2928,24 @@ const translations: Translations = {
           "label": "Private key content (PEM)",
           "placeholder": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
           "description": "Paste full private key PEM body, not a file path"
+        },
+        "templates": {
+          "title": "Cert Templates",
+          "save_current": "Save current as template",
+          "save": "Save template",
+          "saved": "Cert template saved",
+          "save_failed": "Failed to save cert template",
+          "deleted": "Cert template deleted",
+          "delete_failed": "Failed to delete cert template",
+          "delete": "Delete template",
+          "use": "Apply",
+          "applied": "Applied cert template: {{name}}",
+          "name_required": "Please enter a template name",
+          "name_placeholder": "Template name, e.g. production cert",
+          "description_placeholder": "Template description (optional)",
+          "search_placeholder": "Search templates by name or description…",
+          "empty_content": "Fill in certificate and private key content first, then save as template",
+          "empty": "No cert templates yet"
         }
       },
       "routing": {

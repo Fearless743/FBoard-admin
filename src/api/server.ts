@@ -86,6 +86,45 @@ export async function dropNetworkSettingsTemplate(id: number) {
   return adminPost<any>("/server/network-settings-template/drop", { id });
 }
 
+/* ============ 证书模板 ============ */
+export interface CertTemplate {
+  id: number;
+  name: string;
+  description?: string | null;
+  cert_content: string;
+  key_content: string;
+  created_at?: string | number;
+  updated_at?: string | number;
+  [k: string]: any;
+}
+
+export async function fetchCertTemplates(
+  search?: string,
+): Promise<CertTemplate[]> {
+  const qs =
+    search != null && search !== ""
+      ? `?search=${encodeURIComponent(search)}`
+      : "";
+  const res = await adminGet<{ data: CertTemplate[] } | CertTemplate[]>(
+    "/server/cert-template/fetch" + qs,
+  );
+  return Array.isArray(res) ? res : res.data || [];
+}
+
+export async function saveCertTemplate(payload: {
+  id?: number;
+  name: string;
+  description?: string | null;
+  cert_content: string;
+  key_content: string;
+}) {
+  return adminPost<any>("/server/cert-template/save", payload);
+}
+
+export async function dropCertTemplate(id: number) {
+  return adminPost<any>("/server/cert-template/drop", { id });
+}
+
 /* ============ 节点 ============ */
 export interface Server {
   id: number;

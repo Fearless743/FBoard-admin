@@ -2575,6 +2575,24 @@ const translations: Translations = {
             "description": "Вставьте полный PEM приватного ключа, не путь к файлу",
             "placeholder": "-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----"
           },
+          "templates": {
+            "title": "Шаблоны сертификатов",
+            "save_current": "Сохранить текущее как шаблон",
+            "save": "Сохранить шаблон",
+            "saved": "Шаблон сертификата сохранён",
+            "save_failed": "Не удалось сохранить шаблон сертификата",
+            "deleted": "Шаблон сертификата удалён",
+            "delete_failed": "Не удалось удалить шаблон сертификата",
+            "delete": "Удалить шаблон",
+            "use": "Применить",
+            "applied": "Применён шаблон сертификата: {{name}}",
+            "name_required": "Введите имя шаблона",
+            "name_placeholder": "Имя шаблона, например: production cert",
+            "description_placeholder": "Описание шаблона (необязательно)",
+            "search_placeholder": "Поиск шаблонов по имени или описанию…",
+            "empty_content": "Сначала заполните содержимое сертификата и ключа, затем сохраните как шаблон",
+            "empty": "Шаблонов сертификатов пока нет"
+          },
           "none_desc": "TLS config disabled"
         }
       },
@@ -2917,7 +2935,25 @@ const translations: Translations = {
           "placeholder": "-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----"
         },
         "none_desc": "TLS-сертификат не настроен",
-        "tab": "TLS-сертификат"
+        "tab": "TLS-сертификат",
+        "templates": {
+          "title": "Шаблоны сертификатов",
+          "save_current": "Сохранить текущее как шаблон",
+          "save": "Сохранить шаблон",
+          "saved": "Шаблон сертификата сохранён",
+          "save_failed": "Не удалось сохранить шаблон сертификата",
+          "deleted": "Шаблон сертификата удалён",
+          "delete_failed": "Не удалось удалить шаблон сертификата",
+          "delete": "Удалить шаблон",
+          "use": "Применить",
+          "applied": "Применён шаблон сертификата: {{name}}",
+          "name_required": "Введите имя шаблона",
+          "name_placeholder": "Имя шаблона, например: production cert",
+          "description_placeholder": "Описание шаблона (необязательно)",
+          "search_placeholder": "Поиск шаблонов по имени или описанию…",
+          "empty_content": "Сначала заполните содержимое сертификата и ключа, затем сохраните как шаблон",
+          "empty": "Шаблонов сертификатов пока нет"
+        }
       },
       "routing": {
         "error": {

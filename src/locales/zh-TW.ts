@@ -2549,6 +2549,24 @@ const translations: Translations = {
             "placeholder": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
             "description": "粘貼完整私鑰 PEM 正文，不是文件路徑"
           },
+          "templates": {
+            "title": "證書模板",
+            "save_current": "儲存目前內容為模板",
+            "save": "儲存模板",
+            "saved": "證書模板已儲存",
+            "save_failed": "儲存證書模板失敗",
+            "deleted": "證書模板已刪除",
+            "delete_failed": "刪除證書模板失敗",
+            "delete": "刪除模板",
+            "use": "使用",
+            "applied": "已套用證書模板：{{name}}",
+            "name_required": "請輸入模板名稱",
+            "name_placeholder": "模板名稱，例如：正式證書",
+            "description_placeholder": "模板描述（選填）",
+            "search_placeholder": "搜尋模板名稱或描述…",
+            "empty_content": "請先填寫證書內容與私鑰內容，再儲存為模板",
+            "empty": "暫無證書模板"
+          },
           "none_desc": "未啟用 TLS 證書配置"
         }
       },
@@ -2884,6 +2902,24 @@ const translations: Translations = {
           "label": "私鑰內容 (PEM)",
           "placeholder": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
           "description": "粘貼完整私鑰 PEM 正文，不是文件路徑"
+        },
+        "templates": {
+          "title": "證書模板",
+          "save_current": "儲存目前內容為模板",
+          "save": "儲存模板",
+          "saved": "證書模板已儲存",
+          "save_failed": "儲存證書模板失敗",
+          "deleted": "證書模板已刪除",
+          "delete_failed": "刪除證書模板失敗",
+          "delete": "刪除模板",
+          "use": "使用",
+          "applied": "已套用證書模板：{{name}}",
+          "name_required": "請輸入模板名稱",
+          "name_placeholder": "模板名稱，例如：正式證書",
+          "description_placeholder": "模板描述（選填）",
+          "search_placeholder": "搜尋模板名稱或描述…",
+          "empty_content": "請先填寫證書內容與私鑰內容，再儲存為模板",
+          "empty": "暫無證書模板"
         }
       },
       "routing": {
