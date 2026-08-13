@@ -596,6 +596,7 @@ export function ServerListPage() {
                               try {
                                 await copyServer(n.id);
                                 toast.success(t("server.columns.actions_dropdown.copy_success"));
+                                qc.invalidateQueries({ queryKey: ["servers", "nodes"] });
                               } catch (e) {}
                             }}
                           >
