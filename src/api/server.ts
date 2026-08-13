@@ -237,6 +237,10 @@ export async function batchUpdateServer(payload: { ids: number[]; show?: number;
   return adminPost<any>("/server/manage/batchUpdate", payload);
 }
 
+export async function batchReplaceServer(payload: { field: string; search: string; replace: string }) {
+  return adminPost<{ changed: number }>("/server/manage/batchReplace", payload);
+}
+
 export async function createChildNode(payload: { parent_id: number; name: string; host: string; port: number; group_ids?: number[]; tags?: string[]; show?: boolean }) {
   return adminPost<any>("/server/manage/create-child-node", payload);
 }

@@ -16,6 +16,7 @@ import {
   WifiOff,
   Pencil,
   Server as ServerIcon,
+  ReplaceAll,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -68,6 +69,7 @@ import {
   fetchMachines,
   fetchGroups,
   sortServers,
+  batchReplaceServer,
   type Server,
   type ProtocolType,
   type ServerGroup,
@@ -95,6 +97,22 @@ const STATUS_LABEL_FALLBACK: Record<number, string> = {
   2: "运行正常",
 };
 
+/** 批量替换可选字段（value 为后端白名单字段名，label 走 i18n） */
+const BATCH_REPLACE_FIELDS = [
+  { value: "name", label: "name" },
+  { value: "host", label: "host" },
+  { value: "port", label: "port" },
+  { value: "code", label: "code" },
+  { value: "group_ids", label: "group_ids" },
+  { value: "route_ids", label: "route_ids" },
+  { value: "tags", label: "tags" },
+  { value: "protocol_settings", label: "protocol_settings" },
+  { value: "custom_outbounds", label: "custom_outbounds" },
+  { value: "custom_routes", label: "custom_routes" },
+  { value: "cert_config", label: "cert_config" },
+  { value: "rate_time_ranges", label: "rate_time_ranges" },
+] as const;
+
 export function ServerListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -114,6 +132,11 @@ export function ServerListPage() {
   const [resetting, setResetting] = useState<Server | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
   const [pendingSortList, setPendingSortList] = useState<any[] | null>(null);
+  const [replaceOpen, setReplaceOpen] = useState(false);
+  const [replaceField, setReplaceField] = useState<string>("name");
+  const [replaceSearch, setReplaceSearch] = useState("");
+  const [replaceValue, setReplaceValue] = useState("");
+  const [replaceLoading, setReplaceLoading] = useState(false);
 
   // Handle createWithMachineId URL param（一次性动作，不进列表 schema）
   useEffect(() => {
@@ -248,6 +271,32 @@ export function ServerListPage() {
     return `${base}/admin/#/server/config/${n.id}`;
   };
 
+  const handleReplace = async () => {
+    if (!replaceSearch) {
+      toast.error(t("server.toolbar.batch_replace.search_required"));
+      return;
+    }
+    setReplaceLoading(true);
+    try {
+      const res = await batchReplaceServer({
+        field: replaceField,
+        search: replaceSearch,
+        replace: replaceValue,
+      });
+      toast.success(
+        t("server.toolbar.batch_replace.success", {
+          count: (res as any)?.data?.changed ?? (res as any)?.changed ?? 0,
+        }),
+      );
+      setReplaceOpen(false);
+      await qc.invalidateQueries({ queryKey: ["servers", "nodes"] });
+    } catch (e) {
+      // toast 已在请求层处理
+    } finally {
+      setReplaceLoading(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -255,6 +304,13 @@ export function ServerListPage() {
         description={t("server.manage.description")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setReplaceOpen(true)}
+            >
+              <ReplaceAll className="h-4 w-4" />
+              {t("server.toolbar.batch_replace.menu")}
+            </Button>
             <Button
               variant={dragEnabled ? "default" : "outline"}
               onClick={toggleDrag}
@@ -349,7 +405,7 @@ export function ServerListPage() {
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: dragEnabled ? 5 : 9 }).map((_, j) => (
+                  {Array.from({ length: dragEnabled ? 3 : 10 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -358,7 +414,7 @@ export function ServerListPage() {
               ))
             ) : (dragEnabled ? sortList : nodes).length === 0 ? (
               <TableRow>
-                <TableCell colSpan={dragEnabled ? 5 : 10}>
+                <TableCell colSpan={dragEnabled ? 3 : 10}>
                   <EmptyState icon={<ServerIcon className="h-10 w-10" />} />
                 </TableCell>
               </TableRow>
@@ -591,6 +647,65 @@ export function ServerListPage() {
         }}
         onSaved={() => qc.invalidateQueries({ queryKey: ["servers", "nodes"] })}
       />
+
+      <Dialog open={replaceOpen} onOpenChange={(v) => !v && setReplaceOpen(false)}>
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
+            <DialogTitle>{t("server.toolbar.batch_replace.title")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>{t("server.toolbar.batch_replace.field")}</Label>
+              <Select value={replaceField} onValueChange={setReplaceField}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BATCH_REPLACE_FIELDS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>
+                      {t(`server.toolbar.batch_replace.fields.${f.label}`, {
+                        defaultValue: f.label,
+                      })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("server.toolbar.batch_replace.search")}</Label>
+              <Input
+                value={replaceSearch}
+                onChange={(e) => setReplaceSearch(e.target.value)}
+                placeholder={t("server.toolbar.batch_replace.search_placeholder")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("server.toolbar.batch_replace.replace")}</Label>
+              <Input
+                value={replaceValue}
+                onChange={(e) => setReplaceValue(e.target.value)}
+                placeholder={t("server.toolbar.batch_replace.replace_placeholder")}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setReplaceOpen(false)}
+              disabled={replaceLoading}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleReplace}
+              disabled={replaceLoading}
+            >
+              {replaceLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t("server.toolbar.batch_replace.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={!!deleting}

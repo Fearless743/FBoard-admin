@@ -2189,6 +2189,34 @@ const translations: Translations = {
       },
       "batch_reset_traffic_success": "Successfully reset traffic for {{count}} nodes",
       "batch_reset_traffic_error": "Batch reset traffic failed",
+      "batch_replace": {
+        "selected": "{{count}} nodes selected",
+        "menu": "Batch Replace",
+        "clear": "Clear selection",
+        "title": "Batch Replace Node Field",
+        "field": "Field",
+        "search": "Search Value",
+        "search_placeholder": "Enter the string to search for",
+        "replace": "Replace Value",
+        "replace_placeholder": "Enter the string to replace with",
+        "confirm": "Replace",
+        "search_required": "Please enter a search value",
+        "success": "Successfully replaced {{count}} nodes",
+        "fields": {
+          "name": "Node Name",
+          "host": "Host",
+          "port": "Port",
+          "code": "Node Code",
+          "group_ids": "Groups",
+          "route_ids": "Routes",
+          "tags": "Tags",
+          "protocol_settings": "Protocol Settings",
+          "custom_outbounds": "Custom Outbounds",
+          "custom_routes": "Custom Routes",
+          "cert_config": "Cert Config",
+          "rate_time_ranges": "Rate Time Ranges"
+        }
+      },
       "virtualNode": "Virtual Node"
     },
     "form": {

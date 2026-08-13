@@ -2189,6 +2189,34 @@ const translations: Translations = {
       },
       "batch_reset_traffic_success": "Успешно сброшен трафик {{count}} узлов",
       "batch_reset_traffic_error": "Ошибка пакетного сброса трафика",
+      "batch_replace": {
+        "selected": "Выбрано узлов: {{count}}",
+        "menu": "Пакетная замена",
+        "clear": "Снять выбор",
+        "title": "Пакетная замена поля узла",
+        "field": "Поле",
+        "search": "Искомое значение",
+        "search_placeholder": "Введите искомую строку",
+        "replace": "Значение замены",
+        "replace_placeholder": "Введите строку для замены",
+        "confirm": "Заменить",
+        "search_required": "Введите искомое значение",
+        "success": "Успешно заменено узлов: {{count}}",
+        "fields": {
+          "name": "Имя узла",
+          "host": "Хост",
+          "port": "Порт",
+          "code": "Код узла",
+          "group_ids": "Группы",
+          "route_ids": "Маршруты",
+          "tags": "Теги",
+          "protocol_settings": "Настройки протокола",
+          "custom_outbounds": "Свои исходящие",
+          "custom_routes": "Свои маршруты",
+          "cert_config": "Настройки сертификата",
+          "rate_time_ranges": "Периоды множителя"
+        }
+      },
       "virtualNode": "Виртуальный узел"
     },
     "form": {

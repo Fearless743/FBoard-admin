@@ -2163,6 +2163,34 @@ const translations: Translations = {
       },
       "batch_reset_traffic_success": "成功重置 {{count}} 個節點的流量",
       "batch_reset_traffic_error": "批量重置流量失敗",
+      "batch_replace": {
+        "selected": "已選擇 {{count}} 個節點",
+        "menu": "批量替換",
+        "clear": "清除選擇",
+        "title": "批量替換節點字段",
+        "field": "字段",
+        "search": "搜索值",
+        "search_placeholder": "輸入要搜索的字符串",
+        "replace": "替換值",
+        "replace_placeholder": "輸入要替換成的字符串",
+        "confirm": "替換",
+        "search_required": "請輸入搜索值",
+        "success": "成功替換 {{count}} 個節點",
+        "fields": {
+          "name": "節點名稱",
+          "host": "主機地址",
+          "port": "端口",
+          "code": "節點標識",
+          "group_ids": "權限組",
+          "route_ids": "路由規則",
+          "tags": "標籤",
+          "protocol_settings": "協議設置",
+          "custom_outbounds": "自定義出站",
+          "custom_routes": "自定義路由",
+          "cert_config": "證書配置",
+          "rate_time_ranges": "倍率時間段"
+        }
+      },
       "virtualNode": "虛擬節點"
     },
     "form": {

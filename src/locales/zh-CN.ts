@@ -2163,6 +2163,34 @@ const translations: Translations = {
       },
       "batch_reset_traffic_success": "成功重置 {{count}} 个节点的流量",
       "batch_reset_traffic_error": "批量重置流量失败",
+      "batch_replace": {
+        "selected": "已选择 {{count}} 个节点",
+        "menu": "批量替换",
+        "clear": "清除选择",
+        "title": "批量替换节点字段",
+        "field": "字段",
+        "search": "搜索值",
+        "search_placeholder": "输入要搜索的字符串",
+        "replace": "替换值",
+        "replace_placeholder": "输入要替换成的字符串",
+        "confirm": "替换",
+        "search_required": "请输入搜索值",
+        "success": "成功替换 {{count}} 个节点",
+        "fields": {
+          "name": "节点名称",
+          "host": "主机地址",
+          "port": "端口",
+          "code": "节点标识",
+          "group_ids": "权限组",
+          "route_ids": "路由规则",
+          "tags": "标签",
+          "protocol_settings": "协议设置",
+          "custom_outbounds": "自定义出站",
+          "custom_routes": "自定义路由",
+          "cert_config": "证书配置",
+          "rate_time_ranges": "倍率时间段"
+        }
+      },
       "virtualNode": "虚拟节点"
     },
     "form": {
