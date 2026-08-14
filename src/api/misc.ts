@@ -200,6 +200,14 @@ export async function toggleCouponShow(id: number, show: 0 | 1) {
   return adminPost<any>("/coupon/show", { id, show });
 }
 
+export async function batchDropCoupons(ids: number[]) {
+  return adminPost<any>("/coupon/batchDrop", { ids });
+}
+
+export async function dropExpiredCoupons() {
+  return adminPost<any>("/coupon/dropExpired");
+}
+
 /* ============ 礼品卡模板 ============ */
 export interface GiftCardTemplate {
   id: number;
