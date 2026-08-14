@@ -85,11 +85,6 @@ const STATUS_VARIANT: Record<
   1: "destructive",
   2: "success",
 };
-const STATUS_DOT: Record<number, string> = {
-  0: "bg-muted-foreground",
-  1: "bg-destructive",
-  2: "bg-emerald-500",
-};
 /** i18n 缺失时的中文回退，避免页面直接露出 0/1/2 */
 const STATUS_LABEL_FALLBACK: Record<number, string> = {
   0: "未运行",
@@ -480,11 +475,8 @@ export function ServerListPage() {
                           </Badge>
                           <Badge
                             variant={statusVariant}
-                            className="h-5 gap-1 font-normal"
+                            className="h-5 font-normal"
                           >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[statusCode] ?? "bg-muted-foreground"}`}
-                            />
                             {t(`server.columns.status.${statusCode}`, {
                               defaultValue:
                                 STATUS_LABEL_FALLBACK[statusCode] ??
