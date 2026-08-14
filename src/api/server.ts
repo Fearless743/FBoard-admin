@@ -176,6 +176,8 @@ export async function getNodes(params?: {
   pageSize?: number;
   search?: string;
   type?: string;
+  /** 机器 ID：筛选该机器下绑定的节点 */
+  machine_id?: number;
   /** 运行状态：0 未运行 / 1 无人使用或异常 / 2 运行正常 */
   status?: 0 | 1 | 2 | number | string;
 }): Promise<Server[]> {
@@ -185,6 +187,7 @@ export async function getNodes(params?: {
     if (params.pageSize) searchParams.set('pageSize', String(params.pageSize));
     if (params.search) searchParams.set('search', params.search);
     if (params.type) searchParams.set('type', params.type);
+    if (params.machine_id) searchParams.set('machine_id', String(params.machine_id));
     if (params.status !== undefined && params.status !== null && params.status !== "") {
       searchParams.set('status', String(params.status));
     }
