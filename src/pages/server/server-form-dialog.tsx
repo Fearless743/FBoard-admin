@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, type ReactNode } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import {
@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { pinyin } from "pinyin-pro";
 import {
   saveServer,
   fetchGroups,
@@ -177,13 +178,33 @@ export function ServerFormDialog({
     enabled: open,
   });
 
+  /** 部署服务器搜索（客户端拼音搜索） */
+  const [machineSearch, setMachineSearch] = useState("");
+  const [machineSelectOpen, setMachineSelectOpen] = useState(false);
+
   const { data: machinesRes = { data: [] } } = useQuery({
     queryKey: ["machines"],
     queryFn: () => fetchMachines(1, 1000),
     staleTime: 300000,
     enabled: open,
   });
-  const machines: any[] = (machinesRes as any)?.data || [];
+  const allMachines: any[] = (machinesRes as any)?.data || [];
+
+  const filteredMachines = useMemo(() => {
+    const q = machineSearch.trim().toLowerCase();
+    if (!q) return allMachines;
+    return allMachines.filter((m) => {
+      const name = (m.name ?? "").toLowerCase();
+      // 原文匹配
+      if (name.includes(q)) return true;
+      // 拼音匹配：全拼和首字母
+      const py = pinyin(name, { toneType: "none", type: "string" });
+      if (py.includes(q)) return true;
+      const pyFirst = pinyin(name, { pattern: "first", toneType: "none", type: "string" });
+      if (pyFirst.replace(/\s/g, "").includes(q)) return true;
+      return false;
+    });
+  }, [allMachines, machineSearch]);
 
   const { data: nodesData } = useQuery({
     queryKey: ["servers", "nodes"],
@@ -329,6 +350,7 @@ export function ServerFormDialog({
 
   useEffect(() => {
     if (open) {
+      setMachineSearch("");
       const serverType = server?.type || "";
       const protocolSettings = server?.protocol_settings || {};
       const initialTags = (server?.tags || []).filter(Boolean);
@@ -638,38 +660,74 @@ export function ServerFormDialog({
                   control={control}
                   name="machine_id"
                   render={({ field }) => (
-                    <Select
-                      value={field.value == null ? SELECT_NONE : String(field.value)}
-                      onValueChange={(v) =>
-                        field.onChange(v === SELECT_NONE ? null : Number(v))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={t("server.form.machine.placeholder")}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={SELECT_NONE}>
-                          {t("server.form.machine.none")}
-                        </SelectItem>
-                        {(machines as any[]).map((m) => (
-                          <SelectItem key={m.id} value={String(m.id)}>
-                            <span className="flex items-center gap-2">
-                              <span
-                                className={cn(
-                                  "size-2 rounded-full shrink-0",
-                                  m.is_active
-                                    ? "bg-emerald-500"
-                                    : "bg-muted-foreground",
-                                )}
-                              />
-                              {m.name}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={machineSelectOpen} onOpenChange={setMachineSelectOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={machineSelectOpen}
+                          className="w-full justify-between"
+                        >
+                          {field.value == null
+                            ? t("server.form.machine.placeholder")
+                            : (filteredMachines as any[]).find((m) => m.id === field.value)
+                                ?.name ?? String(field.value)}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder={t("common.search")}
+                            value={machineSearch}
+                            onValueChange={setMachineSearch}
+                          />
+                          <CommandList>
+                            <CommandGroup>
+                              <CommandItem
+                                value={SELECT_NONE}
+                                onSelect={() => {
+                                  field.onChange(null);
+                                  setMachineSelectOpen(false);
+                                }}
+                              >
+                                {t("server.form.machine.none")}
+                              </CommandItem>
+                              {(filteredMachines as any[]).length === 0 ? (
+                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                  {machineSearch
+                                    ? t("common.noMatch")
+                                    : t("common.loading")}
+                                </div>
+                              ) : (
+                                (filteredMachines as any[]).map((m) => (
+                                  <CommandItem
+                                    key={m.id}
+                                    value={String(m.id)}
+                                    onSelect={() => {
+                                      field.onChange(m.id);
+                                      setMachineSelectOpen(false);
+                                    }}
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <span
+                                        className={cn(
+                                          "size-2 rounded-full shrink-0",
+                                          m.is_active
+                                            ? "bg-emerald-500"
+                                            : "bg-muted-foreground",
+                                        )}
+                                      />
+                                      {m.name}
+                                    </span>
+                                  </CommandItem>
+                                ))
+                              )}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   )}
                 />
               </FormField>

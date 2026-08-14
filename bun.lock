@@ -42,6 +42,7 @@
         "i18next": "^24.2.0",
         "i18next-browser-languagedetector": "^8.0.2",
         "lucide-react": "^0.468.0",
+        "pinyin-pro": "^3.29.1",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-hook-form": "^7.54.2",
@@ -828,6 +829,8 @@
     "picomatch": ["picomatch@4.0.5", "", {}, "sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A=="],
 
     "pify": ["pify@2.3.0", "", {}, "sha512-udgsAY+fTnvv7kI7aaxbqwWNb0AHiB0qBO89PZKPkoTmGOgdbrHDKD+0B2X4uTfJ/FT1R09r9gTsjUjNJotuog=="],
+
+    "pinyin-pro": ["pinyin-pro@3.29.1", "", {}, "sha512-GkdTguAt9JDAO7Xw71gyx3mtzgFXpmeigesM3XkcTcQdudg2v5k1ZFzWM30Oo4UkwZ9U8pE1pcLKKu8cx8icPg=="],
 
     "pirates": ["pirates@4.0.7", "", {}, "sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA=="],
 
