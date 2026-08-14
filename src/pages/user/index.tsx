@@ -133,6 +133,7 @@ const USER_SORT_FIELDS = [
   "balance",
   "commission_balance",
   "online_count",
+  "expired_at",
 ] as const;
 type UserSortField = (typeof USER_SORT_FIELDS)[number];
 
@@ -409,9 +410,12 @@ export function UserListPage() {
               >
                 {t("user.columns.used_traffic")}
               </SortableHead>
-              <TableHead className="hidden min-w-[120px] lg:table-cell">
+              <SortableHead
+                field="expired_at"
+                className="hidden min-w-[120px] lg:table-cell"
+              >
                 {t("user.columns.expire_time")}
-              </TableHead>
+              </SortableHead>
               <SortableHead
                 field="balance"
                 className="hidden min-w-[100px] lg:table-cell"
