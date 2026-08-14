@@ -3087,6 +3087,7 @@ const translations: Translations = {
     "table": {
       "columns": {
         "id": "ID",
+        "select": "Выбрать",
         "show": "Включен",
         "name": "Название",
         "type": "Тип",
@@ -3112,6 +3113,20 @@ const translations: Translations = {
           "title": "Подтверждение удаления",
           "description": "Это действие навсегда удалит этот купон. Вы уверены, что хотите продолжить?",
           "confirmText": "Удалить"
+        },
+        "batchDelete": "Удалить выбранные ({{count}})",
+        "batchDeleteConfirm": {
+          "title": "Массовое удаление",
+          "description": "Вы уверены, что хотите удалить выбранные {{count}} купонов? Это действие нельзя отменить."
+        },
+        "dropExpired": "Удалить просроченные",
+        "dropExpiredConfirm": {
+          "title": "Удаление просроченных купонов",
+          "description": "Вы уверены, что хотите удалить все просроченные купоны? Это действие нельзя отменить."
+        },
+        "dropExpiredResult": {
+          "success": "Удалено просроченных купонов: {{count}}",
+          "empty": "Просроченных купонов не найдено"
         }
       },
       "toolbar": {
