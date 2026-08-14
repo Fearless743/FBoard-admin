@@ -2217,6 +2217,7 @@ const translations: Translations = {
           "rate_time_ranges": "Rate Time Ranges"
         }
       },
+      "filteringByMachine": "Filtering nodes of this machine:",
       "virtualNode": "Virtual Node"
     },
     "form": {
@@ -3680,6 +3681,7 @@ const translations: Translations = {
   },
   "common": {
     "all": "All",
+    "clear": "Clear",
     "selectAll": "Select all",
     "loading": "Loading...",
     "error": "Error",

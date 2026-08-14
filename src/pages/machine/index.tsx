@@ -1594,7 +1594,7 @@ function MachineDetailDialog({
                     size="sm"
                     variant="outline"
                     className="gap-1.5 text-xs"
-                    onClick={() => navigate(adminPath("server/manage"))}
+                    onClick={() => navigate(adminPath("server/manage") + "?machineId=" + machine.id)}
                   >
                     {t("machine.detail.openNodeManage")}
                     <ExternalLink className="h-4 w-4" />
@@ -1817,7 +1817,7 @@ function MachineDetailDialog({
                     variant="ghost"
                     size="sm"
                     className="gap-1 text-xs"
-                    onClick={() => navigate(adminPath("server/manage"))}
+                    onClick={() => navigate(adminPath("server/manage") + "?machineId=" + machine.id)}
                   >
                     {t("machine.detail.openNodeManage")}
                     <ArrowRight className="h-3.5 w-3.5" />

@@ -2217,6 +2217,7 @@ const translations: Translations = {
           "rate_time_ranges": "Периоды множителя"
         }
       },
+      "filteringByMachine": "Фильтр узлов этой машины:",
       "virtualNode": "Виртуальный узел"
     },
     "form": {
@@ -3679,6 +3680,7 @@ const translations: Translations = {
   },
   "common": {
     "all": "Все",
+    "clear": "Очистить",
     "selectAll": "Выбрать все",
     "loading": "Загрузка...",
     "error": "Ошибка",
