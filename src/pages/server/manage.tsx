@@ -117,6 +117,25 @@ export function ServerListPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  // 从 URL 读取 machineId（机器详情页跳转时传入，用于自动筛选该机器节点）
+  const [machineId, setMachineId] = useState<number | null>(() => {
+    const raw = searchParams.get("machineId");
+    if (raw) {
+      const id = parseInt(raw, 10);
+      return isNaN(id) ? null : id;
+    }
+    return null;
+  });
+  // 从 URL 同步 machineId（支持浏览器前进/后退，以及直接修改地址栏）
+  useEffect(() => {
+    const raw = searchParams.get("machineId");
+    if (raw) {
+      const id = parseInt(raw, 10);
+      setMachineId(isNaN(id) ? null : id);
+    } else {
+      setMachineId(null);
+    }
+  }, [searchParams]);
   // type/status 用 string：协议类型来自后端动态列表；默认 all 不写进 URL
   const [qs, setQs, query] = useUrlState(
     listQuerySchema({
@@ -166,6 +185,7 @@ export function ServerListPage() {
       query.q,
       query.type,
       query.status,
+      machineId,
     ],
     queryFn: () =>
       getNodes({
@@ -174,6 +194,7 @@ export function ServerListPage() {
         search: query.q || undefined,
         type: query.type === "all" ? undefined : query.type,
         status: query.status === "all" ? undefined : Number(query.status),
+        machine_id: machineId ?? undefined,
       }),
   });
 
@@ -327,6 +348,31 @@ export function ServerListPage() {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        {machineId != null && (
+          <div className="mb-2 flex w-full items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+            <span className="text-muted-foreground">
+              {t("server.toolbar.filteringByMachine")}
+            </span>
+            <span className="font-medium">
+              {machinesMap[machineId] || `#${machineId}`}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-7 gap-1 text-xs"
+              onClick={() => {
+                setMachineId(null);
+                setSearchParams((prev) => {
+                  const next = new URLSearchParams(prev);
+                  next.delete("machineId");
+                  return next;
+                }, { replace: true });
+              }}
+            >
+              {t("common.clear")}
+            </Button>
+          </div>
+        )}
         <div className="relative max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
