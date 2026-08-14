@@ -71,10 +71,15 @@ import {
   reloadMachine,
   getMachineLogs,
   batchUpgradeMachines,
+  fetchAvailableNodes,
+  bindMachineNodes,
+  unbindMachineNode,
+  fetchProtocolTypes,
   type Machine,
   type MachineLoadStatus,
   type MachineKernelStatus,
   type MachineSummary,
+  type AvailableNode,
 } from "@/api/server";
 import { formatBytes, formatDate } from "@/lib/utils";
 import { adminPath } from "@/lib/paths";
@@ -1313,6 +1318,32 @@ function MultiSeriesChart({
   );
 }
 
+/* ─── 节点地址压缩显示：截断长 host，悬浮展示完整地址 ─── */
+function NodeHostPort({
+  host,
+  port,
+}: {
+  host?: string | null;
+  port?: number | string | null;
+}) {
+  if (!host) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+  const full = `${host}${port != null && port !== "" ? `:${port}` : ""}`;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-block max-w-[160px] truncate align-bottom">
+          {full}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs break-all font-mono text-xs">
+        {full}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 /* ─── 机器详情侧边栏 ─── */
 function MachineDetailDialog({
   machine,
@@ -1331,6 +1362,9 @@ function MachineDetailDialog({
   const [historyLoading, setHistoryLoading] = useState(false);
   const [nodes, setNodes] = useState<any[] | null>(null);
   const [nodesLoading, setNodesLoading] = useState(false);
+  const [bindOpen, setBindOpen] = useState(false);
+  const [unbindTarget, setUnbindTarget] = useState<any | null>(null);
+  const [unbindSubmitting, setUnbindSubmitting] = useState(false);
   // Time range state
   const RANGES = [
     { label: "1h", hours: 1 },
@@ -1408,6 +1442,21 @@ function MachineDetailDialog({
       loadToken();
     } catch (e) {
       toast.error(t("machine.messages.tokenResetFailed"));
+    }
+  };
+
+  const onUnbindNode = async () => {
+    if (!machine || !unbindTarget) return;
+    setUnbindSubmitting(true);
+    try {
+      await unbindMachineNode(machine.id, unbindTarget.id);
+      toast.success(t("machine.detail.unbindSuccess", { name: unbindTarget.name }));
+      setUnbindTarget(null);
+      loadNodes();
+    } catch (e) {
+      toast.error(t("machine.detail.unbindFailed"));
+    } finally {
+      setUnbindSubmitting(false);
     }
   };
 
@@ -1756,10 +1805,10 @@ function MachineDetailDialog({
                     })}
                   </Badge>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     className="gap-1 text-xs"
-                    onClick={() => navigate(adminPath("server/manage"))}
+                    onClick={() => setBindOpen(true)}
                   >
                     <Link2 className="h-3.5 w-3.5" />
                     {t("machine.detail.bindExistingButton")}
@@ -1813,9 +1862,9 @@ function MachineDetailDialog({
                               type="button"
                               className="inline-flex items-center gap-1 text-left text-primary hover:underline"
                             >
-                              <span className="text-muted-foreground">
-                                #{n.id}
-                              </span>
+                              <Badge variant="secondary" className="font-mono text-[10px]">
+                                {n.id}
+                              </Badge>
                               {n.name}
                               <ExternalLink className="h-3 w-3 shrink-0" />
                             </button>
@@ -1828,8 +1877,8 @@ function MachineDetailDialog({
                               {n.type}
                             </Badge>
                           </TableCell>
-                          <TableCell className="font-mono text-xs text-muted-foreground">
-                            {n.host}:{n.port}
+                          <TableCell className="max-w-[200px] font-mono text-xs text-muted-foreground">
+                            <NodeHostPort host={n.host} port={n.port} />
                           </TableCell>
                           <TableCell className="text-center">
                             <Switch
@@ -1845,6 +1894,7 @@ function MachineDetailDialog({
                               variant="ghost"
                               className="h-7 w-7 text-muted-foreground hover:text-destructive"
                               title={t("machine.detail.unbindNode")}
+                              onClick={() => setUnbindTarget(n)}
                             >
                               <Unlink className="h-3.5 w-3.5" />
                             </Button>
@@ -1858,6 +1908,283 @@ function MachineDetailDialog({
             </CardContent>
           </Card>
         </div>
+      </DialogContent>
+
+      {/* 解绑确认 */}
+      <ConfirmDialog
+        open={!!unbindTarget}
+        onOpenChange={(v) => {
+          if (!v && !unbindSubmitting) setUnbindTarget(null);
+        }}
+        title={t("machine.detail.unbindConfirmTitle")}
+        description={
+          unbindTarget
+            ? t("machine.detail.unbindConfirmDescription", { name: unbindTarget.name })
+            : undefined
+        }
+        confirmText={t("machine.detail.unbindNode")}
+        variant="destructive"
+        loading={unbindSubmitting}
+        onConfirm={onUnbindNode}
+      />
+
+      {/* 绑定已有节点 */}
+      <BindNodesDialog
+        machine={machine}
+        open={bindOpen}
+        onOpenChange={(v) => {
+          setBindOpen(v);
+          if (!v) loadNodes();
+        }}
+      />
+    </Dialog>
+  );
+}
+
+/* ─── 绑定已有节点弹窗 ─── */
+function BindNodesDialog({
+  machine,
+  open,
+  onOpenChange,
+}: {
+  machine: Machine | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [type, setType] = useState("");
+  const [nodes, setNodes] = useState<AvailableNode[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
+
+  // 协议类型列表（与节点管理页一致）
+  const { data: protocolTypesData = [] } = useQuery({
+    queryKey: ["server", "protocol-types"],
+    queryFn: fetchProtocolTypes,
+    staleTime: 300000,
+    enabled: open,
+  });
+
+  useEffect(() => {
+    const h = window.setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(h);
+  }, [search]);
+
+  useEffect(() => {
+    setSelected(new Set());
+    setPage(1);
+    setType("");
+    setSearch("");
+    setDebouncedSearch("");
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setLoading(true);
+    fetchAvailableNodes({
+      current: page,
+      pageSize,
+      search: debouncedSearch || undefined,
+      type: type || undefined,
+    })
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res) ? res : res?.data || [];
+        setNodes(list);
+        setTotal(res?.total ?? list.length);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setNodes([]);
+          setTotal(0);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, page, debouncedSearch, type]);
+
+  const toggleNode = useCallback((id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.size === nodes.length && nodes.length > 0) {
+        nodes.forEach((n) => next.delete(n.id));
+      } else {
+        nodes.forEach((n) => next.add(n.id));
+      }
+      return next;
+    });
+  }, [nodes]);
+
+  const submit = async () => {
+    if (!machine || selected.size === 0) return;
+    setSubmitting(true);
+    try {
+      const ids = Array.from(selected);
+      await bindMachineNodes(machine.id, ids);
+      toast.success(
+        t("machine.detail.bindSuccess", {
+          count: ids.length,
+          name: machine.name,
+        }),
+      );
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(t("machine.detail.bindFailed"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
+          <DialogTitle className="flex items-center gap-2">
+            <Link2 className="h-5 w-5" />
+            {t("machine.detail.bindExistingTitle")}
+          </DialogTitle>
+          <DialogDescription>
+            {machine
+              ? t("machine.detail.bindExistingDescription", { name: machine.name })
+              : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 min-h-0 flex flex-col gap-3 px-6 py-4">
+          {/* 搜索 + 类型筛选 + 全选 */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[200px] flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("machine.detail.bindSearchPlaceholder")}
+                className="pl-8"
+              />
+            </div>
+            <Select value={type} onValueChange={(v) => { setType(v); setPage(1); }}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder={t("machine.detail.bindTypeAll")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{t("machine.detail.bindTypeAll")}</SelectItem>
+                {(Array.isArray(protocolTypesData) ? protocolTypesData : []).map((p: any) => (
+                  <SelectItem key={p.type} value={p.type}>
+                    {p.name || p.type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              disabled={!nodes.length}
+              onClick={toggleAll}
+            >
+              <Check className="h-3.5 w-3.5" />
+              {t("machine.detail.selectAll", { count: nodes.length })}
+            </Button>
+          </div>
+
+          {/* 列表 */}
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border">
+            {loading ? (
+              <div className="flex h-40 items-center justify-center">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : !nodes.length ? (
+              <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+                {debouncedSearch || type
+                  ? t("machine.detail.noSearchResults")
+                  : t("machine.detail.noUnboundNodes")}
+              </div>
+            ) : (
+              <div className="divide-y">
+                {nodes.map((n) => {
+                  const active = selected.has(n.id);
+                  return (
+                    <button
+                      key={n.id}
+                      type="button"
+                      className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-muted/50"
+                      onClick={() => toggleNode(n.id)}
+                    >
+                      <span
+                        className={cn(
+                          "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                          active
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-muted-foreground/40",
+                        )}
+                      >
+                        {active && <Check className="h-3 w-3" />}
+                      </span>
+                      <Badge variant="secondary" className="font-mono text-[10px] shrink-0">
+                        {n.id}
+                      </Badge>
+                      <span className="flex-1 truncate font-mono text-sm">
+                        {n.name}
+                      </span>
+                      <Badge variant="outline" className="font-mono text-[10px]">
+                        {n.type}
+                      </Badge>
+                      <span className="hidden max-w-[140px] truncate font-mono text-xs text-muted-foreground sm:inline-block align-bottom">
+                        {n.host}:{n.port}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 已选 + 分页 */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground">
+              {t("machine.detail.selectedCount", { count: selected.size })}
+            </span>
+            <Pagination
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={(p) => setPage(p)}
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("machine.detail.cancel")}
+          </Button>
+          <Button onClick={submit} disabled={submitting || selected.size === 0}>
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {t("machine.detail.bindConfirm", { count: selected.size })}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -3581,6 +3581,7 @@ const translations: Translations = {
       "bindExistingTitle": "Bind Existing Nodes",
       "bindExistingDescription": "Select nodes to bind to \"{{name}}\"",
       "bindSearchPlaceholder": "Search by name, address, type...",
+      "bindTypeAll": "All types",
       "noUnboundNodes": "No unbound nodes available",
       "noSearchResults": "No matching nodes",
       "selectAll": "Select all ({{count}})",
@@ -3592,6 +3593,8 @@ const translations: Translations = {
       "unbindNode": "Unbind",
       "unbindSuccess": "\"{{name}}\" has been unbound",
       "unbindFailed": "Unbind failed",
+      "unbindConfirmTitle": "Confirm unbind",
+      "unbindConfirmDescription": "The node \"{{name}}\" will be unbound from this server (the node itself will not be deleted).",
       "cancel": "Cancel"
     },
     "messages": {

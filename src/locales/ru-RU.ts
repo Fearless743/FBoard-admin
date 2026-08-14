@@ -3563,6 +3563,7 @@ const translations: Translations = {
       "bindExistingTitle": "Привязать существующие узлы",
       "bindExistingDescription": "Выберите узлы для привязки к «{{name}}»",
       "bindSearchPlaceholder": "Поиск по имени, адресу, типу...",
+      "bindTypeAll": "Все типы",
       "noUnboundNodes": "Нет свободных узлов",
       "noSearchResults": "Нет совпадений",
       "selectAll": "Выбрать все ({{count}})",
@@ -3574,6 +3575,8 @@ const translations: Translations = {
       "unbindNode": "Отвязать",
       "unbindSuccess": "«{{name}}» отвязан",
       "unbindFailed": "Ошибка отвязки",
+      "unbindConfirmTitle": "Подтвердите отвязку",
+      "unbindConfirmDescription": "Узел «{{name}}» будет отвязан от этого сервера (сам узел не будет удалён).",
       "cancel": "Отмена"
     },
     "messages": {

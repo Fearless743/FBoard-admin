@@ -3580,6 +3580,7 @@ const translations: Translations = {
       "bindExistingTitle": "关联已有节点",
       "bindExistingDescription": "选择要关联到「{{name}}」的节点",
       "bindSearchPlaceholder": "搜索节点名称、地址、类型...",
+      "bindTypeAll": "全部类型",
       "noUnboundNodes": "没有未绑定的节点",
       "noSearchResults": "没有匹配的节点",
       "selectAll": "全选（共 {{count}} 个）",
@@ -3591,6 +3592,8 @@ const translations: Translations = {
       "unbindNode": "取消关联",
       "unbindSuccess": "已取消「{{name}}」的关联",
       "unbindFailed": "取消关联失败",
+      "unbindConfirmTitle": "确认取消关联",
+      "unbindConfirmDescription": "将把节点「{{name}}」从当前服务器上解绑（节点本身不会被删除）。",
       "cancel": "取消"
     },
     "messages": {

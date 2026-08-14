@@ -450,6 +450,49 @@ export async function getMachineNodes(id: number) {
   return adminGet<any>("/server/machine/nodes", { machine_id: id });
 }
 
+export interface AvailableNode {
+  id: number;
+  name: string;
+  type: string;
+  host: string;
+  port: number | string;
+  show: 0 | 1;
+  enabled: boolean;
+  sort: number;
+  status?: number;
+  [k: string]: any;
+}
+
+export interface AvailableNodesResponse {
+  data: AvailableNode[];
+  total: number;
+  current_page: number;
+  last_page: number;
+}
+
+export async function fetchAvailableNodes(params: {
+  current?: number;
+  pageSize?: number;
+  search?: string;
+  type?: string;
+}): Promise<AvailableNodesResponse> {
+  const qs = new URLSearchParams();
+  if (params.current) qs.set("current", String(params.current));
+  if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+  if (params.search) qs.set("search", params.search);
+  if (params.type) qs.set("type", params.type);
+  const res = await adminGet<any>("/server/machine/available-nodes?" + qs.toString());
+  return res?.data ? { data: res.data, total: res.total ?? 0, current_page: res.current_page ?? 1, last_page: res.last_page ?? 1 } : res;
+}
+
+export async function bindMachineNodes(machineId: number, ids: number[]) {
+  return adminPost<any>("/server/machine/bind-nodes", { machine_id: machineId, ids });
+}
+
+export async function unbindMachineNode(machineId: number, id: number) {
+  return adminPost<any>("/server/machine/unbind-node", { machine_id: machineId, id });
+}
+
 export async function upgradeMachine(id: number) {
   return adminPost<{ submitted: boolean; machine_id: number }>("/server/machine/upgrade", { id });
 }
