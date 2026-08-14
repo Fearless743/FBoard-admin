@@ -2191,6 +2191,7 @@ const translations: Translations = {
           "rate_time_ranges": "倍率时间段"
         }
       },
+      "filteringByMachine": "正在筛选该机器的节点：",
       "virtualNode": "虚拟节点"
     },
     "form": {
@@ -3676,6 +3677,7 @@ const translations: Translations = {
   },
   "common": {
     "all": "全部",
+    "clear": "清除",
     "selectAll": "全选",
     "loading": "加载中...",
     "error": "错误",
