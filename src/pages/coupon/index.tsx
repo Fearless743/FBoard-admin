@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
-import { Plus, Pencil, Trash2, Loader2, Search, TicketPercent, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Search, TicketPercent, Copy, CalendarOff } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Pagination } from "@/components/common/pagination";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,9 +44,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, type CouponItem } from "@/api/misc";
+import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, batchDropCoupons, dropExpiredCoupons, type CouponItem } from "@/api/misc";
 
-const COL_COUNT = 8;
+const COL_COUNT = 9;
 
 export function CouponListPage() {
   const { t } = useTranslation();
@@ -53,6 +54,9 @@ export function CouponListPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CouponItem | null>(null);
   const [deleting, setDeleting] = useState<CouponItem | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [batchDeleting, setBatchDeleting] = useState<null | "selected" | "expired">(null);
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
   const [qs, setQs, query] = useUrlState(
     listQuerySchema({
       q: { type: "string", default: "", debounce: 500 },
@@ -84,6 +88,55 @@ export function CouponListPage() {
       toast.success(t("common.success"));
       qc.invalidateQueries({ queryKey: ["coupons"] });
     } catch (e) {}
+  };
+
+  // 全选 / 反选当前页
+  const pageIds = list.map((c) => c.id);
+  const allChecked = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const toggleAll = (checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      pageIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  };
+  const toggleOne = (id: number, checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const handleBatchDeleteSelected = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBatchSubmitting(true);
+    try {
+      await batchDropCoupons(ids);
+      toast.success(t("common.delete.success"));
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["coupons"] });
+    } catch (e) {
+    } finally {
+      setBatchSubmitting(false);
+      setBatchDeleting(null);
+    }
+  };
+
+  const handleDropExpired = async () => {
+    setBatchSubmitting(true);
+    try {
+      const res: any = await dropExpiredCoupons();
+      const count = res?.count ?? 0;
+      toast.success(count > 0 ? t("coupon.table.actions.dropExpiredResult.success", { count }) : t("coupon.table.actions.dropExpiredResult.empty"));
+      qc.invalidateQueries({ queryKey: ["coupons"] });
+    } catch (e) {
+    } finally {
+      setBatchSubmitting(false);
+      setBatchDeleting(null);
+    }
   };
 
   return (
@@ -125,12 +178,40 @@ export function CouponListPage() {
             <SelectItem value="2">{t("coupon.table.toolbar.types.2")}</SelectItem>
           </SelectContent>
         </Select>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={selected.size === 0}
+            onClick={() => setBatchDeleting("selected")}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+            {t("coupon.table.actions.batchDelete", { count: selected.size })}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setBatchDeleting("expired")}
+          >
+            <CalendarOff className="h-4 w-4" />
+            {t("coupon.table.actions.dropExpired")}
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allChecked}
+                  onCheckedChange={(v) => toggleAll(!!v)}
+                  aria-label={t("coupon.table.columns.select")}
+                />
+              </TableHead>
               <TableHead className="hidden w-16 md:table-cell">
                 {t("coupon.table.columns.id")}
               </TableHead>
@@ -165,13 +246,13 @@ export function CouponListPage() {
                     <TableCell
                       key={j}
                       className={cn(
-                        // 0 id, 1 show, 2 name, 3 type, 4 code, 5 limit, 6 validity, 7 actions
-                        j === 0 && "hidden md:table-cell",
-                        j === 1 && "hidden sm:table-cell",
-                        j === 3 && "hidden sm:table-cell",
-                        j === 4 && "hidden md:table-cell",
-                        j === 5 && "hidden lg:table-cell",
-                        j === 6 && "hidden md:table-cell",
+                        // 0 select, 1 id, 2 show, 3 name, 4 type, 5 code, 6 limit, 7 validity, 8 actions
+                        j === 1 && "hidden md:table-cell",
+                        j === 2 && "hidden sm:table-cell",
+                        j === 4 && "hidden sm:table-cell",
+                        j === 5 && "hidden md:table-cell",
+                        j === 6 && "hidden lg:table-cell",
+                        j === 7 && "hidden md:table-cell",
                       )}
                     >
                       <Skeleton className="h-4 w-full" />
@@ -249,6 +330,13 @@ export function CouponListPage() {
 
                 return (
                   <TableRow key={c.id} className="group">
+                    <TableCell className="w-10">
+                      <Checkbox
+                        checked={selected.has(c.id)}
+                        onCheckedChange={(v) => toggleOne(c.id, !!v)}
+                        aria-label={t("coupon.table.columns.select")}
+                      />
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <IdBadge id={c.id} compact />
                     </TableCell>
@@ -374,6 +462,24 @@ export function CouponListPage() {
             setDeleting(null);
           } catch (e) {}
         }}
+      />
+
+      <ConfirmDialog
+        open={batchDeleting === "selected"}
+        onOpenChange={(v) => !v && setBatchDeleting(null)}
+        title={t("coupon.table.actions.batchDeleteConfirm.title")}
+        description={t("coupon.table.actions.batchDeleteConfirm.description", { count: selected.size })}
+        onConfirm={handleBatchDeleteSelected}
+        loading={batchSubmitting}
+      />
+
+      <ConfirmDialog
+        open={batchDeleting === "expired"}
+        onOpenChange={(v) => !v && setBatchDeleting(null)}
+        title={t("coupon.table.actions.dropExpiredConfirm.title")}
+        description={t("coupon.table.actions.dropExpiredConfirm.description")}
+        onConfirm={handleDropExpired}
+        loading={batchSubmitting}
       />
     </>
   );

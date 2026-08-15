@@ -3086,6 +3086,7 @@ const translations: Translations = {
     "table": {
       "columns": {
         "id": "ID",
+        "select": "選擇",
         "show": "啟用",
         "name": "卷名稱",
         "type": "類型",
@@ -3111,6 +3112,20 @@ const translations: Translations = {
           "title": "確認刪除",
           "description": "此操作將永久刪除該優惠券，刪除後無法恢復。確定要繼續嗎？",
           "confirmText": "刪除"
+        },
+        "batchDelete": "批量刪除 ({{count}})",
+        "batchDeleteConfirm": {
+          "title": "批量刪除",
+          "description": "確定要刪除選中的 {{count}} 張優惠券嗎？刪除後無法恢復。"
+        },
+        "dropExpired": "刪除已過期",
+        "dropExpiredConfirm": {
+          "title": "刪除已過期優惠券",
+          "description": "確定要刪除所有已過期的優惠券嗎？刪除後無法恢復。"
+        },
+        "dropExpiredResult": {
+          "success": "已刪除 {{count}} 張過期優惠券",
+          "empty": "沒有找到已過期的優惠券"
         }
       },
       "toolbar": {
