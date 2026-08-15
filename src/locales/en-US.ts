@@ -3087,6 +3087,7 @@ const translations: Translations = {
     "table": {
       "columns": {
         "id": "ID",
+        "select": "Select",
         "show": "Enable",
         "name": "Coupon Name",
         "type": "Type",
@@ -3112,6 +3113,20 @@ const translations: Translations = {
           "title": "Confirm Delete",
           "description": "This action will permanently delete this coupon and cannot be undone. Are you sure you want to continue?",
           "confirmText": "Delete"
+        },
+        "batchDelete": "Delete Selected ({{count}})",
+        "batchDeleteConfirm": {
+          "title": "Batch Delete",
+          "description": "Are you sure you want to delete the selected {{count}} coupons? This action cannot be undone."
+        },
+        "dropExpired": "Delete Expired",
+        "dropExpiredConfirm": {
+          "title": "Delete Expired Coupons",
+          "description": "Are you sure you want to delete all expired coupons? This action cannot be undone."
+        },
+        "dropExpiredResult": {
+          "success": "Successfully deleted {{count}} expired coupon(s)",
+          "empty": "No expired coupons found"
         }
       },
       "toolbar": {

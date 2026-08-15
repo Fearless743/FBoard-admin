@@ -3086,6 +3086,7 @@ const translations: Translations = {
     "table": {
       "columns": {
         "id": "ID",
+        "select": "选择",
         "show": "启用",
         "name": "卷名称",
         "type": "类型",
@@ -3111,6 +3112,20 @@ const translations: Translations = {
           "title": "确认删除",
           "description": "此操作将永久删除该优惠券，删除后无法恢复。确定要继续吗？",
           "confirmText": "删除"
+        },
+        "batchDelete": "批量删除 ({{count}})",
+        "batchDeleteConfirm": {
+          "title": "批量删除",
+          "description": "确定要删除选中的 {{count}} 张优惠券吗？删除后无法恢复。"
+        },
+        "dropExpired": "删除已过期",
+        "dropExpiredConfirm": {
+          "title": "删除已过期优惠券",
+          "description": "确定要删除所有已过期的优惠券吗？删除后无法恢复。"
+        },
+        "dropExpiredResult": {
+          "success": "已删除 {{count}} 张过期优惠券",
+          "empty": "没有找到已过期的优惠券"
         }
       },
       "toolbar": {
