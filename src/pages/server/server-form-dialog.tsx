@@ -289,7 +289,8 @@ export function ServerFormDialog({
   // 新建节点或切换协议类型时，用协议定义 default 填充 TLS / 传输协议等缺失项
   useEffect(() => {
     if (!open || !selectedType || !currentDef) return;
-    // 编辑已有节点：只补缺失键，不覆盖已保存值
+    // 编辑已有节点：reset() 已初始化 protocol_settings，跳过避免覆盖已保存值
+    if (server) return;
     const current = watch("protocol_settings") || {};
     const merged = applyProtocolDefaults(
       currentDef.config_fields || {},
@@ -387,7 +388,7 @@ export function ServerFormDialog({
         route_ids: (server?.route_ids || []).map(Number),
       });
     }
-  }, [open, server, initialMachineId, reset, protocolTypes]);
+  }, [open, server, initialMachineId, reset]);
 
   const onSubmit = async (values: FormValues) => {
     try {
