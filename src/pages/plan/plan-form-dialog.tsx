@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, type ComponentProps, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useServerGroups } from "@/hooks/use-server-groups";
 import { useForm, Controller, type Control, type FieldPath } from "react-hook-form";
 import { Loader2, Eraser, CircleHelp } from "lucide-react";
 import { toast } from "sonner";
@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { savePlan, type Plan } from "@/api/plan";
-import { fetchGroups, type ServerGroup } from "@/api/server";
+import type { ServerGroup } from "@/api/server";
 
 const GROUP_NONE = "__none__";
 /** 与后端 Plan::RESET_TRAFFIC_* 对齐：null=跟随系统，0=每月1号 … 4=按年重置 */
@@ -160,11 +160,7 @@ export function PlanFormDialog({
 }) {
   const { t } = useTranslation();
 
-  const { data: groupsData, isLoading: groupsLoading } = useQuery({
-    queryKey: ["server-groups"],
-    queryFn: fetchGroups,
-    enabled: open,
-  });
+  const { data: groupsData = [], isLoading: groupsLoading } = useServerGroups(open);
   const groups: ServerGroup[] = Array.isArray(groupsData)
     ? groupsData
     : (groupsData as { data?: ServerGroup[] } | undefined)?.data || [];

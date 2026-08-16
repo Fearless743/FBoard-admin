@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
+import { useServerGroups } from "@/hooks/use-server-groups";
 import {
   Plus,
   Trash2,
@@ -67,7 +68,6 @@ import {
   resetServerTraffic,
   fetchProtocolTypes,
   fetchMachines,
-  fetchGroups,
   sortServers,
   batchReplaceServer,
   type Server,
@@ -211,11 +211,7 @@ export function ServerListPage() {
     staleTime: 300000,
   });
 
-  const { data: serverGroups = [] } = useQuery({
-    queryKey: ["server-groups"],
-    queryFn: fetchGroups,
-    staleTime: 300000,
-  });
+  const { data: serverGroups = [] } = useServerGroups();
 
   const machinesMap = useMemo(() => {
     const m: Record<number, string> = {};

@@ -77,7 +77,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePlanOptions } from "@/hooks/use-plans";
-import { fetchGroups } from "@/api/server";
+import { useServerGroups } from "@/hooks/use-server-groups";
 import {
   banUser,
   destroyUser,
@@ -232,11 +232,7 @@ export function UserListPage() {
     return m;
   }, [plansData]);
 
-  const { data: groupsData } = useQuery({
-    queryKey: ["server-groups"],
-    queryFn: fetchGroups,
-    staleTime: 300000,
-  });
+  const { data: groupsData } = useServerGroups();
   const groupsMap = useMemo(() => {
     const m: Record<number, string> = {};
     (groupsData || []).forEach((g: any) => {

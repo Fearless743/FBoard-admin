@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Suspense, lazy, useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import { Plus, Pencil, Trash2, Loader2, BookOpen, GripVertical, Search } from "lucide-react";
 import { toast } from "sonner";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +51,48 @@ import {
 
 const LANGS = ["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN", "ru-RU"];
 const SORT_PAGE_SIZE = 1000;
+
+const ReactQuill = lazy(() => import("react-quill"));
+
+function KnowledgeEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [cssLoaded, setCssLoaded] = useState(false);
+
+  useEffect(() => {
+    import("react-quill/dist/quill.snow.css").then(() => setCssLoaded(true));
+  }, []);
+
+  if (!cssLoaded) {
+    return <Skeleton className="h-[370px] w-full rounded-lg" />;
+  }
+
+  return (
+    <Suspense fallback={<Skeleton className="h-[370px] w-full rounded-lg" />}>
+      <ReactQuill
+        theme="snow"
+        value={value}
+        onChange={onChange}
+        modules={{
+          toolbar: [
+            [{ header: [1, 2, 3, false] }],
+            ["bold", "italic", "underline", "strike"],
+            [{ color: [] }, { background: [] }],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["blockquote", "code-block"],
+            ["link", "image"],
+            ["clean"],
+          ],
+        }}
+        style={{ height: "300px" }}
+      />
+    </Suspense>
+  );
+}
 
 export function KnowledgeListPage() {
   const { t } = useTranslation();
@@ -415,23 +455,7 @@ function KnowledgeFormDialog({
           <div className="space-y-1.5">
             <Label>{t("knowledge.form.content")}</Label>
             <div className="knowledge-editor">
-              <ReactQuill
-                theme="snow"
-                value={content}
-                onChange={setContent}
-                modules={{
-                  toolbar: [
-                    [{ header: [1, 2, 3, false] }],
-                    ["bold", "italic", "underline", "strike"],
-                    [{ color: [] }, { background: [] }],
-                    [{ list: "ordered" }, { list: "bullet" }],
-                    ["blockquote", "code-block"],
-                    ["link", "image"],
-                    ["clean"],
-                  ],
-                }}
-                style={{ height: "300px" }}
-              />
+              <KnowledgeEditor value={content} onChange={setContent} />
             </div>
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState } from "@/hooks/use-url-state";
+import { usePlanOptions } from "@/hooks/use-plans";
 import { Plus, Pencil, Trash2, Loader2, Gift, Download, ChevronDown, ChevronRight, X, GripVertical, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -433,15 +434,7 @@ function TemplateFormDialog({
     }
   }, [open, template, GB]);
 
-  const { data: plansData } = useQuery({
-    queryKey: ["plans", "options"],
-    queryFn: async () => {
-      const m = await import("@/api/plan");
-      return (m.fetchPlans as any)(1, 200);
-    },
-    enabled: open,
-  });
-  const plans: any[] = (plansData as any)?.data || [];
+  const { data: plans = [] } = usePlanOptions(open);
 
   const buildPayload = () => {
     const rewards: Record<string, any> = {};

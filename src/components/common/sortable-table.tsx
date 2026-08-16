@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, memo, useContext, type ReactNode } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -60,7 +60,12 @@ export function SortableContainer({ items, onReorder, enabled, children }: Sorta
   );
 }
 
-export function SortableRow({ id, children }: { id: number; children: ReactNode }) {
+/**
+ * 列表行组件，被知识库/订阅方案/公告等大量列表页复用。
+ * 用 React.memo 包裹：排序态切换或父组件重渲染时，未变化的行可跳过
+ * 重建（行内容通常是大段 JSX，缓存收益明显）。
+ */
+export const SortableRow = memo(function SortableRow({ id, children }: { id: number; children: ReactNode }) {
   const enabled = useContext(DragEnabledContext);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !enabled });
 
@@ -77,9 +82,9 @@ export function SortableRow({ id, children }: { id: number; children: ReactNode 
       {children}
     </tr>
   );
-}
+});
 
-export function DragCell() {
+export const DragCell = memo(function DragCell() {
   const enabled = useContext(DragEnabledContext);
   if (!enabled) return null;
   return (
@@ -89,4 +94,4 @@ export function DragCell() {
       </div>
     </td>
   );
-}
+});

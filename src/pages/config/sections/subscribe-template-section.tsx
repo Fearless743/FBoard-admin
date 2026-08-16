@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import {
 import { fetchSubscribeTemplate, saveConfig } from "@/api/config";
 import { SectionCard } from "../section-card";
 import { SectionSkeleton } from "../section-skeleton";
-import { CodeEditor } from "../code-editor";
+const CodeEditor = lazy(() => import("../code-editor").then((m) => ({ default: m.CodeEditor })));
 
 const KEYS: Array<{ key: string; client: string; lang: "json" | "yaml" | "conf" }> = [
   { key: "subscribe_template_singbox", client: "singbox", lang: "json" },
@@ -195,5 +195,5 @@ function TemplateEditor({
     return <SectionSkeleton />;
   }
 
-  return <CodeEditor value={displayValue} onChange={onChange} language={lang} />;
+  return <Suspense fallback={<SectionSkeleton />}><CodeEditor value={displayValue} onChange={onChange} language={lang} /></Suspense>;
 }
