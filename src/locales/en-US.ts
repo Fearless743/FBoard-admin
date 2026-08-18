@@ -2044,7 +2044,8 @@ const translations: Translations = {
       "address": "Address",
       "onlineUsers": {
         "title": "Online Users",
-        "tooltip": "Online users count based on server reporting frequency"
+        "tooltip": "Online users count based on server reporting frequency",
+        "sort_tip": "Sort by online users"
       },
       "rate": {
         "title": "Rate",

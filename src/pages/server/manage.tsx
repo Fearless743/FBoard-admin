@@ -17,6 +17,9 @@ import {
   Pencil,
   Server as ServerIcon,
   ReplaceAll,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -75,7 +78,7 @@ import {
   type ServerGroup,
 } from "@/api/server";
 import { ServerFormDialog } from "./server-form-dialog";
-import { formatBytes, bytesToGb, copyToClipboard } from "@/lib/utils";
+import { formatBytes, bytesToGb, copyToClipboard, cn } from "@/lib/utils";
 
 const STATUS_VARIANT: Record<
   number,
@@ -137,6 +140,8 @@ export function ServerListPage() {
       q: { type: "string", default: "", debounce: 400 },
       type: { type: "string", default: "all" },
       status: { type: "string", default: "all" },
+      sort_by: { type: "string", default: "", resetPageOnChange: true },
+      order: { type: "string", default: "", resetPageOnChange: true },
     }),
   );
   const [editing, setEditing] = useState<Server | null>(null);
@@ -180,6 +185,8 @@ export function ServerListPage() {
       query.q,
       query.type,
       query.status,
+      query.sort_by,
+      query.order,
       machineId,
     ],
     queryFn: () =>
@@ -190,6 +197,8 @@ export function ServerListPage() {
         type: query.type === "all" ? undefined : query.type,
         status: query.status === "all" ? undefined : Number(query.status),
         machine_id: machineId ?? undefined,
+        sort_by: query.sort_by ? "online" : undefined,
+        order: query.order === "asc" || query.order === "desc" ? query.order : undefined,
       }),
   });
 
@@ -277,10 +286,25 @@ export function ServerListPage() {
       }
     } else {
       setPendingSortList(null);
-      setQs({ q: "", type: "all", status: "all", page: 1 });
+      setQs({ q: "", type: "all", status: "all", sort_by: "", order: "", page: 1 });
       setDragEnabled(true);
     }
   }, [dragEnabled, pendingSortList, finishSort, setQs]);
+
+  // 在线人数排序：三态（未排序 → 降序 → 升序 → 未排序），排序时禁用拖拽模式
+  const activeOnlineSort = query.sort_by === "online";
+  const isOnlineAsc = activeOnlineSort && query.order === "asc";
+  const toggleOnlineSort = useCallback(() => {
+    if (!activeOnlineSort) {
+      setQs({ sort_by: "online", order: "desc", page: 1 });
+      return;
+    }
+    if (isOnlineAsc) {
+      setQs({ sort_by: "", order: "", page: 1 });
+      return;
+    }
+    setQs({ sort_by: "online", order: "asc", page: 1 });
+  }, [activeOnlineSort, isOnlineAsc, setQs]);
 
   const getConfigUrl = (n: Server) => {
     const base = window.location.origin;
@@ -436,7 +460,34 @@ export function ServerListPage() {
                   <TableHead className="text-right">{t("server.columns.rate.title")}</TableHead>
                   <TableHead>{t("server.columns.groups.title")}</TableHead>
                   <TableHead className="text-right">{t("server.columns.traffic.title")}</TableHead>
-                  <TableHead className="w-20 text-center">{t("server.columns.onlineUsers.title")}</TableHead>
+                  <TableHead className="w-24 text-center">
+                    <button
+                      type="button"
+                      onClick={toggleOnlineSort}
+                      disabled={dragEnabled}
+                      title={t("server.columns.onlineUsers.sort_tip", {
+                        defaultValue: "按在线人数排序",
+                      })}
+                      className={cn(
+                        "inline-flex items-center justify-center gap-1 text-xs font-medium transition-colors hover:text-foreground",
+                        dragEnabled && "cursor-not-allowed opacity-50 hover:text-muted-foreground",
+                        activeOnlineSort
+                          ? "text-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      <span>{t("server.columns.onlineUsers.title")}</span>
+                      {activeOnlineSort ? (
+                        isOnlineAsc ? (
+                          <ArrowUp className="h-3.5 w-3.5 shrink-0" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 shrink-0" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                      )}
+                    </button>
+                  </TableHead>
                   <TableHead className="w-32 text-right">{t("server.columns.actions")}</TableHead>
                 </>
               )}
