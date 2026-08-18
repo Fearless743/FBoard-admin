@@ -2018,7 +2018,8 @@ const translations: Translations = {
       "address": "地址",
       "onlineUsers": {
         "title": "在线人数",
-        "tooltip": "在线人数根据服务端上报频率而定"
+        "tooltip": "在线人数根据服务端上报频率而定",
+        "sort_tip": "按在线人数排序"
       },
       "rate": {
         "title": "倍率",
