@@ -180,6 +180,10 @@ export async function getNodes(params?: {
   machine_id?: number;
   /** 运行状态：0 未运行 / 1 无人使用或异常 / 2 运行正常 */
   status?: 0 | 1 | 2 | number | string;
+  /** 在线人数排序：sort_by=online 时按在线人数排序 */
+  sort_by?: "online";
+  /** 排序方向：asc 升序 / desc 降序 */
+  order?: "asc" | "desc";
 }): Promise<Server[]> {
   if (params) {
     const searchParams = new URLSearchParams();
@@ -191,6 +195,8 @@ export async function getNodes(params?: {
     if (params.status !== undefined && params.status !== null && params.status !== "") {
       searchParams.set('status', String(params.status));
     }
+    if (params.sort_by) searchParams.set('sort_by', params.sort_by);
+    if (params.order) searchParams.set('order', params.order);
     return adminGet<Server[]>("/server/manage/getNodes?" + searchParams.toString());
   }
   return adminGet<Server[]>("/server/manage/getNodes");
