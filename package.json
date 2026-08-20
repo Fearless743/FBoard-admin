@@ -56,7 +56,7 @@
     "react-i18next": "^15.4.0",
     "react-markdown": "^10.1.0",
     "react-quill": "^2.0.0",
-    "react-router-dom": "^7.1.1",
+    "react-router-dom": "^7.18.2",
     "remark-gfm": "^4.0.1",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
