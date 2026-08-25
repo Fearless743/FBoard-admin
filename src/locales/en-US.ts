@@ -376,6 +376,7 @@ const translations: Translations = {
       "online_count": "Online Devices",
       "status": "Status",
       "subscription": "Subscription",
+      "plan_list": "Plans",
       "group": "Group",
       "used_traffic": "Used Traffic",
       "total_traffic": "Total Traffic",
@@ -1402,6 +1403,10 @@ const translations: Translations = {
         "title": "Deposit Bonus Tiers",
         "description": "Format is threshold:bonus in major units, e.g. 100:10 means deposit 100 get 10 bonus. The highest matching tier is used.",
         "placeholder": "100:10"
+      },
+      "multi_plan_enable": {
+        "title": "Allow Multiple Subscription Plans",
+        "description": "When enabled, users can hold multiple active plans simultaneously. New purchases will be added alongside existing plans instead of replacing them."
       },
       "saving": "Saving...",
       "plan": {
