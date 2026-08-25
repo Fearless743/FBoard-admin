@@ -376,6 +376,7 @@ const translations: Translations = {
       "online_count": "在线设备",
       "status": "状态",
       "subscription": "订阅",
+      "plan_list": "套餐列表",
       "group": "权限组",
       "used_traffic": "已用流量",
       "total_traffic": "总流量",
@@ -1291,6 +1292,10 @@ const translations: Translations = {
         "title": "充值赠送阶梯",
         "description": "格式为「门槛元:赠送元」，例如 100:10 表示充值满 100 元赠送 10 元。取满足门槛的最大赠送。",
         "placeholder": "100:10"
+      },
+      "multi_plan_enable": {
+        "title": "允许用户持有多个订阅套餐",
+        "description": "开启后用户可同时拥有多个有效套餐，新购订单会追加到现有套餐而非覆盖。"
       },
       "saving": "保存中...",
       "plan": {
