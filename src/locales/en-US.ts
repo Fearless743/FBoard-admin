@@ -376,6 +376,7 @@ const translations: Translations = {
       "online_count": "Online Devices",
       "status": "Status",
       "subscription": "Subscription",
+      "plan_list": "Plans",
       "group": "Group",
       "used_traffic": "Used Traffic",
       "total_traffic": "Total Traffic",
@@ -563,6 +564,15 @@ const translations: Translations = {
         "expire_time_confirm": "Confirm",
         "subscription": "Subscription Plan",
         "subscription_none": "None",
+        "multi_plan_title": "Plan List (Multi-Plan Mode)",
+        "multi_plan_hint": "When multi-plan mode is enabled, multiple active plans can be added. In single-plan mode only the first plan is shown.",
+        "plan_item_plan": "Plan",
+        "plan_item_expire": "Expires",
+        "plan_item_speed_limit": "Speed Limit (Mbps)",
+        "plan_item_speed_limit_placeholder": "Leave empty for no limit",
+        "plan_item_permanent": "Permanent",
+        "plan_item_add": "Add Plan",
+        "plan_item_remove": "Remove",
         "account_status": "Account Status",
         "banned_hint": "User cannot log in or use subscription services",
         "normal_hint": "User can use all services normally",
@@ -1402,6 +1412,10 @@ const translations: Translations = {
         "title": "Deposit Bonus Tiers",
         "description": "Format is threshold:bonus in major units, e.g. 100:10 means deposit 100 get 10 bonus. The highest matching tier is used.",
         "placeholder": "100:10"
+      },
+      "multi_plan_enable": {
+        "title": "Allow Multiple Subscription Plans",
+        "description": "When enabled, users can hold multiple active plans simultaneously. New purchases will be added alongside existing plans instead of replacing them."
       },
       "saving": "Saving...",
       "plan": {

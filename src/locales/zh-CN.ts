@@ -376,6 +376,7 @@ const translations: Translations = {
       "online_count": "在线设备",
       "status": "状态",
       "subscription": "订阅",
+      "plan_list": "套餐列表",
       "group": "权限组",
       "used_traffic": "已用流量",
       "total_traffic": "总流量",
@@ -563,6 +564,15 @@ const translations: Translations = {
         "expire_time_confirm": "确定",
         "subscription": "订阅计划",
         "subscription_none": "无",
+        "multi_plan_title": "套餐列表（多套餐模式）",
+        "multi_plan_hint": "开启多套餐模式后，可添加多个有效套餐。单套餐模式下仅显示第一个套餐。",
+        "plan_item_plan": "套餐",
+        "plan_item_expire": "到期时间",
+        "plan_item_speed_limit": "限速 (Mbps)",
+        "plan_item_speed_limit_placeholder": "留空则不限速",
+        "plan_item_permanent": "长期有效",
+        "plan_item_add": "添加套餐",
+        "plan_item_remove": "移除",
         "account_status": "账户状态",
         "banned_hint": "用户无法登录、无法使用订阅服务",
         "normal_hint": "用户可以正常使用所有服务",
@@ -1291,6 +1301,10 @@ const translations: Translations = {
         "title": "充值赠送阶梯",
         "description": "格式为「门槛元:赠送元」，例如 100:10 表示充值满 100 元赠送 10 元。取满足门槛的最大赠送。",
         "placeholder": "100:10"
+      },
+      "multi_plan_enable": {
+        "title": "允许用户持有多个订阅套餐",
+        "description": "开启后用户可同时拥有多个有效套餐，新购订单会追加到现有套餐而非覆盖。"
       },
       "saving": "保存中...",
       "plan": {
