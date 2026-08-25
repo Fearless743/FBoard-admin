@@ -80,7 +80,6 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
 
   // 多套餐编辑状态
   const [planList, setPlanList] = useState<PlanListItem[]>([]);
-  const [multiPlanMode, setMultiPlanMode] = useState(false);
 
   /**
    * 数字输入：空/非法 → 0。
@@ -134,7 +133,6 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
 
       // 初始化套餐列表
       if (user.plan_list && user.plan_list.length > 0) {
-        setMultiPlanMode(true);
         setPlanList(
           user.plan_list.map((p) => ({
             plan_id: p.id,
@@ -143,16 +141,13 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
           }))
         );
       } else {
-        setMultiPlanMode(false);
         setPlanList([]);
       }
     }
   }, [user, reset]);
 
-  // 检测当前是否启用多套餐模式
-  const isMultiPlanEnabled = useMemo(() => {
-    return planList.length > 0 || multiPlanMode;
-  }, [planList, multiPlanMode]);
+  // 检测当前是否有套餐列表（多套餐编辑状态）
+  const isMultiPlanEnabled = planList.length > 0;
 
   const onSubmit = async (values: FormValues) => {
     try {
