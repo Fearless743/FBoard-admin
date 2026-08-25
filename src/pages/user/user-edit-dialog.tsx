@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
-import { Loader2, Ban, ShieldCheck } from "lucide-react";
+import { Loader2, Ban, ShieldCheck, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { usePlanOptions } from "@/hooks/use-plans";
-import { updateUser, type UserListItem } from "@/api/user";
+import {
+  updateUser,
+  updateUserPlans,
+  type UserListItem,
+  type PlanListItem,
+} from "@/api/user";
 
 export interface UserEditDialogProps {
   open: boolean;
@@ -57,10 +62,25 @@ interface FormValues {
   invite_user_id: number | null;
 }
 
+function toLocalInput(unix: number): string {
+  const d = new Date(unix * 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(v: string): number | null {
+  if (!v) return null;
+  return Math.floor(new Date(v).getTime() / 1000);
+}
+
 export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDialogProps) {
   const { t } = useTranslation();
   const { data: plans } = usePlanOptions();
   const GB = 1073741824;
+
+  // 多套餐编辑状态
+  const [planList, setPlanList] = useState<PlanListItem[]>([]);
+  const [multiPlanMode, setMultiPlanMode] = useState(false);
 
   /**
    * 数字输入：空/非法 → 0。
@@ -83,8 +103,10 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
     defaultValues: emptyValues(),
   });
 
+  // 监听用户变化，初始化表单和套餐列表
   useEffect(() => {
     if (user) {
+      // 初始化主表单
       reset({
         id: user.id,
         email: user.email || "",
@@ -109,11 +131,32 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
         remarks: user.remark || "",
         invite_user_id: user.invite_user_id ?? null,
       });
+
+      // 初始化套餐列表
+      if (user.plan_list && user.plan_list.length > 0) {
+        setMultiPlanMode(true);
+        setPlanList(
+          user.plan_list.map((p) => ({
+            plan_id: p.id,
+            expired_at: p.expired_at ? toLocalInput(p.expired_at) : "",
+            speed_limit: p.speed_limit ?? null,
+          }))
+        );
+      } else {
+        setMultiPlanMode(false);
+        setPlanList([]);
+      }
     }
   }, [user, reset]);
 
+  // 检测当前是否启用多套餐模式
+  const isMultiPlanEnabled = useMemo(() => {
+    return planList.length > 0 || multiPlanMode;
+  }, [planList, multiPlanMode]);
+
   const onSubmit = async (values: FormValues) => {
     try {
+      // 先保存基础信息
       const payload: any = {
         ...values,
         password: values.password || undefined,
@@ -138,12 +181,42 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
       };
       if (payload.password === undefined) delete payload.password;
       await updateUser(payload);
+
+      // 如果有套餐列表，保存多套餐信息
+      if (isMultiPlanEnabled && planList.length > 0) {
+        await updateUserPlans({
+          id: values.id,
+          plan_list: planList.map((p) => ({
+            plan_id: p.plan_id,
+            expired_at: fromLocalInput(p.expired_at),
+            speed_limit: p.speed_limit,
+          })),
+        });
+      }
+
       toast.success(t("user.edit.form.success"));
       onSaved();
       onOpenChange(false);
     } catch (e: any) {
       // 错误已由 axios 拦截器统一 toast
     }
+  };
+
+  const addPlan = () => {
+    setPlanList((prev) => [
+      ...prev,
+      { plan_id: 0, expired_at: "", speed_limit: null },
+    ]);
+  };
+
+  const removePlan = (index: number) => {
+    setPlanList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updatePlan = (index: number, field: keyof PlanListItem, value: any) => {
+    setPlanList((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
+    );
   };
 
   return (
@@ -321,6 +394,106 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
             </Field>
           </div>
 
+          {/* 多套餐管理区域 */}
+          {user?.plan_list && user.plan_list.length > 0 && (
+            <div className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-semibold">
+                    {t("user.edit.form.multi_plan_title")}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.edit.form.multi_plan_hint")}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addPlan}
+                  className="h-8 gap-1"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t("user.edit.form.plan_item_add")}
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                {planList.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-wrap items-center gap-2 rounded-md border bg-card p-3"
+                  >
+                    <div className="flex-1 min-w-[140px]">
+                      <Label className="text-xs text-muted-foreground">
+                        {t("user.edit.form.plan_item_plan")}
+                      </Label>
+                      <Select
+                        value={item.plan_id ? String(item.plan_id) : "none"}
+                        onValueChange={(v) =>
+                          updatePlan(index, "plan_id", v === "none" ? 0 : Number(v))
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder={t("user.edit.form.subscription_none")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            {t("user.edit.form.subscription_none")}
+                          </SelectItem>
+                          {(plans || []).map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex-1 min-w-[140px]">
+                      <Label className="text-xs text-muted-foreground">
+                        {t("user.edit.form.plan_item_expire")}
+                      </Label>
+                      <Input
+                        type="datetime-local"
+                        value={item.expired_at}
+                        onChange={(e) =>
+                          updatePlan(index, "expired_at", e.target.value)
+                        }
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-[120px]">
+                      <Label className="text-xs text-muted-foreground">
+                        {t("user.edit.form.plan_item_speed_limit")}
+                      </Label>
+                      <Input
+                        type="number"
+                        placeholder={t("user.edit.form.plan_item_speed_limit_placeholder")}
+                        value={item.speed_limit ?? ""}
+                        onChange={(e) =>
+                          updatePlan(index, "speed_limit", e.target.value ? Number(e.target.value) : null)
+                        }
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="mt-6 h-8 w-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => removePlan(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>{t("user.edit.form.remarks")}</Label>
             <Textarea
@@ -484,10 +657,4 @@ function emptyValues(): FormValues {
     remarks: "",
     invite_user_id: null,
   };
-}
-
-function toLocalInput(unix: number): string {
-  const d = new Date(unix * 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

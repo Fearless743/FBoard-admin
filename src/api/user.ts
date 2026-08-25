@@ -101,6 +101,19 @@ export async function getUserInfoById(id: number) {
   return adminGet<any>(`/user/getUserInfoById`, { id });
 }
 
+export interface PlanListItem {
+  plan_id: number;
+  expired_at: number | null;
+  speed_limit?: number | null;
+}
+
+export async function updateUserPlans(payload: {
+  id: number;
+  plan_list: PlanListItem[];
+}) {
+  return adminPost<any>("/user/updateUserPlans", payload);
+}
+
 export interface UserLoginLogItem {
   id: number;
   ip: string;
