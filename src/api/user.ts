@@ -33,6 +33,8 @@ export interface UserListItem {
   discount?: number | null;
   telegram_id?: string | null;
   phone?: string | null;
+  /** 多套餐列表（multi_plan_enable 开启时返回） */
+  plan_list?: Array<{ id: number; name: string; expired_at: number | null; speed_limit?: number | null }>;
   [k: string]: any;
 }
 
