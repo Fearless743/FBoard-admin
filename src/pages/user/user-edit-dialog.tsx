@@ -32,6 +32,13 @@ import {
   type PlanListItem,
 } from "@/api/user";
 
+/** 编辑表单内部使用的套餐状态：expired_at 用字符串（datetime-local 格式） */
+interface PlanFormState {
+  plan_id: number;
+  expired_at: string;
+  speed_limit: number | null;
+}
+
 export interface UserEditDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -79,7 +86,7 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
   const GB = 1073741824;
 
   // 多套餐编辑状态
-  const [planList, setPlanList] = useState<PlanListItem[]>([]);
+  const [planList, setPlanList] = useState<PlanFormState[]>([]);
 
   /**
    * 数字输入：空/非法 → 0。
@@ -208,7 +215,7 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
     setPlanList((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updatePlan = (index: number, field: keyof PlanListItem, value: any) => {
+  const updatePlan = (index: number, field: keyof PlanFormState, value: any) => {
     setPlanList((prev) =>
       prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
     );
