@@ -398,8 +398,8 @@ export function UserListPage() {
               <TableHead className="hidden w-[108px] text-center sm:table-cell">
                 {t("user.columns.status")}
               </TableHead>
-              <TableHead className="hidden min-w-[120px] md:table-cell">
-                {t("user.columns.subscription")}
+              <TableHead className="hidden min-w-[140px] md:table-cell">
+                {t("user.columns.plan_list")}
               </TableHead>
               <TableHead className="hidden min-w-[100px] xl:table-cell">
                 {t("user.columns.group")}
@@ -480,9 +480,13 @@ export function UserListPage() {
                 const expire = expireMeta(u.expired_at);
                 const online = Number(u.online_count || 0);
                 const selectedRow = selected.includes(u.id);
-                const planName = u.plan_id
-                  ? plansMap[u.plan_id] || `#${u.plan_id}`
-                  : null;
+                // plan_list 优先（多套餐模式）；否则回退 plan_id
+                const planNames: string[] = u.plan_list && u.plan_list.length > 0
+                  ? u.plan_list.map((p) => plansMap[p.id] || p.name || `#${p.id}`)
+                  : u.plan_id
+                    ? [plansMap[u.plan_id] || `#${u.plan_id}`]
+                    : [];
+                const planName = planNames[0] || null;
                 const groupName = u.group_id
                   ? groupsMap[u.group_id] || `#${u.group_id}`
                   : null;
@@ -509,14 +513,24 @@ export function UserListPage() {
                   </Badge>
                 );
 
-                const planBadge = planName ? (
-                  <Badge
-                    variant="secondary"
-                    className="max-w-[160px] truncate font-normal"
-                    title={planName}
-                  >
-                    {planName}
-                  </Badge>
+                const planBadge = planNames.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {planNames.map((name, i) => (
+                      <Badge
+                        key={i}
+                        variant="secondary"
+                        className={cn(
+                          "font-normal",
+                          i === planNames.length - 1
+                            ? "max-w-[140px] truncate"
+                            : "max-w-[80px] truncate",
+                        )}
+                        title={name}
+                      >
+                        {name}
+                      </Badge>
+                    ))}
+                  </div>
                 ) : (
                   <span className="text-xs text-muted-foreground">—</span>
                 );
@@ -659,15 +673,16 @@ export function UserListPage() {
                           {/* 窄屏：在独立列出现前，把关键信息并入邮箱列 */}
                           <div className="flex flex-wrap items-center gap-1 pt-0.5 md:hidden">
                             <span className="sm:hidden">{statusBadge}</span>
-                            {planName ? (
+                            {planNames.map((name, i) => (
                               <Badge
+                                key={i}
                                 variant="secondary"
                                 className="max-w-[9rem] truncate px-1.5 text-[10px] font-normal"
-                                title={planName}
+                                title={name}
                               >
-                                {planName}
+                                {name}
                               </Badge>
-                            ) : null}
+                            ))}
                           </div>
                           <button
                             type="button"
