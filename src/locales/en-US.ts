@@ -498,6 +498,8 @@ const translations: Translations = {
         "expire_time_placeholder": "Select user expire date, leave empty for permanent",
         "permanent": "Permanent",
         "subscription": "Subscription Plan",
+"plans": "Plans",
+"add_plan": "Add plan",
         "subscription_none": "None",
         "generate_count": "Generate Count",
         "generate_count_placeholder": "Enter count for batch generation",
@@ -2296,6 +2298,11 @@ const translations: Translations = {
         "placeholder": "Please select permission groups",
         "empty": "No results found",
         "hint": "Optional; assign which user groups can see this node"
+      },
+      "routes": {
+        "label": "Route Rules",
+        "empty": "No route rules found",
+        "hint": "Optional; bound route rules are delivered to client subscription configs using this node"
       },
       "machine": {
         "label": "Bind to Machine",
