@@ -498,6 +498,8 @@ const translations: Translations = {
         "expire_time_placeholder": "請選擇用戶到期日期，留空為長期有效",
         "permanent": "長期有效",
         "subscription": "訂閱計劃",
+"plans": "套餐列表",
+"add_plan": "新增套餐",
         "subscription_none": "無",
         "generate_count": "生成數量",
         "generate_count_placeholder": "如果為批量生產請輸入生成數量",
@@ -2270,6 +2272,11 @@ const translations: Translations = {
         "placeholder": "請選擇權限組",
         "empty": "未找到結果",
         "hint": "選填；不選則任何權限組用戶都看不到此節點（取決於業務邏輯，建議至少選一個）"
+      },
+      "routes": {
+        "label": "路由規則",
+        "empty": "未找到路由規則",
+        "hint": "選填；綁定的路由規則會下發到使用該節點的客戶端訂閱配置中"
       },
       "machine": {
         "label": "綁定服務器",

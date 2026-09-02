@@ -50,11 +50,13 @@ import { pinyin } from "pinyin-pro";
 import {
   saveServer,
   fetchGroups,
+  fetchRoutes,
   fetchProtocolTypes,
   fetchProtocolDefinitions,
   fetchMachines,
   getNodes,
   type Server,
+  type ServerRoute,
   type ProtocolConfigField,
   type ProtocolDefinition,
 } from "@/api/server";
@@ -163,6 +165,13 @@ export function ServerFormDialog({
     enabled: open,
   });
   const groups: Array<{ id: number; name: string }> = groupsData || [];
+
+  const { data: routesData } = useQuery({
+    queryKey: ["server", "routes"],
+    queryFn: fetchRoutes,
+    enabled: open,
+  });
+  const routes: ServerRoute[] = routesData || [];
 
   const { data: protocolTypes = [] } = useQuery({
     queryKey: ["server", "protocol-types"],
@@ -862,6 +871,52 @@ export function ServerFormDialog({
                             }
                           >
                             {g.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                />
+              </FormField>
+
+              <FormField
+                className="sm:col-span-2"
+                label={t("server.form.routes.label")}
+                optionalText={t("server.form.optional_mark")}
+                hint={t("server.form.routes.hint")}
+              >
+                <Controller
+                  control={control}
+                  name="route_ids"
+                  render={({ field }) => (
+                    <div className="flex flex-wrap gap-2 rounded-md border p-2">
+                      {routes.length === 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {t("server.form.routes.empty")}
+                        </span>
+                      )}
+                      {routes.map((r) => {
+                        const active = (field.value || []).includes(r.id);
+                        return (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() =>
+                              field.onChange(
+                                active
+                                  ? (field.value || []).filter((x) => x !== r.id)
+                                  : [...(field.value || []), r.id],
+                              )
+                            }
+                            className={
+                              "rounded-md border px-2.5 py-1 text-xs transition-colors " +
+                              (active
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "hover:bg-accent")
+                            }
+                          >
+                            {r.remarks}
+                            <span className="ml-1 opacity-70">#{r.id}</span>
                           </button>
                         );
                       })}
