@@ -398,8 +398,8 @@ export function UserListPage() {
               <TableHead className="hidden w-[108px] text-center sm:table-cell">
                 {t("user.columns.status")}
               </TableHead>
-              <TableHead className="hidden min-w-[140px] md:table-cell">
-                {t("user.columns.plan_list")}
+              <TableHead className="hidden min-w-[120px] md:table-cell">
+                {t("user.columns.subscription")}
               </TableHead>
               <TableHead className="hidden min-w-[100px] xl:table-cell">
                 {t("user.columns.group")}
@@ -480,13 +480,10 @@ export function UserListPage() {
                 const expire = expireMeta(u.expired_at);
                 const online = Number(u.online_count || 0);
                 const selectedRow = selected.includes(u.id);
-                // plan_list 优先（多套餐模式）；否则回退 plan_id
-                const planNames: string[] = u.plan_list && u.plan_list.length > 0
-                  ? u.plan_list.map((p) => plansMap[p.id] || p.name || `#${p.id}`)
-                  : u.plan_id
-                    ? [plansMap[u.plan_id] || `#${u.plan_id}`]
-                    : [];
-                const planName = planNames[0] || null;
+                const activePlanNames = (u.user_plans || [])
+                  .filter((item) => item.expired_at === null || item.expired_at > Math.floor(Date.now() / 1000))
+                  .map((item) => plansMap[item.plan_id] || `#${item.plan_id}`);
+                const planName = activePlanNames[0] || (u.plan_id ? plansMap[u.plan_id] || `#${u.plan_id}` : null);
                 const groupName = u.group_id
                   ? groupsMap[u.group_id] || `#${u.group_id}`
                   : null;
@@ -513,24 +510,27 @@ export function UserListPage() {
                   </Badge>
                 );
 
-                const planBadge = planNames.length > 0 ? (
-                  <div className="flex flex-wrap gap-1">
-                    {planNames.map((name, i) => (
+                const planBadge = activePlanNames.length > 0 ? (
+                  <div className="flex max-w-[220px] flex-wrap gap-1">
+                    {activePlanNames.map((name, index) => (
                       <Badge
-                        key={i}
+                        key={`${name}-${index}`}
                         variant="secondary"
-                        className={cn(
-                          "font-normal",
-                          i === planNames.length - 1
-                            ? "max-w-[140px] truncate"
-                            : "max-w-[80px] truncate",
-                        )}
+                        className="max-w-[130px] truncate font-normal"
                         title={name}
                       >
                         {name}
                       </Badge>
                     ))}
                   </div>
+                ) : planName ? (
+                  <Badge
+                    variant="secondary"
+                    className="max-w-[160px] truncate font-normal"
+                    title={planName}
+                  >
+                    {planName}
+                  </Badge>
                 ) : (
                   <span className="text-xs text-muted-foreground">—</span>
                 );
@@ -673,16 +673,15 @@ export function UserListPage() {
                           {/* 窄屏：在独立列出现前，把关键信息并入邮箱列 */}
                           <div className="flex flex-wrap items-center gap-1 pt-0.5 md:hidden">
                             <span className="sm:hidden">{statusBadge}</span>
-                            {planNames.map((name, i) => (
+                            {planName ? (
                               <Badge
-                                key={i}
                                 variant="secondary"
                                 className="max-w-[9rem] truncate px-1.5 text-[10px] font-normal"
-                                title={name}
+                                title={planName}
                               >
-                                {name}
+                                {planName}
                               </Badge>
-                            ))}
+                            ) : null}
                           </div>
                           <button
                             type="button"
