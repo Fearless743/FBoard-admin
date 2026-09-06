@@ -3134,6 +3134,15 @@ const translations: Translations = {
         "dropExpiredResult": {
           "success": "已刪除 {{count}} 張過期優惠券",
           "empty": "沒有找到已過期的優惠券"
+        },
+        "dropUsedUp": "刪除已用完",
+        "dropUsedUpConfirm": {
+          "title": "刪除已用完優惠券",
+          "description": "確定要刪除所有剩餘次數為 0 的優惠券嗎？刪除後無法恢復。"
+        },
+        "dropUsedUpResult": {
+          "success": "已刪除 {{count}} 張已用完優惠券",
+          "empty": "沒有找到剩餘次數為 0 的優惠券"
         }
       },
       "toolbar": {

@@ -3135,6 +3135,15 @@ const translations: Translations = {
         "dropExpiredResult": {
           "success": "Successfully deleted {{count}} expired coupon(s)",
           "empty": "No expired coupons found"
+        },
+        "dropUsedUp": "Delete Used Up",
+        "dropUsedUpConfirm": {
+          "title": "Delete Used-Up Coupons",
+          "description": "Are you sure you want to delete all coupons with zero remaining uses? This action cannot be undone."
+        },
+        "dropUsedUpResult": {
+          "success": "Successfully deleted {{count}} used-up coupon(s)",
+          "empty": "No coupons with zero remaining uses found"
         }
       },
       "toolbar": {

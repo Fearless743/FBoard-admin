@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, batchDropCoupons, dropExpiredCoupons, type CouponItem } from "@/api/misc";
+import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, batchDropCoupons, dropExpiredCoupons, dropUsedUpCoupons, type CouponItem } from "@/api/misc";
 
 const COL_COUNT = 9;
 
@@ -55,7 +55,7 @@ export function CouponListPage() {
   const [editing, setEditing] = useState<CouponItem | null>(null);
   const [deleting, setDeleting] = useState<CouponItem | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [batchDeleting, setBatchDeleting] = useState<null | "selected" | "expired">(null);
+  const [batchDeleting, setBatchDeleting] = useState<null | "selected" | "expired" | "usedUp">(null);
   const [batchSubmitting, setBatchSubmitting] = useState(false);
   const [qs, setQs, query] = useUrlState(
     listQuerySchema({
@@ -139,6 +139,20 @@ export function CouponListPage() {
     }
   };
 
+  const handleDropUsedUp = async () => {
+    setBatchSubmitting(true);
+    try {
+      const res: any = await dropUsedUpCoupons();
+      const count = res?.count ?? 0;
+      toast.success(count > 0 ? t("coupon.table.actions.dropUsedUpResult.success", { count }) : t("coupon.table.actions.dropUsedUpResult.empty"));
+      qc.invalidateQueries({ queryKey: ["coupons"] });
+    } catch (e) {
+    } finally {
+      setBatchSubmitting(false);
+      setBatchDeleting(null);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -197,6 +211,14 @@ export function CouponListPage() {
           >
             <CalendarOff className="h-4 w-4" />
             {t("coupon.table.actions.dropExpired")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setBatchDeleting("usedUp")}
+          >
+            <Trash2 className="h-4 w-4" />
+            {t("coupon.table.actions.dropUsedUp")}
           </Button>
         </div>
       </div>
@@ -479,6 +501,15 @@ export function CouponListPage() {
         title={t("coupon.table.actions.dropExpiredConfirm.title")}
         description={t("coupon.table.actions.dropExpiredConfirm.description")}
         onConfirm={handleDropExpired}
+        loading={batchSubmitting}
+      />
+
+      <ConfirmDialog
+        open={batchDeleting === "usedUp"}
+        onOpenChange={(v) => !v && setBatchDeleting(null)}
+        title={t("coupon.table.actions.dropUsedUpConfirm.title")}
+        description={t("coupon.table.actions.dropUsedUpConfirm.description")}
+        onConfirm={handleDropUsedUp}
         loading={batchSubmitting}
       />
     </>
