@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
+import { useAsyncAction } from "@/hooks/use-async-action";;
 import { Plus, Pencil, Trash2, Loader2, GripVertical, Search, CreditCard, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -61,6 +62,7 @@ export function PaymentListPage() {
   const [editing, setEditing] = useState<PaymentMethod | null>(null);
   const [deleting, setDeleting] = useState<PaymentMethod | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
+  const [copyLoading, setCopyLoading] = useState(false);
   const [pendingList, setPendingList] = useState<PaymentMethod[] | null>(null);
   const [qs, setQs, query] = useUrlState(
     listQuerySchema({
@@ -218,16 +220,20 @@ export function PaymentListPage() {
                         variant="ghost"
                         className="h-8 w-8"
                         title={t("payment.table.actions.copy")}
-                        disabled={dragEnabled}
+                        disabled={dragEnabled || copyLoading}
                         onClick={async () => {
+                          setCopyLoading(true);
                           try {
                             await copyPayment(p.id);
                             toast.success(t("payment.table.actions.copy_success"));
                             await qc.invalidateQueries({ queryKey: ["payments"] });
                           } catch (e) {}
+                          finally {
+                            setCopyLoading(false);
+                          }
                         }}
                       >
-                        <Copy className="h-4 w-4" />
+                        {copyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
                       </Button>
                       <Button
                         size="icon"

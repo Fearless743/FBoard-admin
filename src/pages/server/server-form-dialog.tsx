@@ -1012,6 +1012,7 @@ function ProtocolConfigFields({
 }) {
   const { t } = useTranslation();
   const [networkSettingsOpen, setNetworkSettingsOpen] = useState(false);
+  const [generatingKey, setGeneratingKey] = useState<string | null>(null);
   const hasNetworkSettingsField =
     !prefix && Object.prototype.hasOwnProperty.call(fields, "network_settings");
   const rules = validationRules || {};
@@ -1376,7 +1377,9 @@ function ProtocolConfigFields({
                   size="icon"
                   className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
                   title={t("server.form.virtualNode.generateKeyPair")}
+                  disabled={generatingKey === "reality"}
                   onClick={async () => {
+                    setGeneratingKey("reality");
                     try {
                       const { generateRealityKey } =
                         await import("@/api/server");
@@ -1400,10 +1403,12 @@ function ProtocolConfigFields({
                       }
                     } catch {
                       /* ignore */
+                    } finally {
+                      setGeneratingKey(null);
                     }
                   }}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  {generatingKey === "mieru" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 </Button>
               </div>
               {errorFor(fieldPath) ? (
@@ -1468,6 +1473,7 @@ function ProtocolConfigFields({
                     t("server.form.virtualNode.generateKeyPair")
                   }
                   onClick={async () => {
+                    setGeneratingKey("ech");
                     try {
                       const { generateEchKey } = await import("@/api/server");
                       // 优先用 query_server_name / 同级 server_name 作 public_name
@@ -1506,10 +1512,12 @@ function ProtocolConfigFields({
                       });
                     } catch {
                       /* ignore */
+                    } finally {
+                      setGeneratingKey(null);
                     }
                   }}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  {generatingKey === "mieru" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 </Button>
               </div>
               {errorFor(fieldPath) ? (
@@ -1553,6 +1561,7 @@ function ProtocolConfigFields({
                   className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
                   title={t("server.dynamic_form.mieru.traffic_pattern.generate")}
                   onClick={async () => {
+                    setGeneratingKey("mieru");
                     try {
                       const { generateMieruTrafficPattern } =
                         await import("@/api/server");
@@ -1564,10 +1573,12 @@ function ProtocolConfigFields({
                       );
                     } catch {
                       /* ignore */
+                    } finally {
+                      setGeneratingKey(null);
                     }
                   }}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  {generatingKey === "mieru" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 </Button>
               </div>
               {errorFor(fieldPath) ? (
@@ -1611,6 +1622,7 @@ function ProtocolConfigFields({
                   className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
                   title={t("server.form.virtualNode.generateKeyPair")}
                   onClick={async () => {
+                    setGeneratingKey("sudoku");
                     try {
                       const { generateSudokuKey } =
                         await import("@/api/server");
@@ -1627,10 +1639,12 @@ function ProtocolConfigFields({
                       );
                     } catch {
                       /* ignore */
+                    } finally {
+                      setGeneratingKey(null);
                     }
                   }}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  {generatingKey === "mieru" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 </Button>
               </div>
               {errorFor(fieldPath) ? (

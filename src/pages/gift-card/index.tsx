@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState } from "@/hooks/use-url-state";
+import { useAsyncAction } from "@/hooks/use-async-action";;
 import { Plus, Pencil, Trash2, Loader2, Gift, Download, ChevronDown, ChevronRight, X, GripVertical, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -671,6 +672,7 @@ function CodesPanel() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [editCode, setEditCode] = useState<GiftCardCodeItem | null>(null);
   const [deleteCode, setDeleteCode] = useState<GiftCardCodeItem | null>(null);
   const [qs, setQs, query] = useUrlState({
@@ -741,7 +743,9 @@ function CodesPanel() {
         </Button>
         <Button
           variant="outline"
+          disabled={exportLoading}
           onClick={async () => {
+            setExportLoading(true);
             try {
               const res = await exportGiftCardCodes();
               if (res && typeof res === "object" && (res as any).url) {
@@ -750,9 +754,12 @@ function CodesPanel() {
                 toast.success(t("giftCard.code.messages.exportSuccess"));
               }
             } catch (e) {}
+            finally {
+              setExportLoading(false);
+            }
           }}
         >
-          <Download className="h-4 w-4" />
+          {exportLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           {t("giftCard.code.actions.export")}
         </Button>
       </div>

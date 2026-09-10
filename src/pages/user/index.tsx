@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
+import { useAsyncAction } from "@/hooks/use-async-action";;
 import {
   MoreHorizontal,
   Search,
@@ -180,6 +181,9 @@ export function UserListPage() {
   const [trafficRecordsUser, setTrafficRecordsUser] =
     useState<UserListItem | null>(null);
   const [invitesUser, setInvitesUser] = useState<UserListItem | null>(null);
+  const [copyEmailLoading, setCopyEmailLoading] = useState<string | null>(null);
+  const [copyUrlLoading, setCopyUrlLoading] = useState<string | null>(null);
+  const [resetSecretLoading, setResetSecretLoading] = useState<string | null>(null);
   const [loginHistoryUser, setLoginHistoryUser] =
     useState<UserListItem | null>(null);
   const [assignOrderUser, setAssignOrderUser] = useState<UserListItem | null>(
@@ -792,7 +796,9 @@ export function UserListPage() {
                               {t("user.columns.actions_menu.edit")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              disabled={resetSecretLoading === `${u.id}`}
                               onClick={async () => {
+                                setResetSecretLoading(`${u.id}`);
                                 try {
                                   await resetUserSecret(u.id);
                                   toast.success(
@@ -800,20 +806,23 @@ export function UserListPage() {
                                   );
                                   refresh();
                                 } catch (e) {}
+                                finally { setResetSecretLoading(null); }
                               }}
                             >
                               <RotateCcw className="h-4 w-4" />
                               {t("user.columns.actions_menu.reset_secret")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              disabled={copyUrlLoading === `${u.id}-url`}
                               onClick={async () => {
+                                setCopyUrlLoading(`${u.id}-url`);
                                 try {
                                   const url = u.subscribe_url;
                                   await copyToClipboard(url);
                                   toast.success(t("common.copy.success"));
                                 } catch {
                                   toast.error(t("common.copy.failed"));
-                                }
+                                } finally { setCopyUrlLoading(null); }
                               }}
                             >
                               <Copy className="h-4 w-4" />

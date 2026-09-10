@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Upload, Trash2, Palette, Settings as SettingsIcon, Eye } from "lucide-react";
+import { Upload, Trash2, Palette, Settings as SettingsIcon, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { EmptyState } from "@/components/common/empty-state";
@@ -35,6 +35,7 @@ export function ThemePage() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [configuring, setConfiguring] = useState<string | null>(null);
+  const [activating, setActivating] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["themes"],
@@ -113,13 +114,16 @@ export function ThemePage() {
                   {th.is_current ? (
                     <Badge variant="success">{t("theme.card.currentTheme")}</Badge>
                   ) : (
-                    <Button size="sm" onClick={async () => {
+                    <Button size="sm" disabled={activating === th.name} onClick={async () => {
+                      setActivating(th.name);
                       try {
                         await switchTheme(th.name);
                         toast.success(t("theme.card.activateSuccess"));
                         qc.invalidateQueries({ queryKey: ["themes"] });
                       } catch (e) {}
+                      finally { setActivating(null); }
                     }}>
+                      {activating === th.name ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                       {t("theme.card.activateTheme")}
                     </Button>
                   )}
