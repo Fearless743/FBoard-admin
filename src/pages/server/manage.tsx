@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
+import { useAsyncAction } from "@/hooks/use-async-action";;
 import {
   Plus,
   Trash2,
@@ -156,6 +157,7 @@ export function ServerListPage() {
   const [replaceSearch, setReplaceSearch] = useState("");
   const [replaceValue, setReplaceValue] = useState("");
   const [replaceLoading, setReplaceLoading] = useState(false);
+  const [copyNodeLoading, setCopyNodeLoading] = useState<string | null>(null);
 
   // Handle createWithMachineId URL param（一次性动作，不进列表 schema）
   useEffect(() => {
@@ -614,14 +616,17 @@ export function ServerListPage() {
                           variant="outline"
                           size="icon"
                           className="h-5 w-5 shrink-0"
+                          disabled={copyNodeLoading === `${n.id}-copy`}
                           onClick={async () => {
+                            setCopyNodeLoading(`${n.id}-copy`);
                             try {
                               await copyToClipboard(`${n.host}:${n.port}`);
                               toast.success(t("server.columns.actions_dropdown.copy_success"));
                             } catch { toast.error(t("common.copy.failed")); }
+                            finally { setCopyNodeLoading(null); }
                           }}
                         >
-                          <Copy className="h-3 w-3" />
+                          {copyNodeLoading === `${n.id}-copy` ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
                         </Button>
                       </div>
                     </TableCell>
@@ -681,12 +686,15 @@ export function ServerListPage() {
                             {t("server.columns.actions_dropdown.edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            disabled={copyNodeLoading === `${n.id}-copy-server`}
                             onClick={async () => {
+                              setCopyNodeLoading(`${n.id}-copy-server`);
                               try {
                                 await copyServer(n.id);
                                 toast.success(t("server.columns.actions_dropdown.copy_success"));
                                 qc.invalidateQueries({ queryKey: ["servers", "nodes"] });
                               } catch (e) {}
+                              finally { setCopyNodeLoading(null); }
                             }}
                           >
                             <Copy className="h-4 w-4" />

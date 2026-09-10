@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
+import { useAsyncAction } from "@/hooks/use-async-action";;
 import { Plus, Pencil, Trash2, Loader2, Search, TicketPercent, Copy, CalendarOff } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -57,6 +58,7 @@ export function CouponListPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState<null | "selected" | "expired">(null);
   const [batchSubmitting, setBatchSubmitting] = useState(false);
+  const [copyLoading, setCopyLoading] = useState(false);
   const [qs, setQs, query] = useUrlState(
     listQuerySchema({
       q: { type: "string", default: "", debounce: 500 },
@@ -308,16 +310,20 @@ export function CouponListPage() {
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 shrink-0 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                            disabled={copyLoading}
                             onClick={async () => {
+                              setCopyLoading(true);
                               try {
                                 await copyToClipboard(c.code);
                                 toast.success(t("common.copy.success"));
                               } catch {
                                 toast.error(t("common.copy.failed"));
+                              } finally {
+                                setCopyLoading(false);
                               }
                             }}
                           >
-                            <Copy className="h-3 w-3" />
+                            {copyLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>

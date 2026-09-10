@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
+import { useAsyncAction } from "@/hooks/use-async-action";;
 import {
   Search,
   X,
@@ -77,6 +78,8 @@ export function WithdrawalListPage() {
     }),
   );
   const [viewing, setViewing] = useState<WithdrawalItem | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [closeLoading, setCloseLoading] = useState(false);
   const [reply, setReply] = useState("");
   const [replying, setReplying] = useState(false);
   const [showUserInfo, setShowUserInfo] = useState(false);
@@ -608,8 +611,10 @@ export function WithdrawalListPage() {
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                              disabled={confirmLoading}
                               onClick={async () => {
                                 if (!viewing) return;
+                                setConfirmLoading(true);
                                 try {
                                   await confirmWithdrawal(viewing.id);
                                   toast.success(t("withdrawal.actions.confirm_success"));
@@ -619,10 +624,12 @@ export function WithdrawalListPage() {
                                   );
                                 } catch {
                                   /* toast by api layer */
+                                } finally {
+                                  setConfirmLoading(false);
                                 }
                               }}
                             >
-                              <CheckCircle className="h-4 w-4" />
+                              {confirmLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -636,8 +643,10 @@ export function WithdrawalListPage() {
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8 text-destructive hover:text-destructive"
+                              disabled={closeLoading}
                               onClick={async () => {
                                 if (!viewing) return;
+                                setCloseLoading(true);
                                 try {
                                   await closeWithdrawal(viewing.id);
                                   toast.success(t("withdrawal.actions.close_success"));
@@ -647,10 +656,12 @@ export function WithdrawalListPage() {
                                   );
                                 } catch {
                                   /* toast by api layer */
+                                } finally {
+                                  setCloseLoading(false);
                                 }
                               }}
                             >
-                              <XCircle className="h-4 w-4" />
+                              {closeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>

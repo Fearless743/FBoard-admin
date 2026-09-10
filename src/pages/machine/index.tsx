@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
+import { useAsyncAction } from "@/hooks/use-async-action";;
 import {
   Plus, Pencil, Trash2, Loader2, Server, Copy, Check, Eye, EyeOff,
   Activity, Terminal, Unlink, Link2, ExternalLink, ArrowRight, ArrowUpToLine, RotateCcw,
@@ -1364,6 +1365,9 @@ function MachineDetailDialog({
   const [nodesLoading, setNodesLoading] = useState(false);
   const [bindOpen, setBindOpen] = useState(false);
   const [unbindTarget, setUnbindTarget] = useState<any | null>(null);
+  const [copyTokenLoading, setCopyTokenLoading] = useState(false);
+  const [copyCmdLoading, setCopyCmdLoading] = useState(false);
+  const [copyLogsLoading, setCopyLogsLoading] = useState(false);
   const [unbindSubmitting, setUnbindSubmitting] = useState(false);
   // Time range state
   const RANGES = [
@@ -1704,11 +1708,14 @@ function MachineDetailDialog({
                     variant="ghost"
                     className="h-7 w-7 shrink-0"
                     onClick={async () => {
+                      setCopyTokenLoading(true);
                       try {
                         await copyToClipboard(token);
                         toast.success(t("machine.token.copied"));
                       } catch {
                         toast.error(t("common.copy.failed"));
+                      } finally {
+                        setCopyTokenLoading(false);
                       }
                     }}
                   >
@@ -1741,6 +1748,7 @@ function MachineDetailDialog({
                     variant="ghost"
                     className="absolute right-2 top-2 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={async () => {
+                      setCopyCmdLoading(true);
                       try {
                         await copyToClipboard(installCmd);
                         setCopied("cmd");
@@ -1748,14 +1756,12 @@ function MachineDetailDialog({
                         setTimeout(() => setCopied(null), 2000);
                       } catch {
                         toast.error(t("common.copy.failed"));
+                      } finally {
+                        setCopyCmdLoading(false);
                       }
                     }}
                   >
-                    {copied === "cmd" ? (
-                      <Check className="h-3.5 w-3.5" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
-                    )}
+                    {copyCmdLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (copied === "cmd" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />)}
                   </Button>
                 )}
               </div>
@@ -1767,8 +1773,10 @@ function MachineDetailDialog({
                   variant="outline"
                   size="sm"
                   className="gap-1.5 font-mono text-xs"
+                  disabled={copyCmdLoading}
                   onClick={async () => {
                     if (!installCmd) return;
+                    setCopyCmdLoading(true);
                     try {
                       await copyToClipboard(installCmd);
                       setCopied("cmd");
@@ -1776,10 +1784,12 @@ function MachineDetailDialog({
                       setTimeout(() => setCopied(null), 2000);
                     } catch {
                       toast.error(t("common.copy.failed"));
+                    } finally {
+                      setCopyCmdLoading(false);
                     }
                   }}
                 >
-                  <Copy className="h-3.5 w-3.5" />
+                  {copyCmdLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
                   {t("machine.install.copy")}
                 </Button>
               </div>

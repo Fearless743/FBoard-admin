@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState } from "@/hooks/use-url-state";
+import { useAsyncAction } from "@/hooks/use-async-action";;
 import {
   Upload,
   Trash2,
@@ -89,6 +90,9 @@ export function PluginPage() {
   const [browsing, setBrowsing] = useState<{ code: string; name: string } | null>(
     null,
   );
+  const [installLoading, setInstallLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState<string | null>(null);
   // pageSize 固定 20，不写 URL；type 默认 feature 与原先一致
   const pageSize = 20;
   const [qs, setQs, query] = useUrlState({
@@ -275,7 +279,9 @@ export function PluginPage() {
                       <>
                         <Button
                           size="sm"
+                          disabled={installLoading}
                           onClick={async () => {
+                            setInstallLoading(true);
                             try {
                               await installPlugin(p.code);
                               toast.success(
@@ -283,8 +289,12 @@ export function PluginPage() {
                               );
                               qc.invalidateQueries({ queryKey: ["plugins"] });
                             } catch (e) {}
+                            finally {
+                              setInstallLoading(false);
+                            }
                           }}
                         >
+                          {installLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                           {t("plugin.button.install")}
                         </Button>
                         {p.can_be_deleted && (
@@ -324,7 +334,9 @@ export function PluginPage() {
                           <Button
                             size="sm"
                             variant="outline"
+                            disabled={upgradeLoading}
                             onClick={async () => {
+                              setUpgradeLoading(true);
                               try {
                                 await upgradePlugin(p.code);
                                 toast.success(
@@ -332,8 +344,12 @@ export function PluginPage() {
                                 );
                                 qc.invalidateQueries({ queryKey: ["plugins"] });
                               } catch (e) {}
+                              finally {
+                                setUpgradeLoading(false);
+                              }
                             }}
                           >
+                          {upgradeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                             {t("plugin.button.upgrade")}
                           </Button>
                         )}
@@ -341,7 +357,9 @@ export function PluginPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            disabled={toggleLoading === "disable"}
                             onClick={async () => {
+                              setToggleLoading("disable");
                               try {
                                 await disablePlugin(p.code);
                                 toast.success(
@@ -349,15 +367,20 @@ export function PluginPage() {
                                 );
                                 qc.invalidateQueries({ queryKey: ["plugins"] });
                               } catch (e) {}
+                              finally {
+                                setToggleLoading(null);
+                              }
                             }}
                           >
-                            <PowerOff className="h-3.5 w-3.5" />
+                            {toggleLoading === "disable" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PowerOff className="h-3.5 w-3.5" />}
                             {t("plugin.button.disable")}
                           </Button>
                         ) : (
                           <Button
                             size="sm"
+                            disabled={toggleLoading === "enable"}
                             onClick={async () => {
+                              setToggleLoading("enable");
                               try {
                                 await enablePlugin(p.code);
                                 toast.success(
@@ -365,9 +388,12 @@ export function PluginPage() {
                                 );
                                 qc.invalidateQueries({ queryKey: ["plugins"] });
                               } catch (e) {}
+                              finally {
+                                setToggleLoading(null);
+                              }
                             }}
                           >
-                            <Power className="h-3.5 w-3.5" />
+                            {toggleLoading === "enable" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />}
                             {t("plugin.button.enable")}
                           </Button>
                         )}
