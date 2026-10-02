@@ -18,11 +18,13 @@ import {
   Copy,
   Eye,
   FilterX,
+  CheckCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,13 +73,14 @@ import {
   markAsPaid,
   updateOrder,
   assignOrder,
+  bulkConfirmCommission,
   type OrderItem,
 } from "@/api/order";
 import { usePlanOptions } from "@/hooks/use-plans";
 import { cn, copyToClipboard, formatCurrency, formatDate } from "@/lib/utils";
 import { adminPath } from "@/lib/paths";
 
-const COL_COUNT = 8;
+const COL_COUNT = 9;
 
 const statusVariant: Record<
   number,
@@ -231,6 +234,9 @@ export function OrderListPage() {
   const [addPeriod, setAddPeriod] = useState("");
   const [addAmount, setAddAmount] = useState("");
   const [addSubmitting, setAddSubmitting] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [batchCommissionOpen, setBatchCommissionOpen] = useState(false);
+  const [batchCommissionLoading, setBatchCommissionLoading] = useState(false);
 
   const hasActiveFilters = !!(
     qs.trade_no ||
@@ -321,6 +327,43 @@ export function OrderListPage() {
   const orders: OrderItem[] = data?.data || [];
   const total = data?.total || 0;
 
+  const pageIds = orders.map((o) => o.id);
+  const allChecked = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const someChecked = pageIds.some((id) => selected.has(id));
+  const toggleAll = (checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      pageIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  };
+  const toggleOne = (id: number, checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const handleBatchConfirmCommission = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBatchCommissionLoading(true);
+    try {
+      const res: any = await bulkConfirmCommission(ids);
+      const count = res?.count ?? 0;
+      toast.success(t("order.messages.bulkCommissionConfirmSuccess", { count }));
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      setBatchCommissionOpen(false);
+    } catch {
+      /* toast by api layer */
+    } finally {
+      setBatchCommissionLoading(false);
+    }
+  };
+
   const typeOptions = useMemo(
     () => [
       { value: "__all__", label: t("order.filter.allTypes") },
@@ -371,10 +414,23 @@ export function OrderListPage() {
         title={t("order.title")}
         description={t("order.description")}
         actions={
-          <Button onClick={() => setAddOpen(true)} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
-            {t("order.dialog.addOrder")}
-          </Button>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Button
+              variant="outline"
+              disabled={selected.size === 0}
+              onClick={() => setBatchCommissionOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              <CheckCheck className="h-4 w-4" />
+              {t("order.actions.batchConfirmCommission", {
+                count: selected.size,
+              })}
+            </Button>
+            <Button onClick={() => setAddOpen(true)} className="w-full sm:w-auto">
+              <Plus className="h-4 w-4" />
+              {t("order.dialog.addOrder")}
+            </Button>
+          </div>
         }
       />
 
@@ -484,6 +540,13 @@ export function OrderListPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allChecked ? true : someChecked ? "indeterminate" : false}
+                  onCheckedChange={(v) => toggleAll(!!v)}
+                  aria-label={t("order.table.columns.select")}
+                />
+              </TableHead>
               <TableHead className="min-w-0 whitespace-nowrap">
                 {t("order.table.columns.tradeNo")}
               </TableHead>
@@ -518,14 +581,15 @@ export function OrderListPage() {
                     <TableCell
                       key={j}
                       className={cn(
-                        j === 1 && "hidden sm:table-cell",
-                        j === 2 && "hidden md:table-cell",
-                        j === 5 && "hidden sm:table-cell",
-                        j === 6 && "hidden lg:table-cell",
+                        j === 2 && "hidden sm:table-cell",
+                        j === 3 && "hidden md:table-cell",
+                        j === 6 && "hidden sm:table-cell",
+                        j === 7 && "hidden lg:table-cell",
+                        j === 0 && "w-10",
                       )}
                     >
                       <Skeleton
-                        className={cn("h-4 w-full", j === 0 && "h-9 w-44")}
+                        className={cn("h-4 w-full", j === 1 && "h-9 w-44")}
                       />
                     </TableCell>
                   ))}
@@ -619,6 +683,13 @@ export function OrderListPage() {
                       o.status === 3 && "bg-emerald-500/[0.02]",
                     )}
                   >
+                    <TableCell className="align-top sm:align-middle">
+                      <Checkbox
+                        checked={selected.has(o.id)}
+                        onCheckedChange={(v) => toggleOne(o.id, !!v)}
+                        aria-label={t("order.table.columns.select")}
+                      />
+                    </TableCell>
                     <TableCell className="align-top sm:align-middle">
                       <div className="min-w-0 space-y-1">
                         <div className="flex min-w-0 items-center gap-1">
@@ -906,6 +977,18 @@ export function OrderListPage() {
             setDestructiveLoading(false);
           }
         }}
+      />
+
+      <ConfirmDialog
+        open={batchCommissionOpen}
+        onOpenChange={(v) => !batchCommissionLoading && setBatchCommissionOpen(v)}
+        title={t("order.actions.batchConfirmCommissionConfirmTitle")}
+        description={t("order.messages.bulkCommissionConfirmConfirm", {
+          count: selected.size,
+        })}
+        confirmText={t("order.actions.batchConfirmCommissionConfirmButton")}
+        loading={batchCommissionLoading}
+        onConfirm={handleBatchConfirmCommission}
       />
 
       <Dialog

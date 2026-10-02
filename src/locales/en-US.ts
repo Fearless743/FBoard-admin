@@ -3298,6 +3298,7 @@ const translations: Translations = {
     "description": "View and manage user tickets, including viewing, replying, and closing operations.",
     "columns": {
       "id": "Ticket ID",
+      "select": "Select",
       "subject": "Subject",
       "level": "Priority",
       "status": "Status",
@@ -3331,7 +3332,12 @@ const translations: Translations = {
       "close_confirm_description": "Are you sure you want to close this ticket? It will move to the closed list, but you can still reply later.",
       "close_confirm_button": "Confirm Close",
       "close_success": "Ticket closed successfully",
-      "view_ticket": "View Ticket"
+      "view_ticket": "View Ticket",
+      "bulk_close": "Bulk Close ({{count}})",
+      "bulk_close_confirm_title": "Confirm Bulk Close Tickets",
+      "bulk_close_confirm_description": "Are you sure you want to close the {{count}} selected tickets? You can still reply to them after closing.",
+      "bulk_close_confirm_button": "Confirm Close",
+      "bulk_close_success": "Closed {{count}} tickets"
     },
     "detail": {
       "no_messages": "No messages yet",
@@ -4089,6 +4095,7 @@ const translations: Translations = {
     "table": {
       "columns": {
         "tradeNo": "Order No.",
+        "select": "Select",
         "type": "Type",
         "user": "User",
         "plan": "Subscription Plan",
@@ -4162,7 +4169,10 @@ const translations: Translations = {
       "invalid": "Mark Commission Invalid",
       "openMenu": "Open Menu",
       "reset": "Reset",
-      "copyTradeNo": "Copy order no."
+      "copyTradeNo": "Copy order no.",
+      "batchConfirmCommission": "Bulk Confirm Commission ({{count}})",
+      "batchConfirmCommissionConfirmTitle": "Confirm Bulk Commission Payout",
+      "batchConfirmCommissionConfirmButton": "Confirm Payout"
     },
     "search": {
       "placeholder": "Search order no...."
@@ -4217,7 +4227,9 @@ const translations: Translations = {
       "cancelConfirm": "Are you sure you want to cancel this order?",
       "commissionIssueSuccess": "Commission issued",
       "commissionInvalidSuccess": "Commission marked as invalid",
-      "commissionInvalidConfirm": "Mark this commission as invalid?"
+      "commissionInvalidConfirm": "Mark this commission as invalid?",
+      "bulkCommissionConfirmConfirm": "Confirm the commission for the {{count}} selected orders? They will enter the payout flow.",
+      "bulkCommissionConfirmSuccess": "Confirmed {{count}} commissions"
     }
   },
   "theme": {

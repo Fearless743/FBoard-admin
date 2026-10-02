@@ -3297,6 +3297,7 @@ const translations: Translations = {
     "description": "在这里可以查看用户工单，包括查看、回复、关闭等操作。",
     "columns": {
       "id": "工单号",
+      "select": "选择",
       "subject": "主题",
       "level": "优先级",
       "status": "状态",
@@ -3330,7 +3331,12 @@ const translations: Translations = {
       "close_confirm_description": "确定要关闭这个工单吗？关闭后会移入已关闭列表，但仍可继续回复。",
       "close_confirm_button": "确认关闭",
       "close_success": "工单已关闭",
-      "view_ticket": "查看工单"
+      "view_ticket": "查看工单",
+      "bulk_close": "批量关闭 ({{count}})",
+      "bulk_close_confirm_title": "确认批量关闭工单",
+      "bulk_close_confirm_description": "确定要关闭选中的 {{count}} 个工单吗？关闭后仍可继续回复。",
+      "bulk_close_confirm_button": "确认关闭",
+      "bulk_close_success": "已关闭 {{count}} 个工单"
     },
     "detail": {
       "no_messages": "暂无消息记录",
@@ -4088,6 +4094,7 @@ const translations: Translations = {
     "table": {
       "columns": {
         "tradeNo": "订单号",
+        "select": "选择",
         "type": "类型",
         "user": "用户",
         "plan": "订阅计划",
@@ -4161,7 +4168,10 @@ const translations: Translations = {
       "invalid": "无效佣金",
       "openMenu": "打开菜单",
       "reset": "重置",
-      "copyTradeNo": "复制订单号"
+      "copyTradeNo": "复制订单号",
+      "batchConfirmCommission": "批量确认佣金 ({{count}})",
+      "batchConfirmCommissionConfirmTitle": "确认批量发放佣金",
+      "batchConfirmCommissionConfirmButton": "确认发放"
     },
     "search": {
       "placeholder": "搜索订单号..."
@@ -4216,7 +4226,9 @@ const translations: Translations = {
       "cancelConfirm": "确认取消该订单？",
       "commissionIssueSuccess": "已发放佣金",
       "commissionInvalidSuccess": "已标记为无效佣金",
-      "commissionInvalidConfirm": "确认将该佣金标记为无效？"
+      "commissionInvalidConfirm": "确认将该佣金标记为无效？",
+      "bulkCommissionConfirmConfirm": "确定要确认选中的 {{count}} 个订单佣金吗？确认后将进入发放流程。",
+      "bulkCommissionConfirmSuccess": "已确认 {{count}} 笔佣金"
     }
   },
   "theme": {

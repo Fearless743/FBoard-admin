@@ -31,6 +31,10 @@ export async function closeTicket(id: number) {
   return adminPost<any>("/ticket/close", { id });
 }
 
+export async function bulkCloseTickets(ids: number[], remark?: string) {
+  return adminPost<any>("/ticket/bulk-close", { ids, remark });
+}
+
 export async function getTicketDetail(id: number) {
   return adminGet<any>("/ticket/fetch", { id });
 }

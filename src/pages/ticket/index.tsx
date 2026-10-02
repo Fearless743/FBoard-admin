@@ -7,6 +7,7 @@ import {
   Search,
   Eye,
   X,
+  XCircle,
   Loader2,
   User,
   Activity,
@@ -26,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { IdBadge } from "@/components/common/id-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -55,6 +57,7 @@ import {
   fetchTickets,
   replyTicket,
   getTicketDetail,
+  bulkCloseTickets,
   type TicketItem,
 } from "@/api/misc";
 import { getStatUser } from "@/api/stat";
@@ -99,6 +102,9 @@ export function TicketListPage() {
   const [showOrders, setShowOrders] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarSearch, setSidebarSearch] = useState("");
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [batchCloseOpen, setBatchCloseOpen] = useState(false);
+  const [batchClosing, setBatchClosing] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
   const lastScrollTicketId = useRef<number | null>(null);
@@ -137,6 +143,47 @@ export function TicketListPage() {
 
   const list: TicketItem[] = data?.data || [];
   const total = data?.total || 0;
+
+  const pageIds = list.map((tk) => tk.id);
+  const allChecked = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const someChecked = pageIds.some((id) => selected.has(id));
+  const toggleAll = (checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      pageIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  };
+  const toggleOne = (id: number, checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const handleBatchClose = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBatchClosing(true);
+    try {
+      const res: any = await bulkCloseTickets(ids);
+      const count = res?.count ?? 0;
+      toast.success(t("ticket.actions.bulk_close_success", { count }));
+      if (viewing && ids.includes(viewing.id)) {
+        setViewing((prev) => (prev ? { ...prev, status: 1 } : prev));
+        setDetailData((prev: any) => (prev ? { ...prev, status: 1 } : prev));
+      }
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["tickets"] });
+      setBatchCloseOpen(false);
+    } catch {
+      /* toast by api layer */
+    } finally {
+      setBatchClosing(false);
+    }
+  };
 
   const sidebarList = sidebarSearch.trim()
     ? list.filter((tk) => {
@@ -270,12 +317,29 @@ export function TicketListPage() {
             className="pl-9"
           />
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={selected.size === 0}
+          onClick={() => setBatchCloseOpen(true)}
+          className="text-destructive hover:text-destructive"
+        >
+          <XCircle className="h-4 w-4" />
+          {t("ticket.actions.bulk_close", { count: selected.size })}
+        </Button>
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allChecked ? true : someChecked ? "indeterminate" : false}
+                  onCheckedChange={(v) => toggleAll(!!v)}
+                  aria-label={t("ticket.columns.select")}
+                />
+              </TableHead>
               <TableHead className="w-14 sm:w-20">{t("ticket.columns.id")}</TableHead>
               <TableHead className="min-w-0">{t("ticket.columns.subject")}</TableHead>
               <TableHead className="hidden w-24 sm:table-cell">
@@ -294,12 +358,13 @@ export function TicketListPage() {
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 6 }).map((_, j) => (
+                  {Array.from({ length: 7 }).map((_, j) => (
                     <TableCell
                       key={j}
                       className={cn(
-                        (j === 2 || j === 3) && "hidden sm:table-cell",
-                        j === 4 && "hidden md:table-cell",
+                        (j === 3 || j === 4) && "hidden sm:table-cell",
+                        j === 5 && "hidden md:table-cell",
+                        j === 0 && "w-10",
                       )}
                     >
                       <Skeleton className="h-4 w-full" />
@@ -309,7 +374,7 @@ export function TicketListPage() {
               ))
             ) : list.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   <EmptyState
                     icon={<MessageSquare className="h-10 w-10" />}
                     message={t("common.table.noData")}
@@ -359,6 +424,13 @@ export function TicketListPage() {
                         "bg-destructive/[0.02]",
                     )}
                   >
+                    <TableCell className="align-top sm:align-middle">
+                      <Checkbox
+                        checked={selected.has(tk.id)}
+                        onCheckedChange={(v) => toggleOne(tk.id, !!v)}
+                        aria-label={t("ticket.columns.select")}
+                      />
+                    </TableCell>
                     <TableCell className="align-top sm:align-middle">
                       <IdBadge id={tk.id} compact />
                     </TableCell>
@@ -955,6 +1027,18 @@ export function TicketListPage() {
             /* toast by api layer */
           }
         }}
+      />
+
+      <ConfirmDialog
+        open={batchCloseOpen}
+        onOpenChange={(v) => !batchClosing && setBatchCloseOpen(v)}
+        title={t("ticket.actions.bulk_close_confirm_title")}
+        description={t("ticket.actions.bulk_close_confirm_description", {
+          count: selected.size,
+        })}
+        confirmText={t("ticket.actions.bulk_close_confirm_button")}
+        loading={batchClosing}
+        onConfirm={handleBatchClose}
       />
     </>
   );
