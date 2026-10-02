@@ -3134,6 +3134,15 @@ const translations: Translations = {
         "dropExpiredResult": {
           "success": "已删除 {{count}} 张过期优惠券",
           "empty": "没有找到已过期的优惠券"
+        },
+        "dropDepleted": "删除已用尽",
+        "dropDepletedConfirm": {
+          "title": "删除已用尽优惠券",
+          "description": "确定要删除所有剩余次数为 0 的优惠券吗？删除后无法恢复。"
+        },
+        "dropDepletedResult": {
+          "success": "已删除 {{count}} 张已用尽优惠券",
+          "empty": "没有找到剩余次数为 0 的优惠券"
         }
       },
       "toolbar": {
