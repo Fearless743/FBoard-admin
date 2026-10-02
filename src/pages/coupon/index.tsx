@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import { useAsyncAction } from "@/hooks/use-async-action";;
-import { Plus, Pencil, Trash2, Loader2, Search, TicketPercent, Copy, CalendarOff } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Search, TicketPercent, Copy, CalendarOff, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, batchDropCoupons, dropExpiredCoupons, type CouponItem } from "@/api/misc";
+import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, batchDropCoupons, dropExpiredCoupons, dropDepletedCoupons, type CouponItem } from "@/api/misc";
 
 const COL_COUNT = 9;
 
@@ -56,7 +56,7 @@ export function CouponListPage() {
   const [editing, setEditing] = useState<CouponItem | null>(null);
   const [deleting, setDeleting] = useState<CouponItem | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [batchDeleting, setBatchDeleting] = useState<null | "selected" | "expired">(null);
+  const [batchDeleting, setBatchDeleting] = useState<null | "selected" | "expired" | "depleted">(null);
   const [batchSubmitting, setBatchSubmitting] = useState(false);
   const [copyLoading, setCopyLoading] = useState(false);
   const [qs, setQs, query] = useUrlState(
@@ -141,6 +141,20 @@ export function CouponListPage() {
     }
   };
 
+  const handleDropDepleted = async () => {
+    setBatchSubmitting(true);
+    try {
+      const res: any = await dropDepletedCoupons();
+      const count = res?.count ?? 0;
+      toast.success(count > 0 ? t("coupon.table.actions.dropDepletedResult.success", { count }) : t("coupon.table.actions.dropDepletedResult.empty"));
+      qc.invalidateQueries({ queryKey: ["coupons"] });
+    } catch (e) {
+    } finally {
+      setBatchSubmitting(false);
+      setBatchDeleting(null);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -199,6 +213,14 @@ export function CouponListPage() {
           >
             <CalendarOff className="h-4 w-4" />
             {t("coupon.table.actions.dropExpired")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setBatchDeleting("depleted")}
+          >
+            <Ban className="h-4 w-4" />
+            {t("coupon.table.actions.dropDepleted")}
           </Button>
         </div>
       </div>
@@ -485,6 +507,15 @@ export function CouponListPage() {
         title={t("coupon.table.actions.dropExpiredConfirm.title")}
         description={t("coupon.table.actions.dropExpiredConfirm.description")}
         onConfirm={handleDropExpired}
+        loading={batchSubmitting}
+      />
+
+      <ConfirmDialog
+        open={batchDeleting === "depleted"}
+        onOpenChange={(v) => !v && setBatchDeleting(null)}
+        title={t("coupon.table.actions.dropDepletedConfirm.title")}
+        description={t("coupon.table.actions.dropDepletedConfirm.description")}
+        onConfirm={handleDropDepleted}
         loading={batchSubmitting}
       />
     </>

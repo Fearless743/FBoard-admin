@@ -3135,6 +3135,15 @@ const translations: Translations = {
         "dropExpiredResult": {
           "success": "Удалено просроченных купонов: {{count}}",
           "empty": "Просроченных купонов не найдено"
+        },
+        "dropDepleted": "Удалить исчерпанные",
+        "dropDepletedConfirm": {
+          "title": "Удаление исчерпанных купонов",
+          "description": "Вы уверены, что хотите удалить все купоны с оставшимся количеством использований 0? Это действие нельзя отменить."
+        },
+        "dropDepletedResult": {
+          "success": "Удалено исчерпанных купонов: {{count}}",
+          "empty": "Исчерпанных купонов не найдено"
         }
       },
       "toolbar": {

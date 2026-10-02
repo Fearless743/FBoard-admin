@@ -212,6 +212,10 @@ export async function dropExpiredCoupons() {
   return adminPost<any>("/coupon/dropExpired");
 }
 
+export async function dropDepletedCoupons() {
+  return adminPost<any>("/coupon/dropDepleted");
+}
+
 /* ============ 礼品卡模板 ============ */
 export interface GiftCardTemplate {
   id: number;
