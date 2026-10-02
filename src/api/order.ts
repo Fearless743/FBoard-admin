@@ -57,6 +57,10 @@ export async function updateOrder(payload: { trade_no: string; commission_status
   return adminPost<any>("/order/update", payload);
 }
 
+export async function bulkConfirmCommission(ids: number[], remark?: string) {
+  return adminPost<any>("/order/bulk-confirm-commission", { ids, remark });
+}
+
 export async function cancelOrder(trade_no: string) {
   return adminPost<any>("/order/cancel", { trade_no });
 }

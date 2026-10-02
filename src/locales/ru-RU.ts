@@ -3298,6 +3298,7 @@ const translations: Translations = {
     "description": "Просмотр и управление обращениями пользователей, включая ответы и закрытие тикетов.",
     "columns": {
       "id": "ID тикета",
+      "select": "Выбрать",
       "subject": "Тема",
       "level": "Приоритет",
       "status": "Статус",
@@ -3331,7 +3332,12 @@ const translations: Translations = {
       "close_confirm_description": "Вы уверены, что хотите закрыть этот тикет? Он переместится в список закрытых, но отвечать в нем все равно можно.",
       "close_confirm_button": "Закрыть тикет",
       "close_success": "Тикет успешно закрыт",
-      "view_ticket": "Посмотреть тикет"
+      "view_ticket": "Посмотреть тикет",
+      "bulk_close": "Массовое закрытие ({{count}})",
+      "bulk_close_confirm_title": "Подтвердите массовое закрытие тикетов",
+      "bulk_close_confirm_description": "Закрыть выбранные тикеты ({{count}})? После закрытия вы всё ещё сможете отвечать в них.",
+      "bulk_close_confirm_button": "Подтвердить",
+      "bulk_close_success": "Закрыто тикетов: {{count}}"
     },
     "detail": {
       "no_messages": "Сообщений нет",
@@ -4088,6 +4094,7 @@ const translations: Translations = {
     "table": {
       "columns": {
         "tradeNo": "№ Заказа",
+        "select": "Выбрать",
         "type": "Тип",
         "user": "Пользователь",
         "plan": "Тарифный план",
@@ -4161,7 +4168,10 @@ const translations: Translations = {
       "invalid": "Отменить комиссию",
       "openMenu": "Открыть меню",
       "reset": "Сбросить",
-      "copyTradeNo": "Копировать № заказа"
+      "copyTradeNo": "Копировать № заказа",
+      "batchConfirmCommission": "Массовое подтверждение комиссии ({{count}})",
+      "batchConfirmCommissionConfirmTitle": "Подтвердите массовую выплату комиссии",
+      "batchConfirmCommissionConfirmButton": "Подтвердить"
     },
     "search": {
       "placeholder": "Поиск по № заказа..."
@@ -4216,7 +4226,9 @@ const translations: Translations = {
       "cancelConfirm": "Отменить этот заказ?",
       "commissionIssueSuccess": "Комиссия выдана",
       "commissionInvalidSuccess": "Комиссия помечена как недействительная",
-      "commissionInvalidConfirm": "Пометить эту комиссию как недействительную?"
+      "commissionInvalidConfirm": "Пометить эту комиссию как недействительную?",
+      "bulkCommissionConfirmConfirm": "Подтвердить комиссию для выбранных заказов ({{count}})? Они перейдут в процесс выплаты.",
+      "bulkCommissionConfirmSuccess": "Подтверждено комиссий: {{count}}"
     }
   },
   "theme": {
