@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
 import { Plus, Pencil, Trash2, Loader2, BookOpen, GripVertical, Search } from "lucide-react";
 import { toast } from "sonner";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +51,9 @@ import {
 
 const LANGS = ["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN", "ru-RU"];
 const SORT_PAGE_SIZE = 1000;
+
+// 富文本编辑器（react-quill）按需加载，只在打开编辑弹窗时下载
+const KnowledgeEditor = lazy(() => import("./editor"));
 
 export function KnowledgeListPage() {
   const { t } = useTranslation();
@@ -415,23 +416,9 @@ function KnowledgeFormDialog({
           <div className="space-y-1.5">
             <Label>{t("knowledge.form.content")}</Label>
             <div className="knowledge-editor">
-              <ReactQuill
-                theme="snow"
-                value={content}
-                onChange={setContent}
-                modules={{
-                  toolbar: [
-                    [{ header: [1, 2, 3, false] }],
-                    ["bold", "italic", "underline", "strike"],
-                    [{ color: [] }, { background: [] }],
-                    [{ list: "ordered" }, { list: "bullet" }],
-                    ["blockquote", "code-block"],
-                    ["link", "image"],
-                    ["clean"],
-                  ],
-                }}
-                style={{ height: "300px" }}
-              />
+              <Suspense fallback={<Skeleton className="h-[300px] w-full" />}>
+                <KnowledgeEditor value={content} onChange={setContent} />
+              </Suspense>
             </div>
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">
