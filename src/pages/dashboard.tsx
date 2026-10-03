@@ -1,4 +1,4 @@
-import { useState, useMemo, type ReactNode } from "react";
+import { useState, useMemo, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/select";
 import { cn, formatBytes } from "@/lib/utils";
 import { adminPath } from "@/lib/paths";
+import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 
 function todayTimestamps() {
   const now = new Date();
@@ -104,6 +105,7 @@ export function Dashboard() {
   const [trafficRange, setTrafficRange] = useState("today");
   const [userTrafficRange, setUserTrafficRange] = useState("today");
   const [failedJobsOpen, setFailedJobsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard", "stats"],
@@ -205,11 +207,36 @@ export function Dashboard() {
   const horizonOk = !!queueStats?.status;
   const failedCount = Number(queueStats?.failedJobs || 0);
 
+  // 数据就绪后：统计卡片依次上浮，随后各内容区块错落进入
+  useGSAP(
+    () => {
+      if (isLoading) return;
+      const root = rootRef.current;
+      if (!root) return;
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+        tl.from(root.querySelectorAll('[data-anim="stats"] > *'), {
+          y: 14,
+          opacity: 0,
+          duration: 0.5,
+          stagger: 0.05,
+        });
+        tl.from(
+          root.querySelectorAll('[data-anim="section"]'),
+          { y: 18, opacity: 0, duration: 0.5, stagger: 0.08 },
+          "-=0.2",
+        );
+      });
+    },
+    { dependencies: [isLoading], scope: rootRef },
+  );
+
   return (
-    <>
+    <div ref={rootRef}>
       <PageHeader title={t("dashboard.title")} />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div data-anim="stats" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
           Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-[130px] rounded-xl" />
@@ -294,7 +321,7 @@ export function Dashboard() {
       </div>
 
       {/* 收入概览 */}
-      <div className="mt-6">
+      <div data-anim="section" className="mt-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -355,7 +382,7 @@ export function Dashboard() {
       </div>
 
       {/* 节点流量排行 + 用户流量排行 */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div data-anim="section" className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{t("dashboard.trafficRank.nodeTrafficRank")}</CardTitle>
@@ -435,7 +462,7 @@ export function Dashboard() {
       </div>
 
       {/* 队列状态 + 负载（合并重设计） */}
-      <div className="mt-6">
+      <div data-anim="section" className="mt-6">
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
             <div className="flex items-center gap-3">
@@ -692,7 +719,7 @@ export function Dashboard() {
 
       <FailedJobsDialog open={failedJobsOpen} onOpenChange={setFailedJobsOpen} />
       <PluginSlot name="dashboard.after" className="mt-6" />
-    </>
+    </div>
   );
 }
 

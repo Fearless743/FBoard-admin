@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -20,6 +20,7 @@ import {
 import { login } from "@/api/auth";
 import { useAuthStore } from "@/store/auth";
 import { adminPath } from "@/lib/paths";
+import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 
 type FormValues = {
   email: string;
@@ -34,6 +35,31 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [remember, setRemember] = useState(true);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // 登录页入场：卡片整体上浮，品牌区与表单区依次错落出现
+  useGSAP(
+    () => {
+      const card = cardRef.current;
+      if (!card) return;
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+        tl.from(card, { opacity: 0, y: 24, duration: 0.55 });
+        tl.from(
+          card.querySelectorAll('[data-anim="login-brand"] > *'),
+          { x: -18, opacity: 0, duration: 0.5, stagger: 0.09 },
+          "-=0.3",
+        );
+        tl.from(
+          card.querySelectorAll('[data-anim="login-form"] > *'),
+          { y: 14, opacity: 0, duration: 0.45, stagger: 0.06 },
+          "-=0.5",
+        );
+      });
+    },
+    { scope: cardRef },
+  );
 
   const schema = z.object({
     email: z
@@ -90,9 +116,12 @@ export default function LoginPage() {
       <div className="pointer-events-none absolute -left-1/4 top-0 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-1/4 bottom-0 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
 
-      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-2xl border bg-card shadow-xl md:grid-cols-2">
+      <div ref={cardRef} className="relative grid w-full max-w-5xl overflow-hidden rounded-2xl border bg-card shadow-xl md:grid-cols-2">
         {/* 左侧品牌区 */}
-        <div className="sidebar-dark relative hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground md:flex">
+        <div
+          data-anim="login-brand"
+          className="sidebar-dark relative hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground md:flex"
+        >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sidebar-accent ring-1 ring-sidebar-border">
               {logo ? (
@@ -123,7 +152,7 @@ export default function LoginPage() {
 
         {/* 右侧表单区 */}
         <div className="flex flex-col justify-center p-8 sm:p-10">
-          <div className="mx-auto w-full max-w-sm">
+          <div data-anim="login-form" className="mx-auto w-full max-w-sm">
             <div className="mb-8 md:hidden">
               <div className="flex items-center gap-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">

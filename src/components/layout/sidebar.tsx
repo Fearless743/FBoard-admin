@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Cloud, PanelLeftClose, PanelLeft } from "lucide-react";
@@ -12,6 +12,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { PluginSlot } from "@/plugin/slot";
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
@@ -19,6 +20,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const location = useLocation();
   const { groups } = useMergedNavigation();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const navRef = useRef<HTMLElement>(null);
+  // 首屏挂载时导航项的 stagger 已包含高亮项，跳过第一次的「高亮弹入」
+  const firstRun = useRef(true);
 
   const siteName = window.settings?.title || "Fboard";
   const logo = window.settings?.logo;
@@ -26,6 +30,47 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
 
   const toggleGroup = (key: string) =>
     setCollapsedGroups((s) => ({ ...s, [key]: !s[key] }));
+
+  // 导航项入场：整体错落淡入
+  useGSAP(
+    () => {
+      const nav = navRef.current;
+      if (!nav) return;
+      const items = nav.querySelectorAll("a");
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        gsap.from(items, {
+          x: -14,
+          opacity: 0,
+          duration: 0.4,
+          stagger: 0.025,
+          ease: "power2.out",
+        });
+      });
+    },
+    { scope: navRef },
+  );
+
+  // 路由切换时让当前选中项轻微「弹入」，强化位置反馈
+  useGSAP(
+    () => {
+      if (firstRun.current) {
+        firstRun.current = false;
+        return;
+      }
+      const active = navRef.current?.querySelector<HTMLElement>('[data-active="true"]');
+      if (!active) return;
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        gsap.fromTo(
+          active,
+          { scale: 0.96, x: -4 },
+          { scale: 1, x: 0, duration: 0.35, ease: "back.out(2)" },
+        );
+      });
+    },
+    { dependencies: [location.pathname], scope: navRef },
+  );
 
   return (
     <aside className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -48,7 +93,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
       </div>
 
       {/* 导航列表 */}
-      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
+      <nav ref={navRef} className="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
         {groups.map((group) => {
           // 单项分组不显示分组标题
           if (group.items.length === 1) {
@@ -161,6 +206,7 @@ function SidebarItem({
     <Link
       to={adminPath(item.path)}
       onClick={onNavigate}
+      data-active={active ? "true" : undefined}
       className={className}
     >
       <Icon className="h-4 w-4 shrink-0" />

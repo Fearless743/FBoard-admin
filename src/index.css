@@ -30,6 +30,9 @@
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-border: 220 13% 91%;
+
+    /* 让原生控件 / 滚动条跟随明暗主题 */
+    color-scheme: light;
   }
 
   .dark {
@@ -57,6 +60,8 @@
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-border: 240 3.7% 15.9%;
+
+    color-scheme: dark;
   }
 
   /* 侧边栏深色主题（header 固定深色，sidebar 可独立切换） */
@@ -72,9 +77,32 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    /* Firefox 滚动条（Chromium 见下方 ::-webkit-scrollbar） */
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* 已加载完整字重，禁止浏览器伪粗体，保证字重一致 */
+    font-synthesis-weight: none;
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.22);
+  }
+}
+
+/* 尊重系统「减少动态效果」偏好，同时降低低端设备动画开销 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
