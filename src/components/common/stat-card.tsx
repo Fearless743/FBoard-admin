@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { CountUp } from "@/components/common/count-up";
 
 interface StatCardProps {
   title: string;
@@ -54,7 +55,13 @@ export function StatCard({
           </div>
         )}
       </div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-tight">
+        {typeof value === "string" || typeof value === "number" ? (
+          <CountUp value={value} />
+        ) : (
+          value
+        )}
+      </p>
       {delta !== undefined && (
         <div
           className={cn(

@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 
 interface DataPoint {
   date: string;
@@ -42,6 +43,8 @@ function buildSmoothPath(pts: Array<{ x: number; y: number }>): string {
 export function SimpleAreaChart({ data, gradientId = "areaGradient", formatter }: SimpleAreaChartProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<SVGPathElement>(null);
+  const areaRef = useRef<SVGPathElement>(null);
   const [size, setSize] = useState({ w: 600, h: 300 });
   const [tooltip, setTooltip] = useState<{ x: number; i: number } | null>(null);
 
@@ -100,6 +103,50 @@ export function SimpleAreaChart({ data, gradientId = "areaGradient", formatter }
     return { pts, smoothPath, areaPath, gridLines, xLabels, xScale, yScale };
   }, [data, w, h, cw, ch, pad.l, pad.t, pad.b]);
 
+  // 用数值签名作为动画依赖：轮询刷新会返回新数组引用，但数值未变时不应重放动画
+  const dataKey = useMemo(
+    () => (data ?? []).map((d) => `${d.date}\u0000${d.value}`).join("\u0001"),
+    [data],
+  );
+
+  // 数值变化时重放「描线 + 面积淡入」；hover / 轮询返回同值数据不会重放
+  useGSAP(
+    () => {
+      if (!data || data.length === 0) return;
+      const line = lineRef.current;
+      const area = areaRef.current;
+      if (!line && !area) return;
+
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        const tl = gsap.timeline();
+        const length = line?.getTotalLength?.() ?? 0;
+        if (line && length > 0) {
+          tl.fromTo(
+            line,
+            { strokeDasharray: length, strokeDashoffset: length },
+            {
+              strokeDashoffset: 0,
+              duration: 0.9,
+              ease: "power2.inOut",
+              // 结束后清掉 dash 内联样式，避免容器尺寸变化重算路径后线被截断
+              onComplete: () =>
+                gsap.set(line, { clearProps: "strokeDasharray,strokeDashoffset" }),
+            },
+          );
+        }
+        if (area) {
+          tl.from(area, {
+            opacity: 0,
+            duration: 0.6,
+            clearProps: "opacity",
+          }, length > 0 ? "-=0.5" : 0);
+        }
+      });
+    },
+    { dependencies: [dataKey], scope: containerRef },
+  );
+
   if (!data || data.length === 0 || !chart) {
     return (
       <div ref={containerRef} className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
@@ -146,10 +193,11 @@ export function SimpleAreaChart({ data, gradientId = "areaGradient", formatter }
         ))}
 
         {/* area fill：与折线同一平滑曲线，再闭合到基线 */}
-        <path d={areaPath} fill={`url(#${gradientId})`} />
+        <path ref={areaRef} d={areaPath} fill={`url(#${gradientId})`} />
 
         {/* smooth line */}
         <path
+          ref={lineRef}
           d={smoothPath}
           fill="none"
           stroke="hsl(var(--primary))"
