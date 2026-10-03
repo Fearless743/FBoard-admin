@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:mock": "vite --mode mock",
     "build": "tsc -b && vite build",
     "build:watch": "tsc -b --watch & vite build --watch",
     "typecheck": "tsc -b --noEmit",
