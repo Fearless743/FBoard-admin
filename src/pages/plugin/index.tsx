@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState } from "@/hooks/use-url-state";
@@ -18,8 +18,6 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   applyPluginActionResult,
   buildLinkActionResult,
@@ -69,7 +67,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePlanOptions } from "@/hooks/use-plans";
-import { CodeEditor } from "@/pages/config/code-editor";
+
+// 重量级依赖按需加载：CodeMirror 仅在打开插件 JSON/YAML 配置弹窗时加载，
+// react-markdown 仅在打开插件说明弹窗时加载。
+const CodeEditor = lazy(() =>
+  import("@/pages/config/code-editor").then((m) => ({ default: m.CodeEditor })),
+);
+const ReadmeMarkdown = lazy(() => import("./readme-markdown"));
 
 export function PluginPage() {
   const { t } = useTranslation();
@@ -832,12 +836,14 @@ function PluginConfigDialog({
                         {f.type}
                       </Badge>
                     </div>
-                    <CodeEditor
-                      value={String(values[f.key] ?? "")}
-                      onChange={(value) => setValue(f.key, value)}
-                      language={f.type}
-                      minHeight="220px"
-                    />
+                    <Suspense fallback={<Skeleton className="h-[220px] w-full" />}>
+                      <CodeEditor
+                        value={String(values[f.key] ?? "")}
+                        onChange={(value) => setValue(f.key, value)}
+                        language={f.type}
+                        minHeight="220px"
+                      />
+                    </Suspense>
                     {description && (
                       <p className="text-xs text-muted-foreground">
                         {description}
@@ -1111,7 +1117,9 @@ function PluginReadmeDialog({
               .markdown-body ::-webkit-scrollbar { height: 6px; }
               .markdown-body ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
             `}</style>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            <Suspense fallback={null}>
+              <ReadmeMarkdown content={content} />
+            </Suspense>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">

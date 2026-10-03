@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -78,8 +78,13 @@ import {
   type ProtocolType,
   type ServerGroup,
 } from "@/api/server";
-import { ServerFormDialog } from "./server-form-dialog";
 import { formatBytes, bytesToGb, copyToClipboard, cn } from "@/lib/utils";
+
+// 节点表单弹窗依赖很重（高级设置 / 网络设置 / 虚拟节点 / pinyin-pro 等），
+// 首次打开弹窗时再按需加载，避免拖慢节点列表首屏。
+const ServerFormDialog = lazy(() =>
+  import("./server-form-dialog").then((m) => ({ default: m.ServerFormDialog })),
+);
 
 const STATUS_VARIANT: Record<
   number,
@@ -158,6 +163,11 @@ export function ServerListPage() {
   const [replaceValue, setReplaceValue] = useState("");
   const [replaceLoading, setReplaceLoading] = useState(false);
   const [copyNodeLoading, setCopyNodeLoading] = useState<string | null>(null);
+  // 表单弹窗懒加载：一旦打开过就保持挂载，保证关闭动画正常
+  const [formLoaded, setFormLoaded] = useState(false);
+  useEffect(() => {
+    if (createOpen || editing) setFormLoaded(true);
+  }, [createOpen, editing]);
 
   // Handle createWithMachineId URL param（一次性动作，不进列表 schema）
   useEffect(() => {
@@ -732,19 +742,23 @@ export function ServerListPage() {
         )}
       </div>
 
-      <ServerFormDialog
-        open={createOpen || !!editing}
-        server={editing}
-        initialMachineId={createMachineId}
-        onOpenChange={(v) => {
-          if (!v) {
-            setEditing(null);
-            setCreateOpen(false);
-            setCreateMachineId(null);
-          }
-        }}
-        onSaved={() => qc.invalidateQueries({ queryKey: ["servers", "nodes"] })}
-      />
+      {formLoaded && (
+        <Suspense fallback={null}>
+          <ServerFormDialog
+            open={createOpen || !!editing}
+            server={editing}
+            initialMachineId={createMachineId}
+            onOpenChange={(v) => {
+              if (!v) {
+                setEditing(null);
+                setCreateOpen(false);
+                setCreateMachineId(null);
+              }
+            }}
+            onSaved={() => qc.invalidateQueries({ queryKey: ["servers", "nodes"] })}
+          />
+        </Suspense>
+      )}
 
       <Dialog open={replaceOpen} onOpenChange={(v) => !v && setReplaceOpen(false)}>
         <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">

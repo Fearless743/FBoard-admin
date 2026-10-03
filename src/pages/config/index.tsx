@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Globe,
@@ -27,7 +27,14 @@ import { ServerSection } from "./sections/server-section";
 import { EmailSection } from "./sections/email-section";
 import { TelegramSection } from "./sections/telegram-section";
 import { AppSection } from "./sections/app-section";
-import { SubscribeTemplateSection } from "./sections/subscribe-template-section";
+import { SectionSkeleton } from "./section-skeleton";
+
+// 订阅模板页内嵌 CodeMirror（体积较大），仅在切到该 tab 时按需加载
+const SubscribeTemplateSection = lazy(() =>
+  import("./sections/subscribe-template-section").then((m) => ({
+    default: m.SubscribeTemplateSection,
+  })),
+);
 
 const TABS: Array<{
   value: string;
@@ -47,7 +54,11 @@ const TABS: Array<{
     value: "subscribe_template",
     icon: FileCode2,
     i18n: "settings.subscribe_template.title",
-    render: () => <SubscribeTemplateSection />,
+    render: () => (
+      <Suspense fallback={<SectionSkeleton />}>
+        <SubscribeTemplateSection />
+      </Suspense>
+    ),
   },
 ];
 
