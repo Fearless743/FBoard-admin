@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import fs from "node:fs";
@@ -53,27 +53,38 @@ function copyLocales() {
   };
 }
 
-export default defineConfig({
-  base: "/assets/admin/",
-  plugins: [react(), copyLocales()],
-  build: {
-    outDir: assetsRoot,
-    emptyOutDir: true,
-    manifest: true,
-    minify: true,
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      // 官方 package.exports 仅暴露 dist/index.css；分字重需绕过 exports 直指 dist
-      "harmonyos-sans-sc-webfont-splitted/dist": path.resolve(
-        __dirname,
-        "node_modules/harmonyos-sans-sc-webfont-splitted/dist",
-      ),
+export default defineConfig(async ({ mode }) => {
+  const plugins: Plugin[] = [react(), copyLocales()];
+
+  // 本地 mock 后端：仅在 `vite --mode mock`（bun run dev:mock）时加载，
+  // 动态 import 保证 mock 数据与逻辑不会进入正常 dev / 生产构建。
+  if (mode === "mock") {
+    const { createMockPlugin } = await import("./mock/server");
+    plugins.push(createMockPlugin(__dirname));
+  }
+
+  return {
+    base: "/assets/admin/",
+    plugins,
+    build: {
+      outDir: assetsRoot,
+      emptyOutDir: true,
+      manifest: true,
+      minify: true,
     },
-  },
-  server: {
-    port: 5173,
-    host: true,
-  },
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+        // 官方 package.exports 仅暴露 dist/index.css；分字重需绕过 exports 直指 dist
+        "harmonyos-sans-sc-webfont-splitted/dist": path.resolve(
+          __dirname,
+          "node_modules/harmonyos-sans-sc-webfont-splitted/dist",
+        ),
+      },
+    },
+    server: {
+      port: 5173,
+      host: true,
+    },
+  };
 });
