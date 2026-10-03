@@ -561,3 +561,32 @@ export async function fetchPluginStaticFiles(code: string) {
 export async function executePluginAction(code: string, action: string, params?: any) {
   return adminPost<any>("/plugin/action", { code, action, params });
 }
+
+/** 获取已启用插件声明的后台 UI 扩展块（插槽 / CSS 锚点控件） */
+export async function fetchAdminUiExtensions(): Promise<import("@/plugin/types").AdminUiExtension[]> {
+  // 注意：通用 request() 对数组型 data 不做自动解包（兼容分页接口 { data, total }），
+  // 因此这里手动归一化 { data: [...] } 信封，保证调用方拿到的始终是数组。
+  const res = await adminGet<
+    | import("@/plugin/types").AdminUiExtension[]
+    | { data?: import("@/plugin/types").AdminUiExtension[] }
+  >("/plugin/ui");
+  if (Array.isArray(res)) return res;
+  const list = (res as { data?: unknown } | null)?.data;
+  return Array.isArray(list) ? (list as import("@/plugin/types").AdminUiExtension[]) : [];
+}
+
+/** 获取已启用插件声明的后台导航扩展（菜单 + 整页 + 翻译） */
+export async function fetchAdminUiNavigation(): Promise<import("@/plugin/types").AdminUiNavigation> {
+  const res = await adminGet<
+    | import("@/plugin/types").AdminUiNavigation
+    | { data?: import("@/plugin/types").AdminUiNavigation }
+  >("/plugin/ui/nav");
+  const nav = Array.isArray((res as import("@/plugin/types").AdminUiNavigation | null)?.menus)
+    ? (res as import("@/plugin/types").AdminUiNavigation)
+    : (res as { data?: import("@/plugin/types").AdminUiNavigation } | null)?.data;
+  return {
+    menus: nav?.menus ?? [],
+    pages: nav?.pages ?? [],
+    i18n: nav?.i18n ?? {},
+  };
+}

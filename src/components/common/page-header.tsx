@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { PluginSlot } from "@/plugin/slot";
 
 interface PageHeaderProps {
   title: string;
@@ -17,7 +18,10 @@ export function PageHeader({ title, description, actions, className }: PageHeade
           <p className="text-sm text-muted-foreground">{description}</p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      <div className="flex items-center gap-2">
+        {actions}
+        <PluginSlot name="page.actions" className="flex items-center gap-2" />
+      </div>
     </div>
   );
 }
