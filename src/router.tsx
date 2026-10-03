@@ -3,6 +3,7 @@ import { createHashRouter, Navigate } from "react-router-dom";
 import PageLoading from "@/components/common/page-loading";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProtectedRoute } from "@/components/layout/protected-route";
+import { PluginRouteResolver } from "@/plugin/page-host";
 
 const LoginPage = lazy(() => import("@/pages/login"));
 const Dashboard = lazy(() =>
@@ -81,10 +82,6 @@ const WithdrawalListPage = lazy(() =>
     default: WithdrawalListPage,
   })),
 );
-const NotFound = lazy(() =>
-  import("@/pages/not-found").then(({ NotFound }) => ({ default: NotFound })),
-);
-
 const lazyElement = (element: ReactNode) => (
   <Suspense fallback={<PageLoading />}>{element}</Suspense>
 );
@@ -127,7 +124,7 @@ export const router = createHashRouter([
       { path: "payment", element: lazyElement(<PaymentListPage />) },
       { path: "knowledge", element: lazyElement(<KnowledgeListPage />) },
 
-      { path: "*", element: lazyElement(<NotFound />) },
+      { path: "*", element: <PluginRouteResolver /> },
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },

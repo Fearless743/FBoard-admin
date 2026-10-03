@@ -26,7 +26,8 @@ import { supportedLngs } from "@/locales";
 import { adminPath } from "@/lib/paths";
 import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { useEffect, useState } from "react";
-import { flatNav } from "@/lib/navigation";
+import { navItemLabel, useMergedNavigation } from "@/plugin/nav";
+import { PluginSlot } from "@/plugin/slot";
 
 const languageLabels: Record<string, string> = {
   "zh-CN": "简体中文",
@@ -46,6 +47,7 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
   const setLanguage = useSettingsStore((s) => s.setLanguage);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const { flat } = useMergedNavigation();
 
   // ⌘K 打开搜索
   useEffect(() => {
@@ -77,6 +79,8 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
         <Menu className="h-5 w-5" />
       </Button>
 
+      <PluginSlot name="header.left" className="flex items-center gap-1" />
+
       {/* 窄屏搜索入口（命令面板） */}
       <Button
         variant="ghost"
@@ -101,6 +105,7 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
       </button>
 
       <div className="ml-auto flex items-center gap-1">
+        <PluginSlot name="header.actions" className="flex items-center gap-1" />
         {/* 语言切换 */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -194,19 +199,24 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
         <CommandList>
           <CommandEmpty>{t("search.noResults")}</CommandEmpty>
           <CommandGroup heading={t("search.title")}>
-            {flatNav.map((item) => {
+            {flat.map((item) => {
               const Icon = item.icon;
+              const label = navItemLabel(t, item);
               return (
                 <CommandItem
                   key={item.path}
-                  value={t(item.key)}
+                  value={label}
                   onSelect={() => {
                     setSearchOpen(false);
+                    if (item.external) {
+                      window.open(item.path, item.target || "_blank", "noopener,noreferrer");
+                      return;
+                    }
                     navigate(adminPath(item.path));
                   }}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{t(item.key)}</span>
+                  <span>{label}</span>
                 </CommandItem>
               );
             })}

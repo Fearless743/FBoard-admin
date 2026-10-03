@@ -22,13 +22,22 @@ import {
 
 export interface NavItem {
   path: string; // 相对后台根的子路径，如 "dashboard"
-  key: string; // i18n key（位于 nav.* 下）
+  key: string; // i18n key（位于 nav.* 下）；插件项可能为空
   icon: LucideIcon;
   group?: string;
+  /** 字面量文案（插件项，key 缺失或翻译缺失时回退） */
+  label?: string;
+  /** 外部链接 */
+  external?: boolean;
+  target?: "_blank" | "_self";
+  /** 来源插件 code（静态项为空） */
+  plugin?: string;
 }
 
 export interface NavGroup {
   key: string; // i18n key（位于 nav.* 下）
+  /** 字面量分组名（插件自定义分组，优先于 key 翻译） */
+  label?: string;
   items: NavItem[];
 }
 

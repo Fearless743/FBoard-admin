@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { PluginSlot } from "@/plugin/slot";
+import { PluginAnchors } from "@/plugin/anchors";
 
 export function AppShell() {
   const { t } = useTranslation();
@@ -33,11 +35,14 @@ export function AppShell() {
       {/* 主区域：min-w-0 防止宽表撑破整页横滑 */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header onMobileMenu={() => setMobileOpen(true)} />
+        <PluginAnchors />
         <main
           key={location.pathname}
           className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6"
         >
+          <PluginSlot name="content.before" className="mb-4" />
           <Outlet />
+          <PluginSlot name="content.after" className="mt-4" />
         </main>
       </div>
     </div>

@@ -3,7 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Cloud, PanelLeftClose, PanelLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { navigation, flatNav } from "@/lib/navigation";
+import type { NavItem } from "@/lib/navigation";
+import { navGroupLabel, navItemLabel, useMergedNavigation } from "@/plugin/nav";
 import { adminPath } from "@/lib/paths";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,10 +12,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { PluginSlot } from "@/plugin/slot";
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const { t } = useTranslation();
   const location = useLocation();
+  const { groups } = useMergedNavigation();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const siteName = window.settings?.title || "Fboard";
@@ -46,7 +49,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
 
       {/* 导航列表 */}
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
-        {navigation.map((group) => {
+        {groups.map((group) => {
           // 单项分组不显示分组标题
           if (group.items.length === 1) {
             const item = group.items[0];
@@ -67,7 +70,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
                   onClick={() => toggleGroup(group.key)}
                   className="flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 >
-                  <span>{t(group.key)}</span>
+                  <span>{navGroupLabel(t, group)}</span>
                   <ChevronDown
                     className={cn(
                       "h-4 w-4 transition-transform",
@@ -89,10 +92,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
             </Collapsible>
           );
         })}
+        <PluginSlot name="sidebar.nav" className="pt-2" />
       </nav>
 
       {/* 底部版本信息 */}
       <div className="border-t border-sidebar-border px-5 py-3 text-xs text-muted-foreground">
+        <PluginSlot name="sidebar.bottom" className="mb-2" />
         <div className="flex items-center justify-between gap-2">
           <span className="truncate font-medium text-sidebar-foreground">{siteName}</span>
           {version ? (
@@ -108,7 +113,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   );
 }
 
-function isActive(location: ReturnType<typeof useLocation>, item: (typeof flatNav)[number]) {
+function isActive(location: ReturnType<typeof useLocation>, item: NavItem) {
+  if (item.external) return false;
   const itemPath = adminPath(item.path);
   // dashboard 精确匹配或后台根
   if (item.path === "dashboard") {
@@ -122,25 +128,43 @@ function SidebarItem({
   active,
   onNavigate,
 }: {
-  item: (typeof flatNav)[number];
+  item: NavItem;
   active: boolean;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslation();
   const Icon = item.icon;
+  const label = navItemLabel(t, item);
+  const className = cn(
+    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+    active
+      ? "bg-primary text-primary-foreground shadow-sm"
+      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+  );
+
+  if (item.external) {
+    return (
+      <a
+        href={item.path}
+        target={item.target || "_blank"}
+        rel="noopener noreferrer"
+        onClick={onNavigate}
+        className={className}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="truncate">{label}</span>
+      </a>
+    );
+  }
+
   return (
     <Link
       to={adminPath(item.path)}
       onClick={onNavigate}
-      className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-        active
-          ? "bg-primary text-primary-foreground shadow-sm"
-          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-      )}
+      className={className}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      <span className="truncate">{t(item.key)}</span>
+      <span className="truncate">{label}</span>
     </Link>
   );
 }

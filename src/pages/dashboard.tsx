@@ -32,6 +32,7 @@ import { StatCard } from "@/components/common/stat-card";
 import { PageHeader } from "@/components/common/page-header";
 import { FailedJobsDialog } from "@/components/common/failed-jobs-dialog";
 import { IdBadge } from "@/components/common/id-badge";
+import { PluginSlot } from "@/plugin/slot";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -690,6 +691,7 @@ export function Dashboard() {
       </div>
 
       <FailedJobsDialog open={failedJobsOpen} onOpenChange={setFailedJobsOpen} />
+      <PluginSlot name="dashboard.after" className="mt-6" />
     </>
   );
 }
