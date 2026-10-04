@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
-import { Loader2, Ban, ShieldCheck } from "lucide-react";
+import { Loader2, Ban, ShieldCheck, Plus, Trash2, TriangleAlert } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { usePlanOptions } from "@/hooks/use-plans";
-import { updateUser, type UserListItem } from "@/api/user";
+import { useMultiPlan } from "@/hooks/use-multi-plan";
+import { updateUser, type UserListItem, type PlanListItem } from "@/api/user";
 
 export interface UserEditDialogProps {
   open: boolean;
@@ -58,6 +59,14 @@ interface FormValues {
 }
 
 export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDialogProps) {
+  const multiPlan = useMultiPlan();
+  if (multiPlan) {
+    return <MultiPlanEditDialog open={open} onOpenChange={onOpenChange} user={user} onSaved={onSaved} />;
+  }
+  return <LegacyEditDialog open={open} onOpenChange={onOpenChange} user={user} onSaved={onSaved} />;
+}
+
+function LegacyEditDialog({ open, onOpenChange, user, onSaved }: UserEditDialogProps) {
   const { t } = useTranslation();
   const { data: plans } = usePlanOptions();
   const GB = 1073741824;
@@ -355,6 +364,412 @@ export function UserEditDialog({ open, onOpenChange, user, onSaved }: UserEditDi
       </DialogContent>
     </Dialog>
   );
+}
+
+interface MultiBaseValues {
+  id: number;
+  email: string;
+  password: string;
+  balance: number;
+  commission_balance: number;
+  commission_type: number;
+  commission_rate: number | null;
+  discount: number | null;
+  remarks: string;
+  invite_user_id: number | null;
+  banned: boolean;
+  is_admin: boolean;
+  is_staff: boolean;
+}
+
+interface PlanRowState {
+  key: string;
+  id?: number;
+  plan_id: number | null;
+  expired_at: string; // datetime-local, 空=永久
+  speed_limit: string; // 空=跟随
+  device_limit: string;
+  remaining: number; // bytes，只读
+  sort_order: number; // 只读
+  exhausted: boolean;
+}
+
+function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDialogProps) {
+  const { t } = useTranslation();
+  const { data: plans } = usePlanOptions();
+  const [rows, setRows] = useState<PlanRowState[]>([]);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const GB = 1073741824;
+
+  const asNumber = (v: unknown): number => {
+    if (v === "" || v === null || v === undefined) return 0;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const { register, handleSubmit, reset, control, formState: { isSubmitting } } =
+    useForm<MultiBaseValues>({ defaultValues: emptyMultiBase() });
+
+  useEffect(() => {
+    setConfirmClear(false);
+    if (user) {
+      reset({
+        id: user.id,
+        email: user.email || "",
+        password: "",
+        balance: user.balance ?? 0,
+        commission_balance: user.commission_balance ?? 0,
+        commission_type: user.commission_type ?? 0,
+        commission_rate: user.commission_rate ?? null,
+        discount: user.discount ?? null,
+        remarks: user.remark || "",
+        invite_user_id: user.invite_user_id ?? null,
+        banned: !!user.banned,
+        is_admin: !!user.is_admin,
+        is_staff: !!user.is_staff,
+      });
+      setRows(((user.plan_list || []) as PlanListItem[]).map((p, i) => ({
+        key: `row-${p.id ?? "new"}-${i}`,
+        id: p.id,
+        plan_id: p.plan_id ?? null,
+        expired_at: p.expired_at ? toLocalInput(p.expired_at) : "",
+        speed_limit: p.speed_limit == null ? "" : String(p.speed_limit),
+        device_limit: p.device_limit == null ? "" : String(p.device_limit),
+        remaining: p.remaining ?? 0,
+        sort_order: p.sort_order ?? 0,
+        exhausted: !!p.exhausted,
+      })));
+    } else {
+      reset(emptyMultiBase());
+      setRows([]);
+    }
+  }, [user, reset, open]);
+
+  const setRow = (key: string, patch: Partial<PlanRowState>) =>
+    setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+
+  const addRow = () =>
+    setRows((rs) => [
+      ...rs,
+      {
+        key: `new-${Date.now()}-${rs.length}`,
+        plan_id: null,
+        expired_at: "",
+        speed_limit: "",
+        device_limit: "",
+        remaining: 0,
+        sort_order: 0,
+        exhausted: false,
+      },
+    ]);
+
+  const buildPlans = () =>
+    rows.map((r) => ({
+      ...(r.id ? { id: r.id } : {}),
+      plan_id: r.plan_id as number,
+      expired_at: r.expired_at
+        ? Math.floor(new Date(r.expired_at).getTime() / 1000)
+        : null,
+      speed_limit: r.speed_limit === "" ? null : Number(r.speed_limit),
+      device_limit: r.device_limit === "" ? null : Number(r.device_limit),
+    }));
+
+  const onSubmit = async (values: MultiBaseValues) => {
+    if (rows.some((r) => !r.plan_id)) {
+      toast.error(t("user.edit.multi.plan_required"));
+      return;
+    }
+    try {
+      const payload: any = {
+        id: values.id,
+        email: values.email,
+        balance: asNumber(values.balance),
+        commission_balance: asNumber(values.commission_balance),
+        commission_type: values.commission_type,
+        commission_rate: values.commission_rate,
+        discount: values.discount,
+        remarks: values.remarks,
+        banned: values.banned,
+        is_admin: values.is_admin,
+        is_staff: values.is_staff,
+        invite_user_id: values.invite_user_id,
+        plans: buildPlans(),
+      };
+      if (values.password) payload.password = values.password;
+      await updateUser(payload);
+      toast.success(t("user.edit.form.success"));
+      onSaved();
+      onOpenChange(false);
+    } catch (e: any) {
+      // 错误已由 axios 拦截器统一 toast
+    }
+  };
+
+  const onClear = async () => {
+    if (!user) return;
+    if (!confirmClear) {
+      setConfirmClear(true);
+      return;
+    }
+    setClearing(true);
+    try {
+      await updateUser({ id: user.id, clear_plans: true });
+      toast.success(t("user.edit.form.success"));
+      onSaved();
+      onOpenChange(false);
+    } catch (e: any) {
+      // 拦截器已 toast
+    } finally {
+      setClearing(false);
+      setConfirmClear(false);
+    }
+  };
+
+  const fmtGB = (bytes: number) =>
+    `${(Math.round((bytes / GB) * 100) / 100).toLocaleString()} GB`;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
+          <DialogTitle>{t("user.edit.button")}</DialogTitle>
+          <DialogDescription>{t("user.edit.title")}</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4 px-6 py-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label={t("user.edit.form.email")}>
+                <Input type="email" {...register("email")} />
+              </Field>
+              <Field label={t("user.edit.form.invite_user_id")}>
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  placeholder={t("user.edit.form.invite_user_id_placeholder")}
+                  {...register("invite_user_id", {
+                    setValueAs: (v) => {
+                      if (v === "" || v === null || v === undefined) return null;
+                      const n = Number(v);
+                      return Number.isFinite(n) ? n : null;
+                    },
+                  })}
+                />
+              </Field>
+              <Field label={t("user.edit.form.password")}>
+                <Input
+                  type="password"
+                  placeholder={t("user.edit.form.password_placeholder")}
+                  {...register("password", { minLength: 8 })}
+                />
+              </Field>
+              <Field label={t("user.edit.form.balance")}>
+                <Input type="number" step="0.01" {...register("balance", { setValueAs: asNumber })} />
+              </Field>
+              <Field label={t("user.edit.form.commission_balance")}>
+                <Input type="number" step="0.01" {...register("commission_balance", { setValueAs: asNumber })} />
+              </Field>
+              <Field label={t("user.edit.form.commission_type")}>
+                <Controller
+                  control={control}
+                  name="commission_type"
+                  render={({ field }) => (
+                    <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">{t("user.edit.form.commission_type_system")}</SelectItem>
+                        <SelectItem value="1">{t("user.edit.form.commission_type_cycle")}</SelectItem>
+                        <SelectItem value="2">{t("user.edit.form.commission_type_onetime")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </Field>
+              <Field label={t("user.edit.form.commission_rate")}>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  placeholder={t("user.edit.form.commission_rate_placeholder")}
+                  {...register("commission_rate", { valueAsNumber: true })}
+                />
+              </Field>
+              <Field label={t("user.edit.form.discount")}>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  placeholder={t("user.edit.form.discount_placeholder")}
+                  {...register("discount", { valueAsNumber: true })}
+                />
+              </Field>
+              <Field label={t("user.dialog.fields.registerIp")}>
+                <Input value={user?.register_ip || "—"} readOnly className="bg-muted/40 font-mono" />
+              </Field>
+              <Field label={t("user.dialog.fields.lastLoginIp")}>
+                <Input value={user?.last_login_ip || "—"} readOnly className="bg-muted/40 font-mono" />
+              </Field>
+              <Field label={t("user.dialog.fields.lastLoginAt")}>
+                <Input
+                  value={user?.last_login_at ? toLocalInput(user.last_login_at).replace("T", " ") : "—"}
+                  readOnly
+                  className="bg-muted/40"
+                />
+              </Field>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t("user.edit.form.remarks")}</Label>
+              <Textarea rows={3} placeholder={t("user.edit.form.remarks_placeholder")} {...register("remarks")} />
+            </div>
+
+            <BanField control={control} name="banned" label={t("user.edit.form.account_status")} />
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <BoolField control={control} name="is_admin" label={t("user.edit.form.is_admin")} />
+              <BoolField control={control} name="is_staff" label={t("user.edit.form.is_staff")} />
+            </div>
+
+            <div className="space-y-3 rounded-lg border p-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">{t("user.edit.multi.title")}</Label>
+                <Button type="button" variant="outline" size="sm" onClick={addRow}>
+                  <Plus className="h-4 w-4" />
+                  {t("user.edit.multi.add_plan")}
+                </Button>
+              </div>
+              {rows.length === 0 && (
+                <p className="text-xs text-muted-foreground">{t("user.edit.multi.empty")}</p>
+              )}
+              {rows.map((r) => (
+                <div key={r.key} className={cn("space-y-2 rounded-md border p-3", r.exhausted && "opacity-70")}>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.multi.plan")}</Label>
+                      <Select
+                        value={r.plan_id ? String(r.plan_id) : ""}
+                        onValueChange={(v) => setRow(r.key, { plan_id: Number(v) })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("user.edit.multi.plan_placeholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(plans || []).map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.multi.expired_at")}</Label>
+                      <Input
+                        type="datetime-local"
+                        value={r.expired_at}
+                        onChange={(e) => setRow(r.key, { expired_at: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        title={t("user.edit.multi.remove")}
+                        onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.multi.speed_limit")}</Label>
+                      <Input
+                        type="number"
+                        placeholder={t("user.edit.form.speed_limit_placeholder")}
+                        value={r.speed_limit}
+                        onChange={(e) => setRow(r.key, { speed_limit: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.multi.device_limit")}</Label>
+                      <Input
+                        type="number"
+                        placeholder={t("user.edit.form.device_limit_placeholder")}
+                        value={r.device_limit}
+                        onChange={(e) => setRow(r.key, { device_limit: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.multi.remaining")}</Label>
+                      <Input value={fmtGB(r.remaining)} readOnly className="bg-muted/40" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.multi.sort_order")}</Label>
+                      <Input
+                        value={r.sort_order === 0 ? t("user.edit.multi.sort_default") : String(r.sort_order)}
+                        readOnly
+                        className="bg-muted/40"
+                      />
+                    </div>
+                  </div>
+                  {r.exhausted && (
+                    <p className="text-[11px] text-muted-foreground">{t("user.edit.multi.exhausted_hint")}</p>
+                  )}
+                </div>
+              ))}
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant={confirmClear ? "destructive" : "outline"}
+                  size="sm"
+                  disabled={clearing || rows.length === 0}
+                  onClick={onClear}
+                >
+                  {clearing && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {!clearing && confirmClear && <TriangleAlert className="h-4 w-4" />}
+                  {confirmClear ? t("user.edit.multi.clear_confirm") : t("user.edit.multi.clear")}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 border-t px-6 py-4 shrink-0">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t("user.edit.form.cancel")}
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t("user.edit.form.submit")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function emptyMultiBase(): MultiBaseValues {
+  return {
+    id: 0,
+    email: "",
+    password: "",
+    balance: 0,
+    commission_balance: 0,
+    commission_type: 0,
+    commission_rate: null,
+    discount: null,
+    remarks: "",
+    invite_user_id: null,
+    banned: false,
+    is_admin: false,
+    is_staff: false,
+  };
 }
 
 function Field({

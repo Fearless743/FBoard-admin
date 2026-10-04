@@ -33,7 +33,37 @@ export interface UserListItem {
   discount?: number | null;
   telegram_id?: string | null;
   phone?: string | null;
+  /** 多套餐实例明细（开关开启时后端返回；耗尽行带 exhausted 置灰） */
+  plan_list?: PlanListItem[];
   [k: string]: any;
+}
+
+/** 套餐实例行（后端 plan_list 项） */
+export interface PlanListItem {
+  id: number;
+  plan_id: number;
+  kind: number; // 1=周期 2=流量包
+  name: string;
+  transfer_enable: number;
+  u: number;
+  d: number;
+  remaining: number;
+  expired_at: number | null;
+  speed_limit: number | null;
+  device_limit: number | null;
+  group_id: number;
+  sort_order: number;
+  exhausted: boolean;
+}
+
+/** 管理端提交的实例 diff 行 */
+export interface PlanEditItem {
+  id?: number;
+  plan_id: number;
+  expired_at?: number | null;
+  speed_limit?: number | null;
+  device_limit?: number | null;
+  transfer_enable?: number;
 }
 
 export interface UserListResponse {

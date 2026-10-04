@@ -376,6 +376,7 @@ const translations: Translations = {
       "online_count": "在線設備",
       "status": "狀態",
       "subscription": "訂閱",
+      "plan_exhausted": "已耗盡",
       "group": "權限組",
       "used_traffic": "已用流量",
       "total_traffic": "總流量",
@@ -584,6 +585,24 @@ const translations: Translations = {
         "is_staff": "是否員工",
         "remarks": "備註",
         "remarks_placeholder": "請在這裡記錄",
+        "multi": {
+          "title": "多套餐實例",
+          "add_plan": "新增套餐行",
+          "empty": "暫無套餐實例，可新增",
+          "plan": "套餐",
+          "plan_placeholder": "請選擇套餐",
+          "plan_required": "每行必須選擇套餐",
+          "expired_at": "到期時間（空=永久）",
+          "speed_limit": "限速",
+          "device_limit": "設備數",
+          "remaining": "剩餘額度（唯讀）",
+          "sort_order": "消耗順序（唯讀）",
+          "sort_default": "預設順序",
+          "exhausted_hint": "該行流量已耗盡，列表中置灰展示",
+          "remove": "刪除該行",
+          "clear": "清空全部",
+          "clear_confirm": "再次點擊確認清空"
+        },
         "cancel": "取消",
         "submit": "提交",
         "success": "修改成功"
@@ -1209,6 +1228,10 @@ const translations: Translations = {
       "plan_change_enable": {
         "title": "允許用戶更改訂閱",
         "description": "開啟後用戶將會可以對訂閱計劃進行變更。"
+      },
+      "multi_plan_enable": {
+        "title": "允許多套餐",
+        "description": "開啟後用戶可同時持有多個套餐（新購不再替換舊套餐）。關閉=單套餐舊行為。儲存後請重新整理頁面。"
       },
       "reset_traffic_method": {
         "title": "月流量重置方式",
