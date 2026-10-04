@@ -477,7 +477,7 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
 
   const onSubmit = async (values: MultiBaseValues) => {
     if (rows.some((r) => !r.plan_id)) {
-      toast.error(t("user.edit.multi.plan_required"));
+      toast.error(t("user.edit.form.multi.plan_required"));
       return;
     }
     try {
@@ -636,26 +636,26 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
 
             <div className="space-y-3 rounded-lg border p-4">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-semibold">{t("user.edit.multi.title")}</Label>
+                <Label className="text-sm font-semibold">{t("user.edit.form.multi.title")}</Label>
                 <Button type="button" variant="outline" size="sm" onClick={addRow}>
                   <Plus className="h-4 w-4" />
-                  {t("user.edit.multi.add_plan")}
+                  {t("user.edit.form.multi.add_plan")}
                 </Button>
               </div>
               {rows.length === 0 && (
-                <p className="text-xs text-muted-foreground">{t("user.edit.multi.empty")}</p>
+                <p className="text-xs text-muted-foreground">{t("user.edit.form.multi.empty")}</p>
               )}
               {rows.map((r) => (
                 <div key={r.key} className={cn("space-y-2 rounded-md border p-3", r.exhausted && "opacity-70")}>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">{t("user.edit.multi.plan")}</Label>
+                      <Label className="text-xs">{t("user.edit.form.multi.plan")}</Label>
                       <Select
                         value={r.plan_id ? String(r.plan_id) : ""}
                         onValueChange={(v) => setRow(r.key, { plan_id: Number(v) })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={t("user.edit.multi.plan_placeholder")} />
+                          <SelectValue placeholder={t("user.edit.form.multi.plan_placeholder")} />
                         </SelectTrigger>
                         <SelectContent>
                           {(plans || []).map((p) => (
@@ -667,7 +667,7 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">{t("user.edit.multi.expired_at")}</Label>
+                      <Label className="text-xs">{t("user.edit.form.multi.expired_at")}</Label>
                       <Input
                         type="datetime-local"
                         value={r.expired_at}
@@ -679,7 +679,7 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                         type="button"
                         variant="ghost"
                         size="icon"
-                        title={t("user.edit.multi.remove")}
+                        title={t("user.edit.form.multi.remove")}
                         onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -688,7 +688,7 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                   </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">{t("user.edit.multi.speed_limit")}</Label>
+                      <Label className="text-xs">{t("user.edit.form.multi.speed_limit")}</Label>
                       <Input
                         type="number"
                         placeholder={t("user.edit.form.speed_limit_placeholder")}
@@ -697,7 +697,7 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">{t("user.edit.multi.device_limit")}</Label>
+                      <Label className="text-xs">{t("user.edit.form.multi.device_limit")}</Label>
                       <Input
                         type="number"
                         placeholder={t("user.edit.form.device_limit_placeholder")}
@@ -706,20 +706,20 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">{t("user.edit.multi.remaining")}</Label>
+                      <Label className="text-xs">{t("user.edit.form.multi.remaining")}</Label>
                       <Input value={fmtGB(r.remaining)} readOnly className="bg-muted/40" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">{t("user.edit.multi.sort_order")}</Label>
+                      <Label className="text-xs">{t("user.edit.form.multi.sort_order")}</Label>
                       <Input
-                        value={r.sort_order === 0 ? t("user.edit.multi.sort_default") : String(r.sort_order)}
+                        value={r.sort_order === 0 ? t("user.edit.form.multi.sort_default") : String(r.sort_order)}
                         readOnly
                         className="bg-muted/40"
                       />
                     </div>
                   </div>
                   {r.exhausted && (
-                    <p className="text-[11px] text-muted-foreground">{t("user.edit.multi.exhausted_hint")}</p>
+                    <p className="text-[11px] text-muted-foreground">{t("user.edit.form.multi.exhausted_hint")}</p>
                   )}
                 </div>
               ))}
@@ -733,7 +733,7 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                 >
                   {clearing && <Loader2 className="h-4 w-4 animate-spin" />}
                   {!clearing && confirmClear && <TriangleAlert className="h-4 w-4" />}
-                  {confirmClear ? t("user.edit.multi.clear_confirm") : t("user.edit.multi.clear")}
+                  {confirmClear ? t("user.edit.form.multi.clear_confirm") : t("user.edit.form.multi.clear")}
                 </Button>
               </div>
             </div>
