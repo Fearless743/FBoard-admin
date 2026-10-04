@@ -376,6 +376,7 @@ const translations: Translations = {
       "online_count": "Online Devices",
       "status": "Status",
       "subscription": "Subscription",
+      "plan_exhausted": "Exhausted",
       "group": "Group",
       "used_traffic": "Used Traffic",
       "total_traffic": "Total Traffic",
@@ -584,6 +585,24 @@ const translations: Translations = {
         "is_staff": "Is Staff",
         "remarks": "Remarks",
         "remarks_placeholder": "Please enter remarks here",
+        "multi": {
+          "title": "Plan instances",
+          "add_plan": "Add plan row",
+          "empty": "No plan instances yet, you can add one",
+          "plan": "Plan",
+          "plan_placeholder": "Select a plan",
+          "plan_required": "Each row must have a plan selected",
+          "expired_at": "Expires at (empty = permanent)",
+          "speed_limit": "Speed limit",
+          "device_limit": "Device limit",
+          "remaining": "Remaining (read-only)",
+          "sort_order": "Deduction order (read-only)",
+          "sort_default": "Default order",
+          "exhausted_hint": "This row is exhausted and shown grayed out in the list",
+          "remove": "Remove this row",
+          "clear": "Clear all",
+          "clear_confirm": "Click again to confirm clearing"
+        },
         "cancel": "Cancel",
         "submit": "Submit",
         "success": "Modified successfully"
@@ -1320,6 +1339,10 @@ const translations: Translations = {
       "plan_change_enable": {
         "title": "Allow Subscription Changes",
         "description": "When enabled, users will be able to change their subscription plans."
+      },
+      "multi_plan_enable": {
+        "title": "Multi-plan",
+        "description": "When enabled, users can hold multiple plans at once (new purchases no longer replace old ones). Off = legacy single-plan behavior. Refresh the page after saving."
       },
       "reset_traffic_method": {
         "title": "Monthly Traffic Reset Method",

@@ -15,5 +15,14 @@ export {};
 declare global {
   interface Window {
     FBOARD_TRANSLATIONS?: Record<string, Translations>;
+    settings?: {
+      title?: string;
+      logo?: string;
+      version?: string;
+      secure_path?: string;
+      base_url?: string;
+    };
+    /** 后端 admin.blade.php 注入的多套餐开关 */
+    __MULTI_PLAN_ENABLE__?: boolean;
   }
 }

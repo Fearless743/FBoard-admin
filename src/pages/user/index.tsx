@@ -78,6 +78,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePlanOptions } from "@/hooks/use-plans";
+import { useMultiPlan } from "@/hooks/use-multi-plan";
 import { fetchGroups } from "@/api/server";
 import {
   banUser,
@@ -228,6 +229,7 @@ export function UserListPage() {
   });
 
   const { data: plansData } = usePlanOptions();
+  const multiPlan = useMultiPlan();
   const plansMap = useMemo(() => {
     const m: Record<number, string> = {};
     (plansData || []).forEach((p: any) => {
@@ -484,9 +486,21 @@ export function UserListPage() {
                 const expire = expireMeta(u.expired_at);
                 const online = Number(u.online_count || 0);
                 const selectedRow = selected.includes(u.id);
-                const planName = u.plan_id
-                  ? plansMap[u.plan_id] || `#${u.plan_id}`
-                  : null;
+                // 多套餐：plan_list 多行展示（无"主套餐"回退，耗尽行置灰）；
+                // legacy：单 plan badge。
+                const multiPlans: Array<{ name: string; exhausted: boolean }> | null =
+                  multiPlan && Array.isArray(u.plan_list)
+                    ? u.plan_list.map((p: any) => ({
+                        name: String(p.name ?? `#${p.plan_id}`),
+                        exhausted: !!p.exhausted,
+                      }))
+                    : null;
+                const planName =
+                  multiPlans === null
+                    ? u.plan_id
+                      ? plansMap[u.plan_id] || `#${u.plan_id}`
+                      : null
+                    : null;
                 const groupName = u.group_id
                   ? groupsMap[u.group_id] || `#${u.group_id}`
                   : null;
@@ -513,7 +527,27 @@ export function UserListPage() {
                   </Badge>
                 );
 
-                const planBadge = planName ? (
+                const planBadge = multiPlans ? (
+                  multiPlans.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ) : (
+                    <span className="flex max-w-[180px] flex-col items-start gap-1">
+                      {multiPlans.map((p, i) => (
+                        <Badge
+                          key={i}
+                          variant="secondary"
+                          className={cn(
+                            "max-w-full truncate font-normal",
+                            p.exhausted && "opacity-50 line-through",
+                          )}
+                          title={p.exhausted ? `${p.name} (${t("user.columns.plan_exhausted")})` : p.name}
+                        >
+                          {p.name}
+                        </Badge>
+                      ))}
+                    </span>
+                  )
+                ) : planName ? (
                   <Badge
                     variant="secondary"
                     className="max-w-[160px] truncate font-normal"
@@ -663,7 +697,21 @@ export function UserListPage() {
                           {/* 窄屏：在独立列出现前，把关键信息并入邮箱列 */}
                           <div className="flex flex-wrap items-center gap-1 pt-0.5 md:hidden">
                             <span className="sm:hidden">{statusBadge}</span>
-                            {planName ? (
+                            {multiPlans ? (
+                              multiPlans.slice(0, 2).map((p, i) => (
+                                <Badge
+                                  key={i}
+                                  variant="secondary"
+                                  className={cn(
+                                    "max-w-[9rem] truncate px-1.5 text-[10px] font-normal",
+                                    p.exhausted && "opacity-50 line-through",
+                                  )}
+                                  title={p.name}
+                                >
+                                  {p.name}
+                                </Badge>
+                              ))
+                            ) : planName ? (
                               <Badge
                                 variant="secondary"
                                 className="max-w-[9rem] truncate px-1.5 text-[10px] font-normal"

@@ -8,6 +8,7 @@ import type { FieldDef } from "../schema";
 
 const switchKeys: Array<{ key: string; i18n: string }> = [
   { key: "plan_change_enable", i18n: "plan_change_enable" },
+  { key: "multi_plan_enable", i18n: "multi_plan_enable" },
   { key: "surplus_enable", i18n: "surplus_enable" },
   { key: "show_info_to_server_enable", i18n: "show_info_to_server" },
   { key: "show_protocol_to_server_enable", i18n: "show_protocol_to_server" },
