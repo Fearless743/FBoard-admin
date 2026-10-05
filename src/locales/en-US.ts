@@ -377,6 +377,7 @@ const translations: Translations = {
       "status": "Status",
       "subscription": "Subscription",
       "plan_exhausted": "Exhausted",
+      "plan_expired": "Expired",
       "group": "Group",
       "used_traffic": "Used Traffic",
       "total_traffic": "Total Traffic",
@@ -599,6 +600,7 @@ const translations: Translations = {
           "sort_order": "Deduction order (read-only)",
           "sort_default": "Default order",
           "exhausted_hint": "This row is exhausted and shown grayed out in the list",
+          "expired_hint": "This plan has expired; shown for history only and not counted for traffic/speed limits",
           "remove": "Remove this row",
           "clear": "Clear all",
           "clear_confirm": "Click again to confirm clearing"

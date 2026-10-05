@@ -377,6 +377,7 @@ const translations: Translations = {
       "status": "状态",
       "subscription": "订阅",
       "plan_exhausted": "已耗尽",
+      "plan_expired": "已过期",
       "group": "权限组",
       "used_traffic": "已用流量",
       "total_traffic": "总流量",
@@ -599,6 +600,7 @@ const translations: Translations = {
           "sort_order": "消耗顺序（只读）",
           "sort_default": "默认顺序",
           "exhausted_hint": "该行流量已耗尽，列表中置灰展示",
+          "expired_hint": "该行套餐已过期，仅供查看历史，不参与流量/限速生效",
           "remove": "删除该行",
           "clear": "清空全部",
           "clear_confirm": "再次点击确认清空"

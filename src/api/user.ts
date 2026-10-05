@@ -54,6 +54,8 @@ export interface PlanListItem {
   group_id: number;
   sort_order: number;
   exhausted: boolean;
+  /** 是否未过期（false=已过期，仅展示置灰，运行时不参与聚合） */
+  is_active: boolean;
 }
 
 /** 管理端提交的实例 diff 行 */

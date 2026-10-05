@@ -392,6 +392,7 @@ interface PlanRowState {
   remaining: number; // bytes，只读
   sort_order: number; // 只读
   exhausted: boolean;
+  is_active: boolean; // false=已过期，仅展示标记
 }
 
 function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDialogProps) {
@@ -439,6 +440,7 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
         remaining: p.remaining ?? 0,
         sort_order: p.sort_order ?? 0,
         exhausted: !!p.exhausted,
+        is_active: p.is_active !== false,
       })));
     } else {
       reset(emptyMultiBase());
@@ -461,6 +463,7 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
         remaining: 0,
         sort_order: 0,
         exhausted: false,
+        is_active: true,
       },
     ]);
 
@@ -646,7 +649,7 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                 <p className="text-xs text-muted-foreground">{t("user.edit.form.multi.empty")}</p>
               )}
               {rows.map((r) => (
-                <div key={r.key} className={cn("space-y-2 rounded-md border p-3", r.exhausted && "opacity-70")}>
+                <div key={r.key} className={cn("space-y-2 rounded-md border p-3", (r.exhausted || !r.is_active) && "opacity-70")}>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
                     <div className="space-y-1.5">
                       <Label className="text-xs">{t("user.edit.form.multi.plan")}</Label>
@@ -718,6 +721,9 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                       />
                     </div>
                   </div>
+                  {!r.is_active && (
+                    <p className="text-[11px] text-muted-foreground">{t("user.edit.form.multi.expired_hint")}</p>
+                  )}
                   {r.exhausted && (
                     <p className="text-[11px] text-muted-foreground">{t("user.edit.form.multi.exhausted_hint")}</p>
                   )}

@@ -377,6 +377,7 @@ const translations: Translations = {
       "status": "Статус",
       "subscription": "Подписка",
       "plan_exhausted": "Исчерпан",
+      "plan_expired": "Истёк",
       "group": "Группа",
       "used_traffic": "Использовано",
       "total_traffic": "Всего трафика",
@@ -599,6 +600,7 @@ const translations: Translations = {
           "sort_order": "Порядок списания (только чтение)",
           "sort_default": "Порядок по умолчанию",
           "exhausted_hint": "Строка исчерпана и показана серым в списке",
+          "expired_hint": "Тариф истёк; строка показана только для истории и не влияет на трафик/ограничения",
           "remove": "Удалить строку",
           "clear": "Очистить всё",
           "clear_confirm": "Нажмите ещё раз для подтверждения"
