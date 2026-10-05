@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { saveConfig } from "@/api/config";
+import { setMultiPlanEnabled } from "@/hooks/use-multi-plan";
 import type { SectionDef } from "./schema";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -74,6 +75,10 @@ export function useConfigSection(
       setError(null);
       try {
         await saveConfig(changed);
+        // 多套餐开关即时生效：同步响应式标记，用户列表/编辑对话框无需刷新
+        if ("multi_plan_enable" in changed) {
+          setMultiPlanEnabled(Boolean(changed.multi_plan_enable));
+        }
         qc.setQueryData(["config", section.key], (old: any) => ({
           ...(old ?? {}),
           ...changed,
