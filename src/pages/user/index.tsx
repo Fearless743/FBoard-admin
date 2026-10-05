@@ -494,6 +494,7 @@ export function UserListPage() {
                   quota: number;
                   used: number;
                   expired_at: number | null;
+                  device_limit: number | null;
                   active: boolean;
                   exhausted: boolean;
                 }> | null =
@@ -504,6 +505,7 @@ export function UserListPage() {
                         quota: Number(p.transfer_enable || 0),
                         used: Number(p.u || 0) + Number(p.d || 0),
                         expired_at: p.expired_at ?? null,
+                        device_limit: p.device_limit ?? null,
                         active: p.is_active !== false,
                         exhausted: !!p.exhausted,
                       }))
@@ -809,7 +811,9 @@ export function UserListPage() {
                           >
                             {formatBytes(used)}
                             {online > 0
-                              ? ` · ${online}/${u.device_limit ?? "∞"}`
+                              ? planRows
+                                ? ` · ${online} (${planRows.map((p) => p.device_limit ?? "∞").join("/")})`
+                                : ` · ${online}/${u.device_limit ?? "∞"}`
                               : ""}
                           </button>
                           <div className="text-[11px] lg:hidden">{expireCell}</div>
@@ -819,27 +823,60 @@ export function UserListPage() {
                     <TableCell className="hidden text-center lg:table-cell">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="inline-flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1 text-xs tabular-nums">
-                            <span
-                              className={cn(
-                                "h-1.5 w-1.5 rounded-full",
-                                online > 0
-                                  ? "bg-emerald-500"
-                                  : "bg-muted-foreground/40",
+                          <div className="inline-flex flex-col items-stretch gap-1 rounded-md border bg-muted/30 px-2 py-1 text-xs tabular-nums">
+                            <span className="inline-flex items-center gap-1.5">
+                              <span
+                                className={cn(
+                                  "h-1.5 w-1.5 rounded-full",
+                                  online > 0
+                                    ? "bg-emerald-500"
+                                    : "bg-muted-foreground/40",
+                                )}
+                              />
+                              <span className="font-medium text-foreground">
+                                {online}
+                              </span>
+                              {planRows ? (
+                                planRows.length === 0 ? (
+                                  <span className="text-muted-foreground">—</span>
+                                ) : (
+                                  <span className="flex flex-col items-start gap-0.5">
+                                    {planRows.map((p) => (
+                                      <span
+                                        key={p.id}
+                                        className={cn(
+                                          "max-w-[140px] truncate font-normal text-muted-foreground",
+                                          !p.active && "opacity-60 line-through",
+                                        )}
+                                        title={`${p.name}: ${p.device_limit ?? "∞"}`}
+                                      >
+                                        {p.name}: {p.device_limit ?? "∞"}
+                                      </span>
+                                    ))}
+                                  </span>
+                                )
+                              ) : (
+                                <>
+                                  <span className="text-muted-foreground">/</span>
+                                  <span className="text-muted-foreground">
+                                    {u.device_limit ?? "∞"}
+                                  </span>
+                                </>
                               )}
-                            />
-                            <span className="font-medium text-foreground">
-                              {online}
-                            </span>
-                            <span className="text-muted-foreground">/</span>
-                            <span className="text-muted-foreground">
-                              {u.device_limit ?? "∞"}
                             </span>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          {t("user.columns.online_count")}: {online} /{" "}
-                          {u.device_limit ?? "∞"}
+                          {planRows
+                            ? planRows
+                                .map(
+                                  (p) =>
+                                    `${p.name}: ${p.device_limit ?? "∞"}${
+                                      !p.active ? ` (${t("user.columns.plan_expired")})` : ""
+                                    }`,
+                                )
+                                .join("\n")
+                            : `${t("user.columns.online_count")}: ${online} / ${u.device_limit ?? "∞"}`}
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
