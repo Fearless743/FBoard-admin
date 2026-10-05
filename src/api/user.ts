@@ -66,6 +66,8 @@ export interface PlanEditItem {
   speed_limit?: number | null;
   device_limit?: number | null;
   transfer_enable?: number;
+  u?: number;
+  d?: number;
 }
 
 export interface UserListResponse {
