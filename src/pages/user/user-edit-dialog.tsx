@@ -389,6 +389,9 @@ interface PlanRowState {
   expired_at: string; // datetime-local, 空=永久
   speed_limit: string; // 空=跟随
   device_limit: string;
+  transfer_enable: string; // GB，空=新增行跟随套餐快照
+  u: string; // GB，已用上行
+  d: string; // GB，已用下行
   remaining: number; // bytes，只读
   sort_order: number; // 只读
   exhausted: boolean;
@@ -437,6 +440,9 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
         expired_at: p.expired_at ? toLocalInput(p.expired_at) : "",
         speed_limit: p.speed_limit == null ? "" : String(p.speed_limit),
         device_limit: p.device_limit == null ? "" : String(p.device_limit),
+        transfer_enable: toGB(p.transfer_enable ?? 0),
+        u: toGB(p.u ?? 0),
+        d: toGB(p.d ?? 0),
         remaining: p.remaining ?? 0,
         sort_order: p.sort_order ?? 0,
         exhausted: !!p.exhausted,
@@ -460,6 +466,9 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
         expired_at: "",
         speed_limit: "",
         device_limit: "",
+        transfer_enable: "",
+        u: "0",
+        d: "0",
         remaining: 0,
         sort_order: 0,
         exhausted: false,
@@ -476,6 +485,10 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
         : null,
       speed_limit: r.speed_limit === "" ? null : Number(r.speed_limit),
       device_limit: r.device_limit === "" ? null : Number(r.device_limit),
+      // 总流量：空=新增行跟随套餐快照；已有行回写原值（保存后按新值重算耗尽）
+      ...(r.transfer_enable === "" ? {} : { transfer_enable: gbToBytes(r.transfer_enable) }),
+      u: gbToBytes(r.u),
+      d: gbToBytes(r.d),
     }));
 
   const onSubmit = async (values: MultiBaseValues) => {
@@ -531,6 +544,13 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
 
   const fmtGB = (bytes: number) =>
     `${(Math.round((bytes / GB) * 100) / 100).toLocaleString()} GB`;
+
+  /** bytes → GB 输入框字符串（保留 2 位小数） */
+  const toGB = (bytes: number) =>
+    String(Math.round(((bytes ?? 0) / GB) * 100) / 100);
+
+  /** GB 输入框字符串 → bytes 整数 */
+  const gbToBytes = (v: string) => Math.round(asNumber(v) * GB);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -691,6 +711,43 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                   </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.form.multi.transfer_enable")}</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="any"
+                        placeholder={r.id ? undefined : t("user.edit.form.multi.transfer_enable_placeholder")}
+                        value={r.transfer_enable}
+                        onChange={(e) => setRow(r.key, { transfer_enable: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.form.multi.uplink")}</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={r.u}
+                        onChange={(e) => setRow(r.key, { u: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.form.multi.downlink")}</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={r.d}
+                        onChange={(e) => setRow(r.key, { d: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t("user.edit.form.multi.remaining")}</Label>
+                      <Input value={fmtGB(r.remaining)} readOnly className="bg-muted/40" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="space-y-1.5">
                       <Label className="text-xs">{t("user.edit.form.multi.speed_limit")}</Label>
                       <Input
                         type="number"
@@ -707,10 +764,6 @@ function MultiPlanEditDialog({ open, onOpenChange, user, onSaved }: UserEditDial
                         value={r.device_limit}
                         onChange={(e) => setRow(r.key, { device_limit: e.target.value })}
                       />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">{t("user.edit.form.multi.remaining")}</Label>
-                      <Input value={fmtGB(r.remaining)} readOnly className="bg-muted/40" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">{t("user.edit.form.multi.sort_order")}</Label>
