@@ -488,14 +488,32 @@ export function UserListPage() {
                 const selectedRow = selected.includes(u.id);
                 // 多套餐：plan_list 多行展示（无"主套餐"回退，耗尽/过期行置灰）；
                 // legacy：单 plan badge。
-                const multiPlans: Array<{ name: string; exhausted: boolean; active: boolean }> | null =
+                const planRows: Array<{
+                  id: number;
+                  name: string;
+                  quota: number;
+                  used: number;
+                  expired_at: number | null;
+                  active: boolean;
+                  exhausted: boolean;
+                }> | null =
                   multiPlan && Array.isArray(u.plan_list)
                     ? u.plan_list.map((p: any) => ({
+                        id: Number(p.id),
                         name: String(p.name ?? `#${p.plan_id}`),
-                        exhausted: !!p.exhausted,
+                        quota: Number(p.transfer_enable || 0),
+                        used: Number(p.u || 0) + Number(p.d || 0),
+                        expired_at: p.expired_at ?? null,
                         active: p.is_active !== false,
+                        exhausted: !!p.exhausted,
                       }))
                     : null;
+                const multiPlans: Array<{ name: string; exhausted: boolean; active: boolean }> | null =
+                  planRows?.map((p) => ({
+                    name: p.name,
+                    exhausted: p.exhausted,
+                    active: p.active,
+                  })) ?? null;
                 const planName =
                   multiPlans === null
                     ? u.plan_id
@@ -565,6 +583,56 @@ export function UserListPage() {
                 ) : (
                   <span className="text-xs text-muted-foreground">—</span>
                 );
+
+                // 多套餐：每个实例一行到期时间（过期行红色，永久显示 ∞）。
+                const multiExpireCell =
+                  planRows && planRows.length > 0 ? (
+                    <div className="flex max-w-[200px] flex-col items-start gap-1.5">
+                      {planRows.map((p) => {
+                        const meta = expireMeta(p.expired_at);
+                        return (
+                          <div
+                            key={p.id}
+                            className={cn("space-y-0.5", !p.active && "opacity-60")}
+                            title={`${p.name}${!p.active ? ` (${t("user.columns.plan_expired")})` : ""}`}
+                          >
+                            <p className="max-w-full truncate text-[11px] text-muted-foreground">
+                              {p.name}
+                            </p>
+                            {meta.kind === "permanent" ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                <InfinityIcon className="h-3.5 w-3.5" />
+                                {t("user.columns.expire_status.permanent")}
+                              </span>
+                            ) : (
+                              <p
+                                className={cn(
+                                  "text-xs tabular-nums",
+                                  meta.kind === "expired" && "font-medium text-destructive",
+                                  meta.kind === "soon" && "font-medium text-amber-600 dark:text-amber-400",
+                                  meta.kind === "active" && "text-muted-foreground",
+                                )}
+                              >
+                                {formatDate(p.expired_at, false)}
+                                <span className="text-[10px]">
+                                  {" "}
+                                  {meta.kind === "expired"
+                                    ? t("user.columns.expire_status.expired", {
+                                        days: Math.abs(meta.days ?? 0),
+                                      })
+                                    : t("user.columns.expire_status.remaining", {
+                                        days: meta.days,
+                                      })}
+                                </span>
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  );
 
                 const expireCell =
                   expire.kind === "permanent" ? (
@@ -799,16 +867,61 @@ export function UserListPage() {
                         type="button"
                         className="group/traffic w-full min-w-0 text-left sm:min-w-[100px]"
                         onClick={() => setTrafficRecordsUser(u)}
+                        title={
+                          planRows
+                            ? planRows
+                                .map((p) => `${p.name}: ${formatBytes(p.used)} / ${formatBytes(p.quota)}`)
+                                .join("\n")
+                            : undefined
+                        }
                       >
-                        <div className="flex items-baseline justify-between gap-2 text-xs tabular-nums">
-                          <span className="font-medium group-hover/traffic:text-primary">
-                            {formatBytes(used)}
-                          </span>
-                        </div>
+                        {planRows ? (
+                          planRows.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : (
+                            <span className="flex min-w-0 flex-col gap-1.5">
+                              {planRows.map((p) => {
+                                const pct =
+                                  p.quota > 0 ? Math.min(100, (p.used / p.quota) * 100) : 0;
+                                return (
+                                  <span key={p.id} className={cn(!p.active && "opacity-50")}>
+                                    <span className="flex items-baseline justify-between gap-2 text-[11px] tabular-nums">
+                                      <span className="min-w-0 truncate text-muted-foreground">
+                                        {p.name}
+                                      </span>
+                                      <span className="shrink-0 font-medium group-hover/traffic:text-primary">
+                                        {formatBytes(p.used)}
+                                        <span className="font-normal text-muted-foreground">
+                                          {" "}
+                                          / {formatBytes(p.quota)}
+                                        </span>
+                                      </span>
+                                    </span>
+                                    <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-muted">
+                                      <span
+                                        className={cn(
+                                          "block h-full rounded-full",
+                                          p.exhausted || !p.active ? "bg-muted-foreground/50" : "bg-primary",
+                                        )}
+                                        style={{ width: `${pct}%` }}
+                                      />
+                                    </span>
+                                  </span>
+                                );
+                              })}
+                            </span>
+                          )
+                        ) : (
+                          <div className="flex items-baseline justify-between gap-2 text-xs tabular-nums">
+                            <span className="font-medium group-hover/traffic:text-primary">
+                              {formatBytes(used)}
+                            </span>
+                          </div>
+                        )}
                       </button>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      {expireCell}
+                      {planRows ? multiExpireCell : expireCell}
                     </TableCell>
                     <TableCell className="hidden text-right text-xs tabular-nums font-medium lg:table-cell">
                       {formatCurrencyYuan(u.balance)}
