@@ -495,6 +495,7 @@ export function UserListPage() {
                   used: number;
                   expired_at: number | null;
                   device_limit: number | null;
+                  group_id: number | null;
                   active: boolean;
                   exhausted: boolean;
                 }> | null =
@@ -506,6 +507,7 @@ export function UserListPage() {
                         used: Number(p.u || 0) + Number(p.d || 0),
                         expired_at: p.expired_at ?? null,
                         device_limit: p.device_limit ?? null,
+                        group_id: p.group_id ?? null,
                         active: p.is_active !== false,
                         exhausted: !!p.exhausted,
                       }))
@@ -887,7 +889,32 @@ export function UserListPage() {
                       {planBadge}
                     </TableCell>
                     <TableCell className="hidden xl:table-cell">
-                      {groupName ? (
+                      {planRows ? (
+                        planRows.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : (
+                          <span className="flex max-w-[180px] flex-col items-start gap-1">
+                            {planRows.map((p) => {
+                              const g = p.group_id != null
+                                ? groupsMap[p.group_id] || `#${p.group_id}`
+                                : null;
+                              return (
+                                <Badge
+                                  key={p.id}
+                                  variant="outline"
+                                  className={cn(
+                                    "max-w-full truncate font-normal text-muted-foreground",
+                                    !p.active && "opacity-60 line-through",
+                                  )}
+                                  title={g ? `${p.name} → ${g}` : p.name}
+                                >
+                                  {g ? `${p.name}: ${g}` : p.name}
+                                </Badge>
+                              );
+                            })}
+                          </span>
+                        )
+                      ) : groupName ? (
                         <Badge
                           variant="outline"
                           className="max-w-[140px] truncate font-normal text-muted-foreground"
