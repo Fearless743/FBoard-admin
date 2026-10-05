@@ -486,13 +486,14 @@ export function UserListPage() {
                 const expire = expireMeta(u.expired_at);
                 const online = Number(u.online_count || 0);
                 const selectedRow = selected.includes(u.id);
-                // 多套餐：plan_list 多行展示（无"主套餐"回退，耗尽行置灰）；
+                // 多套餐：plan_list 多行展示（无"主套餐"回退，耗尽/过期行置灰）；
                 // legacy：单 plan badge。
-                const multiPlans: Array<{ name: string; exhausted: boolean }> | null =
+                const multiPlans: Array<{ name: string; exhausted: boolean; active: boolean }> | null =
                   multiPlan && Array.isArray(u.plan_list)
                     ? u.plan_list.map((p: any) => ({
                         name: String(p.name ?? `#${p.plan_id}`),
                         exhausted: !!p.exhausted,
+                        active: p.is_active !== false,
                       }))
                     : null;
                 const planName =
@@ -538,9 +539,15 @@ export function UserListPage() {
                           variant="secondary"
                           className={cn(
                             "max-w-full truncate font-normal",
-                            p.exhausted && "opacity-50 line-through",
+                            (p.exhausted || !p.active) && "opacity-50 line-through",
                           )}
-                          title={p.exhausted ? `${p.name} (${t("user.columns.plan_exhausted")})` : p.name}
+                          title={
+                            p.exhausted
+                              ? `${p.name} (${t("user.columns.plan_exhausted")})`
+                              : !p.active
+                                ? `${p.name} (${t("user.columns.plan_expired")})`
+                                : p.name
+                          }
                         >
                           {p.name}
                         </Badge>
@@ -704,9 +711,15 @@ export function UserListPage() {
                                   variant="secondary"
                                   className={cn(
                                     "max-w-[9rem] truncate px-1.5 text-[10px] font-normal",
-                                    p.exhausted && "opacity-50 line-through",
+                                    (p.exhausted || !p.active) && "opacity-50 line-through",
                                   )}
-                                  title={p.name}
+                                  title={
+                                    p.exhausted
+                                      ? `${p.name} (${t("user.columns.plan_exhausted")})`
+                                      : !p.active
+                                        ? `${p.name} (${t("user.columns.plan_expired")})`
+                                        : p.name
+                                  }
                                 >
                                   {p.name}
                                 </Badge>
