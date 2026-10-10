@@ -609,7 +609,20 @@ function CouponFormDialog({
       if (coupon) {
         await updateCoupon({ id: coupon.id, ...payload });
       } else {
-        await generateCoupon(payload);
+        const res: any = await generateCoupon(payload);
+        // 批量生成时后端直接返回 CSV 文本（带下载头），前端需触发下载
+        if (payload.generate_count && typeof res === "string" && res.length > 0) {
+          const csv = res.charCodeAt(0) === 0xfeff ? res : "\uFEFF" + res;
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `coupons-${Date.now()}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        }
       }
       toast.success(t("common.success"));
       onSaved();
