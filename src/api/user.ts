@@ -33,6 +33,8 @@ export interface UserListItem {
   discount?: number | null;
   telegram_id?: string | null;
   phone?: string | null;
+  /** 多套餐列表（multi_plan_enable 开启时返回） */
+  plan_list?: Array<{ id: number; name: string; expired_at: number | null; speed_limit?: number | null }>;
   [k: string]: any;
 }
 
@@ -97,6 +99,19 @@ export async function dumpUsersCSV(filter?: Record<string, any>) {
 
 export async function getUserInfoById(id: number) {
   return adminGet<any>(`/user/getUserInfoById`, { id });
+}
+
+export interface PlanListItem {
+  plan_id: number;
+  expired_at: number | null;
+  speed_limit?: number | null;
+}
+
+export async function updateUserPlans(payload: {
+  id: number;
+  plan_list: PlanListItem[];
+}) {
+  return adminPost<any>("/user/updateUserPlans", payload);
 }
 
 export interface UserLoginLogItem {

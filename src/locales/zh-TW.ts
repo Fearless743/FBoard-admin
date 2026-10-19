@@ -376,6 +376,7 @@ const translations: Translations = {
       "online_count": "在線設備",
       "status": "狀態",
       "subscription": "訂閱",
+      "plan_list": "套餐列表",
       "group": "權限組",
       "used_traffic": "已用流量",
       "total_traffic": "總流量",
@@ -1293,6 +1294,10 @@ const translations: Translations = {
         "title": "充值贈送階梯",
         "description": "格式為「門檻元:贈送元」，例如 100:10 表示充值滿 100 元贈送 10 元。取滿足門檻的最大贈送。",
         "placeholder": "100:10"
+      },
+      "multi_plan_enable": {
+        "title": "允許用戶持有多個訂閱套餐",
+        "description": "開啟後用戶可同時擁有多个有效套餐，新購訂單會追加到現有套餐而非覆蓋。"
       },
       "saving": "保存中...",
       "plan": {

@@ -15,6 +15,7 @@ const switchKeys: Array<{ key: string; i18n: string }> = [
   { key: "default_remind_traffic", i18n: "default_remind_traffic" },
   { key: "deposit_enable", i18n: "deposit_enable" },
   { key: "deposit_commission_enable", i18n: "deposit_commission_enable" },
+  { key: "multi_plan_enable", i18n: "multi_plan_enable" },
 ];
 
 const baseFields: FieldDef[] = [
