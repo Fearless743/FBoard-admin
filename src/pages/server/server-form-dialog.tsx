@@ -314,30 +314,48 @@ export function ServerFormDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, selectedType, currentDef?.type]);
 
-  // New Sudoku node: auto-generate master key pair when empty
+  // New Sudoku node: auto-generate master key pair and httpmask path_root when empty
   useEffect(() => {
     if (!open || server || selectedType !== "sudoku") return;
+    let cancelled = false;
     const pub = watch("protocol_settings.master_public_key");
     const priv = watch("protocol_settings.master_private_key");
-    if (pub || priv) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const { generateSudokuKey } = await import("@/api/server");
-        const res = await generateSudokuKey();
-        if (cancelled) return;
-        setValue("protocol_settings.master_public_key", res.master_public_key, {
-          shouldDirty: true,
-        });
-        setValue(
-          "protocol_settings.master_private_key",
-          res.master_private_key,
-          { shouldDirty: true },
-        );
-      } catch {
-        // user can still click 一键生成
-      }
-    })();
+    if (!pub && !priv) {
+      (async () => {
+        try {
+          const { generateSudokuKey } = await import("@/api/server");
+          const res = await generateSudokuKey();
+          if (cancelled) return;
+          setValue("protocol_settings.master_public_key", res.master_public_key, {
+            shouldDirty: true,
+          });
+          setValue(
+            "protocol_settings.master_private_key",
+            res.master_private_key,
+            { shouldDirty: true },
+          );
+        } catch {
+          // user can still click 一键生成
+        }
+      })();
+    }
+    // HTTPMask tunnel modes: auto-generate path_root like the official TUI (6-10 random chars).
+    // merge 只填缺失键，不会覆盖这里写入的值。
+    const maskMode = String(
+      watch("protocol_settings.httpmask.mode") || "auto",
+    );
+    const pathRoot = watch("protocol_settings.httpmask.path_root");
+    if (["stream", "poll", "auto", "ws"].includes(maskMode) && !pathRoot) {
+      const alphabet =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      const rnd = new Uint32Array(8);
+      crypto.getRandomValues(rnd);
+      let seg = "";
+      for (let i = 0; i < 8; i++) seg += alphabet[rnd[i] % alphabet.length];
+      setValue("protocol_settings.httpmask.path_root", seg, {
+        shouldDirty: true,
+      });
+    }
     return () => {
       cancelled = true;
     };
