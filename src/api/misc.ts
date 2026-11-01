@@ -27,6 +27,14 @@ export async function replyTicket(payload: { id: number; message: string }) {
   return adminPost<any>("/ticket/reply", payload);
 }
 
+export async function updateTicketMessage(payload: { id: number; message: string }) {
+  return adminPost<any>("/ticket/message/update", payload);
+}
+
+export async function recallTicketMessage(id: number) {
+  return adminPost<any>("/ticket/message/recall", { id });
+}
+
 export async function closeTicket(id: number) {
   return adminPost<any>("/ticket/close", { id });
 }
