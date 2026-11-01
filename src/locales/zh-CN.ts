@@ -3355,6 +3355,19 @@ const translations: Translations = {
       "user_info": "用户信息",
       "traffic_records": "流量记录",
       "order_records": "订单记录",
+      "message": {
+        "edit": "修改",
+        "recall": "撤回",
+        "save": "保存",
+        "cancel": "取消",
+        "edited": "已编辑",
+        "recalled": "该消息已撤回",
+        "edit_success": "消息已修改",
+        "recall_success": "消息已撤回",
+        "recall_confirm_title": "确认撤回消息",
+        "recall_confirm_description": "撤回后用户将无法再看到这条消息，且无法恢复。",
+        "recall_confirm_button": "确认撤回"
+      },
       "input": {
         "closed_reply_placeholder": "工单已关闭，仍可继续回复...",
         "closed_hint": "该工单已关闭，你仍可以继续回复，新的消息会追加到当前工单。",

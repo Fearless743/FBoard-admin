@@ -3356,6 +3356,19 @@ const translations: Translations = {
       "user_info": "Инфо о пользователе",
       "traffic_records": "История трафика",
       "order_records": "История заказов",
+      "message": {
+        "edit": "Изменить",
+        "recall": "Отозвать",
+        "save": "Сохранить",
+        "cancel": "Отмена",
+        "edited": "Изменено",
+        "recalled": "Сообщение отозвано",
+        "edit_success": "Сообщение изменено",
+        "recall_success": "Сообщение отозвано",
+        "recall_confirm_title": "Отозвать сообщение",
+        "recall_confirm_description": "После отзыва пользователь больше не увидит это сообщение, восстановить его не получится.",
+        "recall_confirm_button": "Отозвать"
+      },
       "input": {
         "closed_reply_placeholder": "Тикет закрыт, но вы все еще можете ответить...",
         "closed_hint": "Тикет закрыт, но вы все еще можете отвечать. Новые сообщения будут добавлены в текущий тикет.",

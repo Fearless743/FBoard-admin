@@ -15,6 +15,8 @@ import {
   MessageSquare,
   Send,
   Bot,
+  Pencil,
+  Undo2,
   PanelLeftClose,
   PanelLeft,
 } from "lucide-react";
@@ -56,6 +58,8 @@ import {
   closeTicket,
   fetchTickets,
   replyTicket,
+  updateTicketMessage,
+  recallTicketMessage,
   getTicketDetail,
   bulkCloseTickets,
   type TicketItem,
@@ -97,6 +101,11 @@ export function TicketListPage() {
   const [closing, setClosing] = useState<TicketItem | null>(null);
   const [reply, setReply] = useState("");
   const [replying, setReplying] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [editingMessageText, setEditingMessageText] = useState("");
+  const [savingMessage, setSavingMessage] = useState(false);
+  const [recallingMessage, setRecallingMessage] = useState<any | null>(null);
+  const [recallBusy, setRecallBusy] = useState(false);
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [showTrafficRecords, setShowTrafficRecords] = useState(false);
   const [showOrders, setShowOrders] = useState(false);
@@ -200,6 +209,8 @@ export function TicketListPage() {
   const openTicket = useCallback(async (tk: TicketItem) => {
     setViewing(tk);
     setReply("");
+    setEditingMessageId(null);
+    setEditingMessageText("");
     setDetailLoading(true);
     setDetailData(null);
     // 手机端打开工单时收起列表，避免双栏挤占聊天区
@@ -236,6 +247,8 @@ export function TicketListPage() {
     setViewing(null);
     setDetailData(null);
     setReply("");
+    setEditingMessageId(null);
+    setEditingMessageText("");
     setSidebarSearch("");
     // 关闭后恢复默认展开，下次在桌面打开仍是双栏
     setSidebarOpen(true);
@@ -270,6 +283,66 @@ export function TicketListPage() {
       /* toast by api layer */
     } finally {
       setReplying(false);
+    }
+  };
+
+  const refreshDetail = async () => {
+    if (!viewing) return;
+    const d = await getTicketDetail(viewing.id);
+    setDetailData(d);
+    setViewing((prev) =>
+      prev
+        ? {
+            ...prev,
+            reply_status: d?.reply_status ?? prev.reply_status,
+            status: d?.status ?? prev.status,
+          }
+        : prev,
+    );
+  };
+
+  const beginEditMessage = (msg: any) => {
+    setEditingMessageId(msg.id);
+    setEditingMessageText(msg.message || "");
+  };
+
+  const cancelEditMessage = () => {
+    setEditingMessageId(null);
+    setEditingMessageText("");
+  };
+
+  const saveEditedMessage = async () => {
+    if (editingMessageId === null || !editingMessageText.trim() || savingMessage) return;
+    setSavingMessage(true);
+    try {
+      await updateTicketMessage({
+        id: editingMessageId,
+        message: editingMessageText.trim(),
+      });
+      toast.success(t("ticket.detail.message.edit_success"));
+      cancelEditMessage();
+      await refreshDetail();
+      qc.invalidateQueries({ queryKey: ["tickets"] });
+    } catch {
+      /* toast by api layer */
+    } finally {
+      setSavingMessage(false);
+    }
+  };
+
+  const doRecallMessage = async () => {
+    if (!recallingMessage || recallBusy) return;
+    setRecallBusy(true);
+    try {
+      await recallTicketMessage(recallingMessage.id);
+      toast.success(t("ticket.detail.message.recall_success"));
+      setRecallingMessage(null);
+      await refreshDetail();
+      qc.invalidateQueries({ queryKey: ["tickets"] });
+    } catch {
+      /* toast by api layer */
+    } finally {
+      setRecallBusy(false);
     }
   };
 
@@ -890,17 +963,96 @@ export function TicketListPage() {
                               {t("ticket.detail.sender_admin")}
                             </div>
                           )}
-                          <p className="whitespace-pre-wrap break-words leading-relaxed">
-                            {msg.message}
-                          </p>
-                          <p
+                          {editingMessageId === msg.id ? (
+                            <div className="w-[min(70vw,24rem)] space-y-2">
+                              <Textarea
+                                rows={3}
+                                className="min-h-[72px] resize-none bg-background text-foreground"
+                                value={editingMessageText}
+                                disabled={savingMessage}
+                                onChange={(e) => setEditingMessageText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (
+                                    e.key === "Enter" &&
+                                    !e.shiftKey &&
+                                    !e.nativeEvent.isComposing
+                                  ) {
+                                    e.preventDefault();
+                                    void saveEditedMessage();
+                                  }
+                                  if (e.key === "Escape") cancelEditMessage();
+                                }}
+                              />
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="secondary"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={cancelEditMessage}
+                                  disabled={savingMessage}
+                                >
+                                  {t("ticket.detail.message.cancel")}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={() => void saveEditedMessage()}
+                                  disabled={savingMessage || !editingMessageText.trim()}
+                                >
+                                  {savingMessage && (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  )}
+                                  {t("ticket.detail.message.save")}
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p
+                              className={cn(
+                                "whitespace-pre-wrap break-words leading-relaxed",
+                                msg.is_recalled && "italic opacity-70",
+                              )}
+                            >
+                              {msg.is_recalled
+                                ? t("ticket.detail.message.recalled")
+                                : msg.message}
+                            </p>
+                          )}
+                          <div
                             className={cn(
-                              "mt-1.5 text-[10px] tabular-nums opacity-60",
-                              isAdmin ? "text-right" : "text-left",
+                              "mt-1.5 flex items-center gap-2 text-[10px] tabular-nums opacity-60",
+                              isAdmin ? "justify-end" : "justify-start",
                             )}
                           >
-                            {formatDate(msg.created_at)}
-                          </p>
+                            {msg.is_edited && !msg.is_recalled && (
+                              <span>{t("ticket.detail.message.edited")}</span>
+                            )}
+                            <span>{formatDate(msg.created_at)}</span>
+                            {msg.can_modify && editingMessageId !== msg.id && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-0.5 transition-opacity hover:opacity-100"
+                                  title={t("ticket.detail.message.edit")}
+                                  onClick={() => beginEditMessage(msg)}
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                  {t("ticket.detail.message.edit")}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-0.5 transition-opacity hover:opacity-100"
+                                  title={t("ticket.detail.message.recall")}
+                                  onClick={() => setRecallingMessage(msg)}
+                                >
+                                  <Undo2 className="h-3 w-3" />
+                                  {t("ticket.detail.message.recall")}
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -1039,6 +1191,16 @@ export function TicketListPage() {
         confirmText={t("ticket.actions.bulk_close_confirm_button")}
         loading={batchClosing}
         onConfirm={handleBatchClose}
+      />
+
+      <ConfirmDialog
+        open={!!recallingMessage}
+        onOpenChange={(v) => !v && !recallBusy && setRecallingMessage(null)}
+        title={t("ticket.detail.message.recall_confirm_title")}
+        description={t("ticket.detail.message.recall_confirm_description")}
+        confirmText={t("ticket.detail.message.recall_confirm_button")}
+        loading={recallBusy}
+        onConfirm={doRecallMessage}
       />
     </>
   );

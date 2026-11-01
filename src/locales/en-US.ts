@@ -3356,6 +3356,19 @@ const translations: Translations = {
       "user_info": "User Info",
       "traffic_records": "Traffic Records",
       "order_records": "Order Records",
+      "message": {
+        "edit": "Edit",
+        "recall": "Recall",
+        "save": "Save",
+        "cancel": "Cancel",
+        "edited": "Edited",
+        "recalled": "This message has been recalled",
+        "edit_success": "Message updated",
+        "recall_success": "Message recalled",
+        "recall_confirm_title": "Recall message",
+        "recall_confirm_description": "After recalling, the user will no longer be able to see this message, and it cannot be restored.",
+        "recall_confirm_button": "Recall"
+      },
       "input": {
         "closed_reply_placeholder": "This ticket is closed, but you can still reply...",
         "closed_hint": "This ticket is closed. You can keep replying and new messages will still be appended here.",
