@@ -1886,44 +1886,6 @@ const translations: Translations = {
         "passwordRequired": "請輸入密碼",
         "passwordLength": "密碼長度至少為7個字符"
       },
-      "passkey": {
-        "title": "安全驗證",
-        "description": "請使用 Passkey 完成第二步驗證（{{email}}）",
-        "hybridHint": "電腦瀏覽器會自動彈出 QR Code，用手機掃描即可完成驗證（手機需能存取面板位址）。也可直接使用本機指紋或安全金鑰。",
-        "verify": "使用 Passkey 驗證",
-        "back": "返回密碼登入",
-        "failed": "Passkey 驗證失敗，請重試",
-        "cancelled": "驗證已取消，請重試",
-        "unsupported": "目前瀏覽器不支援 Passkey，請使用最新版 Chrome / Edge / Safari（需 HTTPS 或 localhost）",
-        "unexpectedResponse": "登入回應異常，請重試",
-        "setupTitle": "綁定 Passkey",
-        "setupDescription": "管理員必須綁定 Passkey 才能進入後台，可使用手機掃碼跨裝置建立",
-        "setupHint": "點選下方按鈕後依瀏覽器提示操作；iPhone / Android 可掃碼在手機上建立。",
-        "setupSubmit": "開始綁定 Passkey"
-      }
-    },
-    "passkey": {
-      "manage": "Passkey 管理",
-      "title": "Passkey 管理",
-      "description": "每位管理員至少保留一個 Passkey，遺失全部憑證時可用伺服器命令恢復。",
-      "mandatoryHint": "依安全策略，你必須先綁定 Passkey 才能使用後台。遺失憑證時請聯繫維運執行 fboard:passkey:reset 恢復。",
-      "empty": "尚未綁定任何 Passkey",
-      "add": "綁定新 Passkey",
-      "nameLabel": "備註名",
-      "namePlaceholder": "例如：MacBook Touch ID / iPhone",
-      "lastUsed": "上次使用：{{time}}",
-      "neverUsed": "尚未使用過",
-      "phoneHint": "支援手機掃碼跨裝置綁定：依瀏覽器提示選擇「使用其他裝置/手機」後掃描 QR Code 即可。",
-      "keepOne": "至少保留一個 Passkey",
-      "errors": {
-        "cancelled": "驗證已取消或逾時，請重試",
-        "insecure": "目前位址不允許使用 Passkey，請改用 HTTPS 網域或 localhost",
-        "unsupported": "目前瀏覽器或裝置不支援 Passkey",
-        "exists": "此裝置已綁定過 Passkey，請換一台裝置或刪除後重試",
-        "failed": "Passkey 操作失敗，請重試",
-        "insecureHint": "目前是 HTTP 存取且非 localhost，瀏覽器禁止使用 Passkey。請改用 HTTPS 網域後再綁定。",
-        "unsupportedHint": "目前瀏覽器不支援 Passkey，請使用最新版 Chrome / Edge / Safari，或改用行動裝置掃碼。"
-      }
     }
   },
   "traffic": {
@@ -3854,7 +3816,6 @@ const translations: Translations = {
       "unauthorized": "未授權，請重新登錄",
       "invalidCredentials": "郵箱或密碼錯誤",
       "invalidData": "提交的數據有誤，請檢查輸入",
-      "passkeyRequired": "請先綁定 Passkey 後再使用後台",
       "requestFailed": "請求失敗",
       "networkError": "網絡錯誤",
       "noPermission": "沒有權限",

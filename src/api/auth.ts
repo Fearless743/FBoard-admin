@@ -6,17 +6,15 @@ export interface LoginPayload {
   password: string;
 }
 
-/** 登录返回：
- *  - 非管理员：{ token, auth_data, is_admin }
- *  - 管理员（强制 Passkey 二步）：{ passkey_required: true, ticket, passkey_setup_required? }
+/** 登录返回：{ token, auth_data, is_admin }
+ *  - token:     token 名（仅作标识）
+ *  - auth_data: 完整的 Authorization 值，形如 "Bearer xxx"
+ *  - is_admin:  是否管理员
  */
 export interface LoginResult {
-  token?: string;
-  auth_data?: string;
-  is_admin?: boolean;
-  passkey_required?: boolean;
-  passkey_setup_required?: boolean;
-  ticket?: string;
+  token: string;
+  auth_data: string;
+  is_admin: boolean;
 }
 
 export async function login(payload: LoginPayload): Promise<LoginResult> {

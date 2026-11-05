@@ -114,12 +114,6 @@ async function handleApi(
   }
   if (rest === "user/info") return db.users[0];
 
-  /* ---- Passkey（mock 直通：默认已有凭证，不挡本地联调） ---- */
-  if (rest.endsWith("passkey/status")) return { has_passkey: true, count: 1 };
-  if (rest.endsWith("passkey/list")) return [];
-  if (rest.endsWith("passkey/register-options")) return {};
-  if (rest.endsWith("passkey/register-verify")) return { id: 1, name: "mock" };
-
   /* ---- 仪表盘 / 统计 ---- */
   if (rest === "stat/getStats") return db.dashboardStats;
   if (rest === "stat/getOrder") {

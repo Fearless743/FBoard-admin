@@ -33,7 +33,6 @@
         "@radix-ui/react-tabs": "^1.1.2",
         "@radix-ui/react-toast": "^1.2.4",
         "@radix-ui/react-tooltip": "^1.1.6",
-        "@simplewebauthn/browser": "^14.0.0",
         "@tanstack/react-query": "^5.62.7",
         "@uiw/react-codemirror": "^4.25.11",
         "class-variance-authority": "^0.7.1",
@@ -401,8 +400,6 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.1.5", "https://registry.npmmirror.com/@rolldown/binding-win32-x64-msvc/-/binding-win32-x64-msvc-1.1.5.tgz", { "os": "win32", "cpu": "x64" }, "sha512-tTZuDBPw85tEN5PQi1pnEBzDy0Z49HtScLAbD5t6hyeU92A95pRWaSMw1GZZi/RwgSgUIl0xrSlXIT/9QzvYSA=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-beta.27", "https://registry.npmmirror.com/@rolldown/pluginutils/-/pluginutils-1.0.0-beta.27.tgz", {}, "sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA=="],
-
-    "@simplewebauthn/browser": ["@simplewebauthn/browser@14.0.0", "https://registry.npmmirror.com/@simplewebauthn/browser/-/browser-14.0.0.tgz", {}, "sha512-1odWVqeEBTl7lJ9zMKLEsmTlnyrDO5iRcTvfMKKk1WThUnp/i8JJdffdj2icP+tty159s4PgwE3BiMoEW9NFow=="],
 
     "@tanstack/query-core": ["@tanstack/query-core@5.101.2", "https://registry.npmmirror.com/@tanstack/query-core/-/query-core-5.101.2.tgz", {}, "sha512-hH5MLoJhF7KaIGd7q3xTXGXvslI+GYlM1Z/35aSHHWaCJWB7XvTSHYuV3eM7tw+aE0mT/xMro4M4Q9rCGHT0lw=="],
 

@@ -5,18 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import {
-  Eye,
-  EyeOff,
-  Loader2,
-  Lock,
-  Mail,
-  Cloud,
-  Fingerprint,
-  ShieldCheck,
-  ArrowLeft,
-  Smartphone,
-} from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,24 +18,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { login } from "@/api/auth";
-import {
-  passkeyAuthOptions,
-  passkeyAuthVerify,
-  passkeySetupOptions,
-  passkeySetupVerify,
-} from "@/api/passkey";
 import { useAuthStore } from "@/store/auth";
 import { adminPath } from "@/lib/paths";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
-import { describeWebAuthnError, webAuthnUnavailableReason } from "@/lib/webauthn";
 
 type FormValues = {
   email: string;
   password: string;
 };
-
-type Step = "password" | "passkey" | "setup";
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -56,13 +35,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [step, setStep] = useState<Step>("password");
-  const [ticket, setTicket] = useState("");
-  const [loginEmail, setLoginEmail] = useState("");
-  const [passkeyLoading, setPasskeyLoading] = useState(false);
-  const [passkeyError, setPasskeyError] = useState("");
   const cardRef = useRef<HTMLDivElement>(null);
-  const passkeyUnavailable = webAuthnUnavailableReason();
 
   // 登录页入场：卡片整体上浮，品牌区与表单区依次错落出现
   useGSAP(
@@ -105,113 +78,31 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  const finishWithToken = (authData: string, isAdmin: boolean, email: string) => {
-    const user: any = {
-      id: 0,
-      balance: 0,
-      commission_balance: 0,
-      transfer_enable: 0,
-      email,
-      is_admin: !!isAdmin,
-      is_staff: false,
-    };
-    setAuthData(authData, user);
-    if (remember) {
-      localStorage.setItem("fboard-admin-remember", "1");
-    }
-    toast.success(t("common.success"));
-    navigate(adminPath("dashboard"));
-  };
-
   const onSubmit = async (values: FormValues) => {
     setLoading(true);
     try {
       const res = await login(values);
-      // 非管理员：直接拿 token
-      if (res.auth_data) {
-        finishWithToken(res.auth_data, !!res.is_admin, values.email);
-        return;
+      const user: any = {
+        id: 0,
+        balance: 0,
+        commission_balance: 0,
+        transfer_enable: 0,
+        email: values.email,
+        is_admin: !!res.is_admin,
+        is_staff: false,
+      };
+      // auth_data 形如 "Bearer xxx"，作为真正的凭据
+      setAuthData(res.auth_data, user);
+      if (remember) {
+        localStorage.setItem("fboard-admin-remember", "1");
       }
-      // 管理员：进入第二步
-      if (res.passkey_required && res.ticket) {
-        setTicket(res.ticket);
-        setLoginEmail(values.email);
-        setPasskeyError("");
-        if (res.passkey_setup_required) {
-          setStep("setup");
-        } else {
-          setStep("passkey");
-          void runPasskeyAuth(res.ticket, values.email);
-        }
-        return;
-      }
-      toast.error(t("auth.signIn.passkey.unexpectedResponse"));
+      toast.success(t("common.success"));
+      navigate(adminPath("dashboard"));
     } catch (e: any) {
-      // 错误信息已由统一 toast
+      // 错误信息已由 axios 拦截器统一 toast
     } finally {
       setLoading(false);
     }
-  };
-
-  const runPasskeyAuth = async (tk: string, email: string) => {
-    if (passkeyUnavailable) {
-      setPasskeyError(
-        passkeyUnavailable === "insecure"
-          ? t("auth.passkey.errors.insecureHint")
-          : t("auth.passkey.errors.unsupportedHint"),
-      );
-      return;
-    }
-    setPasskeyLoading(true);
-    setPasskeyError("");
-    try {
-      const { options } = await passkeyAuthOptions(tk);
-      const credential = await startAuthentication({ optionsJSON: options as any });
-      const tokenRes = await passkeyAuthVerify(tk, credential);
-      finishWithToken(tokenRes.auth_data, !!tokenRes.is_admin, email);
-    } catch (e: any) {
-      const msg = friendlyPasskeyError(e);
-      setPasskeyError(msg);
-    } finally {
-      setPasskeyLoading(false);
-    }
-  };
-
-  const runSetup = async () => {
-    if (!ticket) return;
-    if (passkeyUnavailable) {
-      setPasskeyError(
-        passkeyUnavailable === "insecure"
-          ? t("auth.passkey.errors.insecureHint")
-          : t("auth.passkey.errors.unsupportedHint"),
-      );
-      return;
-    }
-    setPasskeyLoading(true);
-    setPasskeyError("");
-    try {
-      const options = await passkeySetupOptions(ticket);
-      const credential = await startRegistration({ optionsJSON: options as any });
-      const { ticket: newTicket } = await passkeySetupVerify(ticket, credential);
-      setTicket(newTicket);
-      setStep("passkey");
-      await runPasskeyAuth(newTicket, loginEmail);
-    } catch (e: any) {
-      setPasskeyError(friendlyPasskeyError(e));
-    } finally {
-      setPasskeyLoading(false);
-    }
-  };
-
-  const friendlyPasskeyError = (e: any): string => {
-    const d = describeWebAuthnError(e);
-    return d.key ? t(d.key, { defaultValue: d.fallback }) : d.fallback;
-  };
-
-  const backToPassword = () => {
-    setStep("password");
-    setTicket("");
-    setPasskeyError("");
   };
 
   // 站点信息：优先来自后端注入的 window.settings
@@ -271,178 +162,97 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {step === "password" && (
-              <>
-                <div className="mb-6 space-y-1.5">
-                  <h2 className="text-2xl font-semibold tracking-tight">
-                    {t("auth.signIn.title")}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {t("auth.signIn.description")}
-                  </p>
+            <div className="mb-6 space-y-1.5">
+              <h2 className="text-2xl font-semibold tracking-tight">
+                {t("auth.signIn.title")}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t("auth.signIn.description")}
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">{t("auth.signIn.email")}</Label>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder={t("auth.signIn.emailPlaceholder")}
+                    className="pl-9"
+                    {...register("email")}
+                  />
                 </div>
-
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t("auth.signIn.email")}</Label>
-                    <div className="relative">
-                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder={t("auth.signIn.emailPlaceholder")}
-                        className="pl-9"
-                        {...register("email")}
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-xs text-destructive">
-                        {errors.email.message?.includes("email")
-                          ? t("auth.signIn.validation.emailInvalid")
-                          : t("auth.signIn.validation.emailRequired")}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">{t("auth.signIn.password")}</Label>
-                      <button
-                        type="button"
-                        onClick={() => setForgotOpen(true)}
-                        className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        {t("auth.signIn.forgotPassword")}
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="current-password"
-                        placeholder={t("auth.signIn.passwordPlaceholder")}
-                        className="px-9"
-                        {...register("password")}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                        tabIndex={-1}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="text-xs text-destructive">
-                        {errors.password.message?.includes("7")
-                          ? t("auth.signIn.validation.passwordLength")
-                          : t("auth.signIn.validation.passwordRequired")}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="remember"
-                      checked={remember}
-                      onCheckedChange={(v) => setRemember(v === true)}
-                    />
-                    <Label htmlFor="remember" className="text-sm font-normal text-muted-foreground">
-                      {t("auth.signIn.rememberMe")}
-                    </Label>
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {t("auth.signIn.submit")}
-                  </Button>
-                </form>
-              </>
-            )}
-
-            {step === "passkey" && (
-              <div className="space-y-5">
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                    <Fingerprint className="h-7 w-7 text-primary" />
-                  </div>
-                  <h2 className="text-xl font-semibold tracking-tight">
-                    {t("auth.signIn.passkey.title")}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {t("auth.signIn.passkey.description", { email: loginEmail })}
-                  </p>
-                </div>
-
-                <div className="flex items-start gap-2 rounded-lg border bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
-                  <Smartphone className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>{t("auth.signIn.passkey.hybridHint")}</span>
-                </div>
-
-                {passkeyError && (
-                  <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-                    {passkeyError}
+                {errors.email && (
+                  <p className="text-xs text-destructive">
+                    {errors.email.message?.includes("email")
+                      ? t("auth.signIn.validation.emailInvalid")
+                      : t("auth.signIn.validation.emailRequired")}
                   </p>
                 )}
-
-                <Button
-                  className="w-full"
-                  disabled={passkeyLoading || !!passkeyUnavailable}
-                  onClick={() => runPasskeyAuth(ticket, loginEmail)}
-                >
-                  {passkeyLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  <ShieldCheck className="h-4 w-4" />
-                  {t("auth.signIn.passkey.verify")}
-                </Button>
-                <Button variant="ghost" className="w-full" onClick={backToPassword}>
-                  <ArrowLeft className="h-4 w-4" />
-                  {t("auth.signIn.passkey.back")}
-                </Button>
               </div>
-            )}
 
-            {step === "setup" && (
-              <div className="space-y-5">
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                    <Fingerprint className="h-7 w-7 text-primary" />
-                  </div>
-                  <h2 className="text-xl font-semibold tracking-tight">
-                    {t("auth.signIn.passkey.setupTitle")}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {t("auth.signIn.passkey.setupDescription")}
-                  </p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t("auth.signIn.password")}</Label>
+                  <button
+                    type="button"
+                    onClick={() => setForgotOpen(true)}
+                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {t("auth.signIn.forgotPassword")}
+                  </button>
                 </div>
-
-                <div className="flex items-start gap-2 rounded-lg border bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
-                  <Smartphone className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>{t("auth.signIn.passkey.setupHint")}</span>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder={t("auth.signIn.passwordPlaceholder")}
+                    className="px-9"
+                    {...register("password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
-
-                {passkeyError && (
-                  <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-                    {passkeyError}
+                {errors.password && (
+                  <p className="text-xs text-destructive">
+                    {errors.password.message?.includes("7")
+                      ? t("auth.signIn.validation.passwordLength")
+                      : t("auth.signIn.validation.passwordRequired")}
                   </p>
                 )}
-
-                <Button className="w-full" disabled={passkeyLoading || !!passkeyUnavailable} onClick={runSetup}>
-                  {passkeyLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {t("auth.signIn.passkey.setupSubmit")}
-                </Button>
-                <Button variant="ghost" className="w-full" onClick={backToPassword}>
-                  <ArrowLeft className="h-4 w-4" />
-                  {t("auth.signIn.passkey.back")}
-                </Button>
               </div>
-            )}
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="remember"
+                  checked={remember}
+                  onCheckedChange={(v) => setRemember(v === true)}
+                />
+                <Label htmlFor="remember" className="text-sm font-normal text-muted-foreground">
+                  {t("auth.signIn.rememberMe")}
+                </Label>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t("auth.signIn.submit")}
+              </Button>
+            </form>
           </div>
         </div>
       </div>
