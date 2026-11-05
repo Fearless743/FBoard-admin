@@ -28,6 +28,9 @@ import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, C
 import { useEffect, useState } from "react";
 import { navItemLabel, useMergedNavigation } from "@/plugin/nav";
 import { PluginSlot } from "@/plugin/slot";
+import { PasskeyDialog } from "@/components/passkey/passkey-dialog";
+import { passkeyStatus } from "@/api/passkey";
+import { Fingerprint } from "lucide-react";
 
 const languageLabels: Record<string, string> = {
   "zh-CN": "简体中文",
@@ -47,7 +50,28 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
   const setLanguage = useSettingsStore((s) => s.setLanguage);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [passkeyOpen, setPasskeyOpen] = useState(false);
+  const [passkeyMandatory, setPasskeyMandatory] = useState(false);
   const { flat } = useMergedNavigation();
+
+  // 强制绑定检查：无 Passkey 的管理员必须先绑定
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const st = await passkeyStatus();
+        if (!cancelled && !st.has_passkey) {
+          setPasskeyMandatory(true);
+          setPasskeyOpen(true);
+        }
+      } catch {
+        /* 未登录或接口异常时忽略，由登录页/拦截器处理 */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ⌘K 打开搜索
   useEffect(() => {
@@ -186,6 +210,9 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => { setPasskeyMandatory(false); setPasskeyOpen(true); }}>
+              <Fingerprint className="h-4 w-4" /> {t("auth.passkey.manage")}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="h-4 w-4" /> {t("common.logout")}
             </DropdownMenuItem>
@@ -223,6 +250,8 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
           </CommandGroup>
         </CommandList>
       </CommandDialog>
+
+      <PasskeyDialog open={passkeyOpen} onOpenChange={setPasskeyOpen} mandatory={passkeyMandatory} />
     </header>
   );
 }
