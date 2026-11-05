@@ -1887,44 +1887,6 @@ const translations: Translations = {
         "passwordRequired": "Please enter your password",
         "passwordLength": "Password must be at least 7 characters"
       },
-      "passkey": {
-        "title": "Security verification",
-        "description": "Verify as {{email}} with your passkey to finish sign-in",
-        "hybridHint": "Your desktop browser will show a QR code automatically — scan it with your phone to verify (the phone must reach the panel URL). You can also use this device's fingerprint or security key.",
-        "verify": "Verify with passkey",
-        "back": "Back to password sign-in",
-        "failed": "Passkey verification failed, please retry",
-        "cancelled": "Verification cancelled, please retry",
-        "unsupported": "This browser does not support passkeys. Use the latest Chrome / Edge / Safari (requires HTTPS or localhost)",
-        "unexpectedResponse": "Unexpected sign-in response, please retry",
-        "setupTitle": "Set up passkey",
-        "setupDescription": "Admins must register a passkey before entering the console. You can create one cross-device by scanning with your phone.",
-        "setupHint": "Click below and follow the browser prompts. Choose “use another device / phone” to scan a QR code with your iPhone / Android.",
-        "setupSubmit": "Start passkey setup"
-      }
-    },
-    "passkey": {
-      "manage": "Passkey settings",
-      "title": "Passkey settings",
-      "description": "Keep at least one passkey per admin. If all credentials are lost, recover via the server command.",
-      "mandatoryHint": "Security policy requires a passkey before using the console. If credentials are lost, ask ops to run fboard:passkey:reset.",
-      "empty": "No passkeys yet",
-      "add": "Add passkey",
-      "nameLabel": "Label",
-      "namePlaceholder": "e.g. MacBook Touch ID / iPhone",
-      "lastUsed": "Last used: {{time}}",
-      "neverUsed": "Never used",
-      "phoneHint": "Cross-device supported: choose “use another device / phone” in the browser prompt and scan the QR code.",
-      "keepOne": "Keep at least one passkey",
-      "errors": {
-        "cancelled": "Verification cancelled or timed out, please retry",
-        "insecure": "This address does not allow passkeys. Use an HTTPS domain or localhost.",
-        "unsupported": "This browser or device does not support passkeys",
-        "exists": "This device is already registered. Use another device or delete the existing passkey.",
-        "failed": "Passkey operation failed, please retry",
-        "insecureHint": "You are on plain HTTP (not localhost), where browsers forbid passkeys. Serve the panel over HTTPS and try again.",
-        "unsupportedHint": "This browser does not support passkeys. Use the latest Chrome / Edge / Safari, or scan from a phone."
-      }
     }
   },
   "traffic": {
@@ -3855,7 +3817,6 @@ const translations: Translations = {
       "unauthorized": "Unauthorized, please sign in again",
       "invalidCredentials": "Incorrect email or password",
       "invalidData": "Invalid data, please check your input",
-      "passkeyRequired": "Set up a passkey before using the console",
       "requestFailed": "Request failed",
       "networkError": "Network error",
       "noPermission": "No permission",

@@ -1887,44 +1887,6 @@ const translations: Translations = {
         "passwordRequired": "Пожалуйста, введите пароль",
         "passwordLength": "Пароль должен содержать не менее 7 символов"
       },
-      "passkey": {
-        "title": "Проверка безопасности",
-        "description": "Подтвердите вход ({{email}}) с помощью passkey",
-        "hybridHint": "Браузер на компьютере автоматически покажет QR-код — отсканируйте его телефоном (телефон должен открывать адрес панели). Можно также использовать отпечаток или ключ безопасности.",
-        "verify": "Подтвердить с passkey",
-        "back": "Назад ко входу по паролю",
-        "failed": "Проверка passkey не удалась, повторите попытку",
-        "cancelled": "Проверка отменена, повторите попытку",
-        "unsupported": "Этот браузер не поддерживает passkey. Используйте свежие Chrome / Edge / Safari (нужен HTTPS или localhost)",
-        "unexpectedResponse": "Неожиданный ответ входа, повторите попытку",
-        "setupTitle": "Привязка passkey",
-        "setupDescription": "Администраторы обязаны привязать passkey. Можно создать его на телефоне, отсканировав код.",
-        "setupHint": "Нажмите кнопку ниже и следуйте подсказкам браузера; выберите «другое устройство / телефон» и отсканируйте QR-код.",
-        "setupSubmit": "Начать привязку passkey"
-      }
-    },
-    "passkey": {
-      "manage": "Управление passkey",
-      "title": "Управление passkey",
-      "description": "Оставляйте хотя бы один passkey. При потере всех ключей восстановите через серверную команду.",
-      "mandatoryHint": "По политике безопасности сначала привяжите passkey. При потере обратитесь к ops: fboard:passkey:reset.",
-      "empty": "Passkey пока нет",
-      "add": "Привязать passkey",
-      "nameLabel": "Название",
-      "namePlaceholder": "например MacBook Touch ID / iPhone",
-      "lastUsed": "Использовался: {{time}}",
-      "neverUsed": "Ещё не использовался",
-      "phoneHint": "Поддерживается привязка через телефон: выберите «другое устройство / телефон» и отсканируйте QR-код.",
-      "keepOne": "Оставьте хотя бы один passkey",
-      "errors": {
-        "cancelled": "Проверка отменена или истекла, повторите попытку",
-        "insecure": "Этот адрес не позволяет использовать passkey. Нужен HTTPS-домен или localhost.",
-        "unsupported": "Браузер или устройство не поддерживает passkey",
-        "exists": "Это устройство уже привязано. Используйте другое или удалите существующий passkey.",
-        "failed": "Операция с passkey не удалась, повторите попытку",
-        "insecureHint": "Открыт обычный HTTP (не localhost) — браузеры запрещают passkey. Настройте HTTPS и повторите.",
-        "unsupportedHint": "Браузер не поддерживает passkey. Используйте свежие Chrome / Edge / Safari или телефон."
-      }
     }
   },
   "traffic": {
@@ -3854,7 +3816,6 @@ const translations: Translations = {
       "unauthorized": "Нет доступа, войдите снова",
       "invalidCredentials": "Неверный email или пароль",
       "invalidData": "Некорректные данные, проверьте ввод",
-      "passkeyRequired": "Сначала привяжите passkey, чтобы пользоваться панелью",
       "requestFailed": "Ошибка запроса",
       "networkError": "Ошибка сети",
       "noPermission": "Нет прав",

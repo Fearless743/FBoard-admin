@@ -1886,44 +1886,6 @@ const translations: Translations = {
         "passwordRequired": "请输入密码",
         "passwordLength": "密码长度至少为7个字符"
       },
-      "passkey": {
-        "title": "安全验证",
-        "description": "已向 {{email}} 发送验证请求，请使用 Passkey 完成第二步验证",
-        "hybridHint": "电脑浏览器会自动弹出二维码，用手机扫码即可完成验证（手机需能访问面板地址并使用系统浏览器/Chrome）。也可直接使用本机的指纹或安全密钥。",
-        "verify": "使用 Passkey 验证",
-        "back": "返回密码登录",
-        "failed": "Passkey 验证失败，请重试",
-        "cancelled": "验证已取消，请重试",
-        "unsupported": "当前浏览器不支持 Passkey，请使用最新版 Chrome / Edge / Safari（需 HTTPS 或 localhost）",
-        "unexpectedResponse": "登录返回异常，请重试",
-        "setupTitle": "绑定 Passkey",
-        "setupDescription": "管理员必须绑定 Passkey 才能进入后台，请按提示创建（可使用手机扫码跨设备创建）",
-        "setupHint": "点击下方按钮后按浏览器提示操作；iPhone / Android 可扫码在手机上创建，凭证保存在手机或密码管理器中。",
-        "setupSubmit": "开始绑定 Passkey"
-      }
-    },
-    "passkey": {
-      "manage": "Passkey 管理",
-      "title": "Passkey 管理",
-      "description": "每个管理员至少保留一个 Passkey，丢失全部凭证时可用服务器命令恢复。",
-      "mandatoryHint": "按安全策略，你必须先绑定 Passkey 才能使用后台（关闭无效）。丢失凭证时请联系运维执行 fboard:passkey:reset 恢复。",
-      "empty": "尚未绑定任何 Passkey",
-      "add": "绑定新 Passkey",
-      "nameLabel": "备注名",
-      "namePlaceholder": "例如：MacBook Touch ID / iPhone",
-      "lastUsed": "上次使用：{{time}}",
-      "neverUsed": "尚未使用过",
-      "phoneHint": "支持手机扫码跨设备绑定：按浏览器提示选择“使用其他设备/手机”后用手机扫描二维码即可。",
-      "keepOne": "至少保留一个 Passkey",
-      "errors": {
-        "cancelled": "验证已取消或超时，请重试",
-        "insecure": "当前访问地址不允许使用 Passkey，请改用 HTTPS 域名或 localhost 访问",
-        "unsupported": "当前浏览器或设备不支持 Passkey",
-        "exists": "该设备已经绑定过 Passkey，请换一台设备或删除后重试",
-        "failed": "Passkey 操作失败，请重试",
-        "insecureHint": "当前是 HTTP 访问且不是 localhost，浏览器禁止使用 Passkey。请配置 HTTPS 域名后访问（可反代到当前端口），再绑定 Passkey。",
-        "unsupportedHint": "当前浏览器不支持 Passkey，请使用最新版 Chrome / Edge / Safari，或改用手机扫码。"
-      }
     }
   },
   "traffic": {
@@ -3854,7 +3816,6 @@ const translations: Translations = {
       "unauthorized": "未授权，请重新登录",
       "invalidCredentials": "邮箱或密码错误",
       "invalidData": "提交的数据有误，请检查输入",
-      "passkeyRequired": "请先绑定 Passkey 后再使用后台",
       "requestFailed": "请求失败",
       "networkError": "网络错误",
       "noPermission": "没有权限",
