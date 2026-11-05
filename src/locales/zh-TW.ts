@@ -1914,7 +1914,16 @@ const translations: Translations = {
       "lastUsed": "上次使用：{{time}}",
       "neverUsed": "尚未使用過",
       "phoneHint": "支援手機掃碼跨裝置綁定：依瀏覽器提示選擇「使用其他裝置/手機」後掃描 QR Code 即可。",
-      "keepOne": "至少保留一個 Passkey"
+      "keepOne": "至少保留一個 Passkey",
+      "errors": {
+        "cancelled": "驗證已取消或逾時，請重試",
+        "insecure": "目前位址不允許使用 Passkey，請改用 HTTPS 網域或 localhost",
+        "unsupported": "目前瀏覽器或裝置不支援 Passkey",
+        "exists": "此裝置已綁定過 Passkey，請換一台裝置或刪除後重試",
+        "failed": "Passkey 操作失敗，請重試",
+        "insecureHint": "目前是 HTTP 存取且非 localhost，瀏覽器禁止使用 Passkey。請改用 HTTPS 網域後再綁定。",
+        "unsupportedHint": "目前瀏覽器不支援 Passkey，請使用最新版 Chrome / Edge / Safari，或改用行動裝置掃碼。"
+      }
     }
   },
   "traffic": {
@@ -3845,6 +3854,7 @@ const translations: Translations = {
       "unauthorized": "未授權，請重新登錄",
       "invalidCredentials": "郵箱或密碼錯誤",
       "invalidData": "提交的數據有誤，請檢查輸入",
+      "passkeyRequired": "請先綁定 Passkey 後再使用後台",
       "requestFailed": "請求失敗",
       "networkError": "網絡錯誤",
       "noPermission": "沒有權限",

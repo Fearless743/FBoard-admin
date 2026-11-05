@@ -20,6 +20,7 @@ import {
   type PasskeyItem,
 } from "@/api/passkey";
 import { startRegistration } from "@simplewebauthn/browser";
+import { describeWebAuthnError, webAuthnUnavailableReason } from "@/lib/webauthn";
 
 export function PasskeyDialog({
   open,
@@ -35,6 +36,13 @@ export function PasskeyDialog({
   const [loading, setLoading] = useState(false);
   const [working, setWorking] = useState(false);
   const [name, setName] = useState("");
+  const unavailable = webAuthnUnavailableReason();
+
+  const showError = (err: any) => {
+    const d = describeWebAuthnError(err);
+    const msg = d.key ? t(d.key, { defaultValue: d.fallback }) : d.fallback;
+    toast.error(msg);
+  };
 
   const fetchList = async () => {
     setLoading(true);
@@ -52,6 +60,14 @@ export function PasskeyDialog({
   }, [open ]);
 
   const handleAdd = async () => {
+    if (unavailable === "insecure") {
+      toast.error(t("auth.passkey.errors.insecureHint"));
+      return;
+    }
+    if (unavailable === "unsupported") {
+      toast.error(t("auth.passkey.errors.unsupportedHint"));
+      return;
+    }
     setWorking(true);
     try {
       const options = await passkeyRegisterOptions();
@@ -61,9 +77,7 @@ export function PasskeyDialog({
       setName("");
       await fetchList();
     } catch (e: any) {
-      if (e?.name !== "NotAllowedError") {
-        // startRegistration 取消不弹错
-      }
+      showError(e);
     } finally {
       setWorking(false);
     }
@@ -79,6 +93,8 @@ export function PasskeyDialog({
       await passkeyDelete(id);
       toast.success(t("common.success"));
       await fetchList();
+    } catch (e: any) {
+      showError(e);
     } finally {
       setWorking(false);
     }
@@ -103,6 +119,13 @@ export function PasskeyDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 px-6 py-4">
+          {unavailable && (
+            <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs leading-relaxed text-destructive">
+              {unavailable === "insecure"
+                ? t("auth.passkey.errors.insecureHint")
+                : t("auth.passkey.errors.unsupportedHint")}
+            </p>
+          )}
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -153,7 +176,7 @@ export function PasskeyDialog({
               maxLength={64}
             />
           </div>
-          <Button className="w-full" disabled={working} onClick={handleAdd}>
+          <Button className="w-full" disabled={working || !!unavailable} onClick={handleAdd}>
             {working && <Loader2 className="h-4 w-4 animate-spin" />}
             <Plus className="h-4 w-4" />
             {t("auth.passkey.add")}

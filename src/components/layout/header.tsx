@@ -30,6 +30,7 @@ import { navItemLabel, useMergedNavigation } from "@/plugin/nav";
 import { PluginSlot } from "@/plugin/slot";
 import { PasskeyDialog } from "@/components/passkey/passkey-dialog";
 import { passkeyStatus } from "@/api/passkey";
+import { webAuthnUnavailableReason } from "@/lib/webauthn";
 import { Fingerprint } from "lucide-react";
 
 const languageLabels: Record<string, string> = {
@@ -54,8 +55,10 @@ export function Header({ onMobileMenu }: { onMobileMenu: () => void }) {
   const [passkeyMandatory, setPasskeyMandatory] = useState(false);
   const { flat } = useMergedNavigation();
 
-  // 强制绑定检查：无 Passkey 的管理员必须先绑定
+  // 强制绑定检查：无 Passkey 的管理员必须先绑定。
+  // 非安全上下文（HTTP + 非 localhost）浏览器无法使用 WebAuthn，此时不强弹，避免锁死界面。
   useEffect(() => {
+    if (webAuthnUnavailableReason()) return;
     let cancelled = false;
     (async () => {
       try {

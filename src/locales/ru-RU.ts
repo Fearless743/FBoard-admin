@@ -1915,7 +1915,16 @@ const translations: Translations = {
       "lastUsed": "Использовался: {{time}}",
       "neverUsed": "Ещё не использовался",
       "phoneHint": "Поддерживается привязка через телефон: выберите «другое устройство / телефон» и отсканируйте QR-код.",
-      "keepOne": "Оставьте хотя бы один passkey"
+      "keepOne": "Оставьте хотя бы один passkey",
+      "errors": {
+        "cancelled": "Проверка отменена или истекла, повторите попытку",
+        "insecure": "Этот адрес не позволяет использовать passkey. Нужен HTTPS-домен или localhost.",
+        "unsupported": "Браузер или устройство не поддерживает passkey",
+        "exists": "Это устройство уже привязано. Используйте другое или удалите существующий passkey.",
+        "failed": "Операция с passkey не удалась, повторите попытку",
+        "insecureHint": "Открыт обычный HTTP (не localhost) — браузеры запрещают passkey. Настройте HTTPS и повторите.",
+        "unsupportedHint": "Браузер не поддерживает passkey. Используйте свежие Chrome / Edge / Safari или телефон."
+      }
     }
   },
   "traffic": {
@@ -3845,6 +3854,7 @@ const translations: Translations = {
       "unauthorized": "Нет доступа, войдите снова",
       "invalidCredentials": "Неверный email или пароль",
       "invalidData": "Некорректные данные, проверьте ввод",
+      "passkeyRequired": "Сначала привяжите passkey, чтобы пользоваться панелью",
       "requestFailed": "Ошибка запроса",
       "networkError": "Ошибка сети",
       "noPermission": "Нет прав",

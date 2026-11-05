@@ -55,6 +55,10 @@ function translateErrorMsg(msg: string): string {
       "common.http.invalidData",
       "提交的数据有误，请检查输入",
     ),
+    "Passkey required": tt(
+      "common.http.passkeyRequired",
+      "请先绑定 Passkey 后再使用后台",
+    ),
     操作成功: tt("common.http.success", "操作成功"),
   };
   return map[msg] || msg;
