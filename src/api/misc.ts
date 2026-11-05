@@ -483,31 +483,6 @@ export async function sortKnowledge(payload: { ids: number[] }) {
   return adminPost<any>("/knowledge/sort", payload);
 }
 
-/* ============ 主题 ============ */
-export async function getThemes(): Promise<any[]> {
-  return adminGet<any[]>("/theme/getThemes");
-}
-
-export async function getThemeConfig(name: string) {
-  return adminPost<any>("/theme/getThemeConfig", { name });
-}
-
-export async function saveThemeConfig(payload: { name: string; config: any }) {
-  return adminPost<any>("/theme/saveThemeConfig", payload);
-}
-
-export async function uploadTheme(formData: FormData) {
-  return adminUpload("/theme/upload", formData);
-}
-
-export async function deleteTheme(name: string) {
-  return adminPost<any>("/theme/delete", { name });
-}
-
-export async function switchTheme(name: string) {
-  return adminPost<any>("/theme/switchTheme", { name });
-}
-
 /* ============ 插件 ============ */
 export async function fetchPluginTypes(): Promise<any[]> {
   return adminGet<any[]>("/plugin/types");

@@ -363,11 +363,6 @@ async function handleApi(
   }
   if (rest.startsWith("config/")) return true;
 
-  /* ---- 主题 ---- */
-  if (rest === "theme/getThemes") return db.themes;
-  if (rest === "theme/getThemeConfig") return {};
-  if (rest.startsWith("theme/")) return true;
-
   /* ---- 插件（默认空列表，需要时在 data.ts 里补充） ---- */
   if (rest === "plugin/getPlugins") return { data: [] };
   if (rest === "plugin/types") return { data: [] };

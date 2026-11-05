@@ -560,26 +560,6 @@ const subscribeTemplates: Record<string, string> = {
   surfboard: "[Proxy]\nmock = direct\n",
 };
 
-const themes = {
-  active: "Fboard",
-  themes: {
-    Fboard: {
-      version: "1.0.0",
-      description: "默认主题（本地 mock）",
-      configs: [
-        { field_name: "site_name", label: "站点名称", field_type: "text", default_value: "Fboard" },
-        {
-          field_name: "accent",
-          label: "主题色",
-          field_type: "select",
-          default_value: "blue",
-          select_options: { blue: "蓝色", green: "绿色", red: "红色" },
-        },
-      ],
-    },
-  },
-};
-
 export const db = {
   now,
   users,
@@ -610,5 +590,4 @@ export const db = {
   protocolTypes,
   protocolDefinitions,
   subscribeTemplates,
-  themes,
 };

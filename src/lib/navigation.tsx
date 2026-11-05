@@ -12,7 +12,6 @@ import {
   Bell,
   BookOpen,
   Settings,
-  Palette,
   Puzzle,
   HardDrive,
   Gauge,
@@ -79,7 +78,6 @@ export const navigation: NavGroup[] = [
     key: "nav.systemManagement",
     items: [
       { path: "config", key: "nav.systemConfig", icon: Settings },
-      { path: "theme", key: "nav.themeConfig", icon: Palette },
       { path: "plugin", key: "nav.pluginManagement", icon: Puzzle },
       { path: "notice", key: "nav.noticeManagement", icon: Bell },
       { path: "payment", key: "nav.paymentConfig", icon: CreditCard },
