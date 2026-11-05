@@ -41,9 +41,6 @@ const MachineListPage = lazy(() =>
 const ConfigPage = lazy(() =>
   import("@/pages/config").then(({ ConfigPage }) => ({ default: ConfigPage })),
 );
-const ThemePage = lazy(() =>
-  import("@/pages/theme").then(({ ThemePage }) => ({ default: ThemePage })),
-);
 const PluginPage = lazy(() =>
   import("@/pages/plugin").then(({ PluginPage }) => ({ default: PluginPage })),
 );
@@ -118,7 +115,6 @@ export const router = createHashRouter([
 
       { path: "config", element: lazyElement(<ConfigPage />) },
       { path: "config/:tab", element: lazyElement(<ConfigPage />) },
-      { path: "theme", element: lazyElement(<ThemePage />) },
       { path: "plugin", element: lazyElement(<PluginPage />) },
       { path: "notice", element: lazyElement(<NoticeListPage />) },
       { path: "payment", element: lazyElement(<PaymentListPage />) },

@@ -26,10 +26,6 @@ export async function getEmailTemplate(key: string) {
   return adminGet<any>("/config/getEmailTemplate", { key });
 }
 
-export async function getThemeTemplate(key: string) {
-  return adminGet<any>("/config/getThemeTemplate", { key });
-}
-
 export async function setTelegramWebhook(payload: { bot_token?: string; webhook_url?: string }) {
   return adminPost<any>("/config/setTelegramWebhook", payload);
 }

@@ -815,7 +815,6 @@ const translations: Translations = {
     "dashboard": "仪表盘",
     "systemManagement": "系统管理",
     "systemConfig": "系统配置",
-    "themeConfig": "主题配置",
     "pluginManagement": "插件管理",
     "pluginMenuDemo": "插件菜单（演示）",
     "noticeManagement": "公告管理",
@@ -4280,52 +4279,6 @@ const translations: Translations = {
       "commissionInvalidConfirm": "确认将该佣金标记为无效？",
       "bulkCommissionConfirmConfirm": "确定要确认选中的 {{count}} 个订单佣金吗？确认后将进入发放流程。",
       "bulkCommissionConfirmSuccess": "已确认 {{count}} 笔佣金"
-    }
-  },
-  "theme": {
-    "title": "主题配置",
-    "description": "主题配置，包括主题色、字体大小等。如果你采用前后分离的方式部署V2board，那么主题配置将不会生效。",
-    "upload": {
-      "button": "上传主题",
-      "title": "上传主题",
-      "description": "请上传一个有效的主题压缩包（.zip 格式）。主题包应包含完整的主题文件结构。",
-      "dragText": "将主题文件拖放到此处，或者",
-      "clickText": "点击选择",
-      "supportText": "支持 .zip 格式的主题包",
-      "uploading": "正在上传...",
-      "success": "上传成功",
-      "error": {
-        "format": "只支持上传 ZIP 格式的主题文件"
-      }
-    },
-    "preview": {
-      "title": "主题预览",
-      "imageCount": "{{current}} / {{total}}"
-    },
-    "card": {
-      "version": "版本: {{version}}",
-      "currentTheme": "当前主题",
-      "activateTheme": "激活主题",
-      "activateSuccess": "已激活",
-      "configureTheme": "主题设置",
-      "preview": "预览",
-      "delete": {
-        "title": "删除主题",
-        "description": "确定要删除该主题吗？删除后无法恢复。",
-        "button": "删除",
-        "error": {
-          "active": "不能删除当前使用的主题"
-        }
-      }
-    },
-    "config": {
-      "title": "配置{{name}}主题",
-      "description": "修改主题的样式、布局和其他显示选项。",
-      "cancel": "取消",
-      "save": "保存",
-      "success": "保存成功",
-      "noConfigs": "该主题没有可配置的选项",
-      "error": "保存失败"
     }
   }
 };
