@@ -1915,7 +1915,16 @@ const translations: Translations = {
       "lastUsed": "Last used: {{time}}",
       "neverUsed": "Never used",
       "phoneHint": "Cross-device supported: choose “use another device / phone” in the browser prompt and scan the QR code.",
-      "keepOne": "Keep at least one passkey"
+      "keepOne": "Keep at least one passkey",
+      "errors": {
+        "cancelled": "Verification cancelled or timed out, please retry",
+        "insecure": "This address does not allow passkeys. Use an HTTPS domain or localhost.",
+        "unsupported": "This browser or device does not support passkeys",
+        "exists": "This device is already registered. Use another device or delete the existing passkey.",
+        "failed": "Passkey operation failed, please retry",
+        "insecureHint": "You are on plain HTTP (not localhost), where browsers forbid passkeys. Serve the panel over HTTPS and try again.",
+        "unsupportedHint": "This browser does not support passkeys. Use the latest Chrome / Edge / Safari, or scan from a phone."
+      }
     }
   },
   "traffic": {
@@ -3846,6 +3855,7 @@ const translations: Translations = {
       "unauthorized": "Unauthorized, please sign in again",
       "invalidCredentials": "Incorrect email or password",
       "invalidData": "Invalid data, please check your input",
+      "passkeyRequired": "Set up a passkey before using the console",
       "requestFailed": "Request failed",
       "networkError": "Network error",
       "noPermission": "No permission",

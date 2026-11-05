@@ -39,6 +39,7 @@ import { useAuthStore } from "@/store/auth";
 import { adminPath } from "@/lib/paths";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import { describeWebAuthnError, webAuthnUnavailableReason } from "@/lib/webauthn";
 
 type FormValues = {
   email: string;
@@ -61,6 +62,7 @@ export default function LoginPage() {
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [passkeyError, setPasskeyError] = useState("");
   const cardRef = useRef<HTMLDivElement>(null);
+  const passkeyUnavailable = webAuthnUnavailableReason();
 
   // 登录页入场：卡片整体上浮，品牌区与表单区依次错落出现
   useGSAP(
@@ -152,6 +154,14 @@ export default function LoginPage() {
   };
 
   const runPasskeyAuth = async (tk: string, email: string) => {
+    if (passkeyUnavailable) {
+      setPasskeyError(
+        passkeyUnavailable === "insecure"
+          ? t("auth.passkey.errors.insecureHint")
+          : t("auth.passkey.errors.unsupportedHint"),
+      );
+      return;
+    }
     setPasskeyLoading(true);
     setPasskeyError("");
     try {
@@ -169,6 +179,14 @@ export default function LoginPage() {
 
   const runSetup = async () => {
     if (!ticket) return;
+    if (passkeyUnavailable) {
+      setPasskeyError(
+        passkeyUnavailable === "insecure"
+          ? t("auth.passkey.errors.insecureHint")
+          : t("auth.passkey.errors.unsupportedHint"),
+      );
+      return;
+    }
     setPasskeyLoading(true);
     setPasskeyError("");
     try {
@@ -186,12 +204,8 @@ export default function LoginPage() {
   };
 
   const friendlyPasskeyError = (e: any): string => {
-    const name = e?.name || "";
-    if (name === "NotAllowedError") return t("auth.signIn.passkey.cancelled");
-    if (name === "NotSupportedError" || name === "SecurityError")
-      return t("auth.signIn.passkey.unsupported");
-    if (e?.message && typeof e.message === "string" && !e.message.startsWith("HTTP")) return e.message;
-    return t("auth.signIn.passkey.failed");
+    const d = describeWebAuthnError(e);
+    return d.key ? t(d.key, { defaultValue: d.fallback }) : d.fallback;
   };
 
   const backToPassword = () => {
@@ -380,7 +394,7 @@ export default function LoginPage() {
 
                 <Button
                   className="w-full"
-                  disabled={passkeyLoading}
+                  disabled={passkeyLoading || !!passkeyUnavailable}
                   onClick={() => runPasskeyAuth(ticket, loginEmail)}
                 >
                   {passkeyLoading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -419,7 +433,7 @@ export default function LoginPage() {
                   </p>
                 )}
 
-                <Button className="w-full" disabled={passkeyLoading} onClick={runSetup}>
+                <Button className="w-full" disabled={passkeyLoading || !!passkeyUnavailable} onClick={runSetup}>
                   {passkeyLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                   {t("auth.signIn.passkey.setupSubmit")}
                 </Button>

@@ -1914,7 +1914,16 @@ const translations: Translations = {
       "lastUsed": "上次使用：{{time}}",
       "neverUsed": "尚未使用过",
       "phoneHint": "支持手机扫码跨设备绑定：按浏览器提示选择“使用其他设备/手机”后用手机扫描二维码即可。",
-      "keepOne": "至少保留一个 Passkey"
+      "keepOne": "至少保留一个 Passkey",
+      "errors": {
+        "cancelled": "验证已取消或超时，请重试",
+        "insecure": "当前访问地址不允许使用 Passkey，请改用 HTTPS 域名或 localhost 访问",
+        "unsupported": "当前浏览器或设备不支持 Passkey",
+        "exists": "该设备已经绑定过 Passkey，请换一台设备或删除后重试",
+        "failed": "Passkey 操作失败，请重试",
+        "insecureHint": "当前是 HTTP 访问且不是 localhost，浏览器禁止使用 Passkey。请配置 HTTPS 域名后访问（可反代到当前端口），再绑定 Passkey。",
+        "unsupportedHint": "当前浏览器不支持 Passkey，请使用最新版 Chrome / Edge / Safari，或改用手机扫码。"
+      }
     }
   },
   "traffic": {
@@ -3845,6 +3854,7 @@ const translations: Translations = {
       "unauthorized": "未授权，请重新登录",
       "invalidCredentials": "邮箱或密码错误",
       "invalidData": "提交的数据有误，请检查输入",
+      "passkeyRequired": "请先绑定 Passkey 后再使用后台",
       "requestFailed": "请求失败",
       "networkError": "网络错误",
       "noPermission": "没有权限",
