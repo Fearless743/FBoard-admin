@@ -228,8 +228,8 @@ const coupons: any[] = Array.from({ length: 30 }, (_, k) => {
     started_at: now - i * DAY,
     ended_at: now + (30 - i) * DAY,
     show: i % 7 === 0 ? 0 : 1,
-    limit_period: i % 3 === 0 ? ["month_price", "quarter_price"] : [],
-    limit_plan: [],
+    limit_period: i % 3 === 0 ? ["monthly", "quarterly"] : [],
+    limit_plan_ids: [],
   };
 });
 

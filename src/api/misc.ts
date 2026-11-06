@@ -171,7 +171,8 @@ export interface CouponItem {
   ended_at: number | null;
   show: 0 | 1;
   limit_period?: string[];
-  limit_plan?: number[];
+  limit_plan_ids?: Array<number | string>;
+  limit_plan?: Array<number | string>;
   [k: string]: any;
 }
 

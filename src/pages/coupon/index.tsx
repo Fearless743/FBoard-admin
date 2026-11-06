@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { dropCoupon, fetchCoupons, generateCoupon, updateCoupon, toggleCouponShow, batchDropCoupons, dropExpiredCoupons, dropDepletedCoupons, type CouponItem } from "@/api/misc";
+import { usePlanOptions } from "@/hooks/use-plans";
 
 const COL_COUNT = 9;
 
@@ -563,6 +564,7 @@ function CouponFormDialog({
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
+  const { data: plans = [] } = usePlanOptions();
   const [name, setName] = useState("");
   const [type, setType] = useState<1 | 2>(1);
   const [value, setValue] = useState<number>(0);
@@ -572,6 +574,8 @@ function CouponFormDialog({
   const [startedAt, setStartedAt] = useState("");
   const [endedAt, setEndedAt] = useState("");
   const [generateCount, setGenerateCount] = useState<string>("");
+  const [limitPlanIds, setLimitPlanIds] = useState<number[]>([]);
+  const [limitPeriods, setLimitPeriods] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -585,6 +589,12 @@ function CouponFormDialog({
       setStartedAt(coupon?.started_at ? toInput(coupon.started_at) : "");
       setEndedAt(coupon?.ended_at ? toInput(coupon.ended_at) : "");
       setGenerateCount("");
+      setLimitPlanIds(
+        ((coupon?.limit_plan_ids ?? coupon?.limit_plan ?? []) as any[])
+          .map((v) => Number(v))
+          .filter((n) => Number.isFinite(n)),
+      );
+      setLimitPeriods(Array.isArray(coupon?.limit_period) ? (coupon.limit_period as string[]) : []);
     }
   }, [open, coupon]);
 
@@ -605,6 +615,8 @@ function CouponFormDialog({
         started_at: startedAt ? Math.floor(new Date(startedAt).getTime() / 1000) : undefined,
         ended_at: endedAt ? Math.floor(new Date(endedAt).getTime() / 1000) : undefined,
         generate_count: generateCount ? Number(generateCount) : undefined,
+        limit_plan_ids: limitPlanIds.length ? limitPlanIds : null,
+        limit_period: limitPeriods.length ? limitPeriods : null,
       };
       if (coupon) {
         await updateCoupon({ id: coupon.id, ...payload });
@@ -695,6 +707,61 @@ function CouponFormDialog({
               <Input type="datetime-local" value={endedAt} onChange={(e) => setEndedAt(e.target.value)} />
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label>{t("coupon.form.limitPlan.label")}</Label>
+            <div className="max-h-40 overflow-y-auto rounded-md border p-2 space-y-1">
+              {plans.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{t("coupon.form.limitPlan.empty")}</p>
+              ) : (
+                plans.map((p) => (
+                  <label key={p.id} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={limitPlanIds.includes(p.id)}
+                      onCheckedChange={(v) => {
+                        setLimitPlanIds((prev) =>
+                          v ? [...prev, p.id] : prev.filter((id) => id !== p.id),
+                        );
+                      }}
+                    />
+                    <span className="truncate">{p.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">{t("coupon.form.limitPlan.description")}</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>{t("coupon.form.limitPeriod.label")}</Label>
+            <div className="grid grid-cols-2 gap-2 rounded-md border p-2">
+              {[
+                "hourly",
+                "daily",
+                "monthly",
+                "quarterly",
+                "half_yearly",
+                "yearly",
+                "two_yearly",
+                "three_yearly",
+                "onetime",
+                "reset_traffic",
+              ].map((p) => (
+                <label key={p} className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={limitPeriods.includes(p)}
+                    onCheckedChange={(v) => {
+                      setLimitPeriods((prev) =>
+                        v ? [...prev, p] : prev.filter((x) => x !== p),
+                      );
+                    }}
+                  />
+                  <span>{t(`coupon.period.${p}`)}</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">{t("coupon.form.limitPeriod.description")}</p>
+          </div>
+
           {!coupon && (
             <div className="space-y-1.5">
               <Label>{t("coupon.form.generateCount.label")}</Label>
