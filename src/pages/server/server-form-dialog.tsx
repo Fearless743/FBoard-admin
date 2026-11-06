@@ -406,7 +406,7 @@ export function ServerFormDialog({
         group_ids: (server?.group_ids || []).map(Number),
         machine_id: machineId,
         parent_id: server?.parent_id ?? null,
-        show: server?.show !== 0,
+        show: server ? !!server.show : true,
         banned: !!server?.banned,
         protocol_settings: protocolSettings,
         cert_config: server?.cert_config || { cert_mode: "none" },
