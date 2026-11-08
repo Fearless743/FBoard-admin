@@ -2929,6 +2929,11 @@ const translations: Translations = {
           "success": "Traffic fingerprint camouflage generated"
         }
       },
+      "trusttunnel": {
+        "client_random_auth_key": {
+          "generate": "Сгенерировать случайный auth key (16-байтный hex)"
+        }
+      },
       "advanced": {
         "trigger_label": "Расширенная конфигурация",
         "dialog_title": "Расширенная конфигурация протокола",

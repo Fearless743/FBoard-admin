@@ -2903,6 +2903,11 @@ const translations: Translations = {
           "success": "流量特徵偽裝已生成"
         }
       },
+      "trusttunnel": {
+        "client_random_auth_key": {
+          "generate": "生成隨機 Auth Key（16 字節 hex）"
+        }
+      },
       "cert_config": {
         "tab": "TLS 證書",
         "none_desc": "未啟用 TLS 證書配置",

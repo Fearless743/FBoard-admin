@@ -1606,6 +1606,61 @@ function ProtocolConfigFields({
           );
         }
 
+        // TrustTunnel ClientRandom Auth Key：输入框内嵌刷新按钮，一键生成 16 字节随机 hex（纯前端生成）
+        if (key === "client_random_auth_key" && !prefix) {
+          return (
+            <div key={key} className="space-y-1.5">
+              <Label>
+                {fieldName}
+                {requiredFor(fieldPath) ? (
+                  <span className="ml-0.5 text-destructive">*</span>
+                ) : null}
+              </Label>
+              {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
+              <div className="relative">
+                <Input
+                  placeholder={
+                    field.placeholder ||
+                    t("common.inputField", { name: fieldName })
+                  }
+                  className="pr-10 font-mono text-xs"
+                  {...register(`protocol_settings.${fieldPath}`, {
+                    ...(requiredFor(fieldPath)
+                      ? {
+                          required: true,
+                          validate: (v: any) => !!String(v ?? "").trim(),
+                        }
+                      : {}),
+                  })}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
+                  title={t("server.dynamic_form.trusttunnel.client_random_auth_key.generate")}
+                  onClick={() => {
+                    const bytes = new Uint8Array(16);
+                    crypto.getRandomValues(bytes);
+                    const hex = Array.from(bytes, (b) =>
+                      b.toString(16).padStart(2, "0"),
+                    ).join("");
+                    setValue(`protocol_settings.${fieldPath}`, hex, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+              {errorFor(fieldPath) ? (
+                <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+              ) : null}
+            </div>
+          );
+        }
+
         // Sudoku master public key：与 Reality 公钥同款 — 输入框内嵌刷新按钮，一键填公私钥
         if (key === "master_public_key" && !prefix) {
           return (
