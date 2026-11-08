@@ -345,12 +345,14 @@ function KnowledgeFormDialog({
     }
     setSubmitting(true);
     try {
+      // 保存前清洗 quill HTML（去 script/iframe/object/embed/form 与 on* 属性）
+      const { sanitizeKnowledgeHtml } = await import("./editor");
       await saveKnowledge({
         id: item?.id,
         title,
         category,
         language,
-        body: content,
+        body: sanitizeKnowledgeHtml(content),
         show: show ? 1 : 0,
       });
       toast.success(t("knowledge.messages.operationSuccess"));

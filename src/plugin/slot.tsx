@@ -1,5 +1,6 @@
 import { Component, useState, type ErrorInfo, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -106,12 +107,21 @@ export function ExtensionRenderer({
   if (extension.type === "button" || extension.type === "link") {
     node = <ButtonContribution extension={extension} />;
   } else if (extension.type === "html") {
-    node = <div dangerouslySetInnerHTML={{ __html: extension.html ?? "" }} />;
+    node = (
+      <div
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(extension.html ?? "", {
+            USE_PROFILES: { html: true },
+          }),
+        }}
+      />
+    );
   } else if (extension.type === "iframe") {
     node = (
       <iframe
         src={extension.url ?? ""}
         title={extension.title || extension.id}
+        sandbox="allow-scripts"
         className="h-64 w-full rounded-md border bg-background"
       />
     );

@@ -84,7 +84,8 @@ export default defineConfig(async ({ mode }) => {
     },
     server: {
       port: 5173,
-      host: true,
+      // 仅监听本地回环，防止 dev server 在局域网暴露（曾为 host: true 监听 0.0.0.0）
+      host: "127.0.0.1",
     },
   };
 });

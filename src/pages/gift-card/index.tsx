@@ -749,7 +749,7 @@ function CodesPanel() {
             try {
               const res = await exportGiftCardCodes();
               if (res && typeof res === "object" && (res as any).url) {
-                window.open((res as any).url, "_blank");
+                window.open((res as any).url, "_blank", "noopener,noreferrer");
               } else {
                 toast.success(t("giftCard.code.messages.exportSuccess"));
               }

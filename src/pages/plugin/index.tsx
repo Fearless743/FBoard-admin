@@ -507,7 +507,7 @@ function PluginStaticFilesDialog({
   // Auto-open if only one file — runs before dialog ever renders
   useEffect(() => {
     if (!isLoading && files.length === 1 && code) {
-      window.open(files[0].url, "_blank");
+      window.open(files[0].url, "_blank", "noopener,noreferrer");
       onOpenChange(false);
     }
   }, [isLoading]); // only trigger on loading transition; ignore files/code changes
@@ -559,7 +559,7 @@ function PluginStaticFilesDialog({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => window.open(selectedFile, "_blank")}
+              onClick={() => window.open(selectedFile, "_blank", "noopener,noreferrer")}
             >
               <ExternalLink className="h-3.5 w-3.5 mr-1" />
               {t("plugin.staticFiles.openInNewTab")}
@@ -567,6 +567,7 @@ function PluginStaticFilesDialog({
           </div>
           <iframe
             src={selectedFile}
+            sandbox="allow-scripts"
             className="w-full flex-1 border-0"
             style={{ height: "calc(95vh - 53px)" }}
             title={t("plugin.staticFiles.previewTitle")}
@@ -618,7 +619,7 @@ function PluginStaticFilesDialog({
                   className="shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
-                    window.open(file.url, "_blank");
+                    window.open(file.url, "_blank", "noopener,noreferrer");
                   }}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />

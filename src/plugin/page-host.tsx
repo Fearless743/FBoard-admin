@@ -1,4 +1,5 @@
 import { useLocation } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { NotFound } from "@/pages/not-found";
 import { getExtension } from "./registry";
 import { usePlugins } from "./provider";
@@ -11,7 +12,15 @@ export function PluginPageHost({ page }: { page: AdminUiPage }) {
   const currentPage = normalizePage(page.path);
 
   if (page.type === "html") {
-    return <div dangerouslySetInnerHTML={{ __html: page.html ?? "" }} />;
+    return (
+      <div
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(page.html ?? "", {
+            USE_PROFILES: { html: true },
+          }),
+        }}
+      />
+    );
   }
 
   if (page.type === "component") {
@@ -36,6 +45,7 @@ export function PluginPageHost({ page }: { page: AdminUiPage }) {
     <iframe
       src={page.url ?? ""}
       title={page.title || page.path}
+      sandbox="allow-scripts"
       className="w-full rounded-md border bg-background"
       style={{ height: page.height || "calc(100vh - 8rem)" }}
     />

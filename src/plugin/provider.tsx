@@ -145,8 +145,13 @@ export function PluginProvider({ children }: { children: ReactNode }) {
     setReady(false);
 
     // 插件脚本从 window.FboardAdmin 取宿主能力，必须先装好 SDK 再执行
+    // loadScript 对非法 URL 会 reject（白名单拦截）：这里 catch 后仍置 ready，
+    // 与此前「加载失败也 resolve」的容错语义保持一致
     void ensureSdkInstalled()
       .then(() => Promise.all(pendingScripts.map((url) => loadScript(url))))
+      .catch((err) => {
+        console.warn("[FboardAdmin] 部分插件脚本未加载", err);
+      })
       .finally(() => {
         if (!cancelled) setReady(true);
       });

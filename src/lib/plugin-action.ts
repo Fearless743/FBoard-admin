@@ -123,6 +123,34 @@ export function unwrapPluginActionResponse(res: unknown): PluginActionResult {
 
 /**
  * 解析「要打开的 URL」：结果体优先，其次动作元数据（link 类型）
+ *
+ * 安全：拒绝 `javascript:` / `data:` / `vbscript:` 等可执行 scheme，
+ * 只允许 http(s) 绝对地址与相对路径；非法返回 null（调用方直接跳过）。
+ */
+export function isSafePluginUrl(url: unknown): boolean {
+  if (typeof url !== "string" || !url.trim()) return false;
+  const raw = url.trim();
+  const schemeMatch = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(raw);
+  if (!schemeMatch) return true; // 相对路径（同源解析）
+  const scheme = schemeMatch[0].toLowerCase();
+  return scheme === "http:" || scheme === "https:";
+}
+
+/** 同源判定：相对路径视为同源 */
+export function isSameOriginPluginUrl(url: string): boolean {
+  try {
+    if (typeof window === "undefined") return false;
+    return new URL(url, window.location.href).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 解析「要打开的 URL」：结果体优先，其次动作元数据（link 类型）
+ *
+ * 安全：拒绝 `javascript:` / `data:` / `vbscript:` 等可执行 scheme，
+ * 只允许 http(s) 绝对地址与相对路径；非法返回 null（调用方直接跳过）。
  */
 export function resolvePluginActionUrl(
   result: PluginActionResult,
@@ -130,10 +158,12 @@ export function resolvePluginActionUrl(
 ): string | null {
   const fromResult = result.open_url || result.url;
   if (typeof fromResult === "string" && fromResult.trim()) {
-    return fromResult.trim();
+    const candidate = fromResult.trim();
+    return isSafePluginUrl(candidate) ? candidate : null;
   }
   if (meta?.type === "link" && typeof meta.url === "string" && meta.url.trim()) {
-    return meta.url.trim();
+    const candidate = meta.url.trim();
+    return isSafePluginUrl(candidate) ? candidate : null;
   }
   return null;
 }
@@ -173,18 +203,27 @@ export function applyPluginActionResult(
   const target: PluginActionTarget =
     result.target || meta?.target || "_blank";
 
-  // 1) 打开链接
+  // 1) 打开链接（resolvePluginActionUrl 已过滤危险 scheme）
   const url = resolvePluginActionUrl(result, meta);
   if (url) {
     if (target === "_self") {
-      window.location.assign(url);
+      // _self 跳转前同源校验：非同源强制走 _blank + noopener，防止 open-redirect 劫持本页
+      if (isSameOriginPluginUrl(url)) {
+        window.location.assign(url);
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
     } else {
       window.open(url, "_blank", "noopener,noreferrer");
     }
   }
 
-  // 2) 下载
-  if (typeof result.download_url === "string" && result.download_url) {
+  // 2) 下载：同样拒绝危险 scheme，只允许 http(s)/相对路径
+  if (
+    typeof result.download_url === "string" &&
+    result.download_url &&
+    isSafePluginUrl(result.download_url)
+  ) {
     const a = document.createElement("a");
     a.href = result.download_url;
     a.rel = "noopener noreferrer";

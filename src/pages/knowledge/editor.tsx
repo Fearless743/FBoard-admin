@@ -1,9 +1,22 @@
+import DOMPurify from "dompurify";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 export interface KnowledgeEditorProps {
   value: string;
   onChange: (v: string) => void;
+}
+
+/**
+ * 保存前清洗 quill HTML：去掉 script/iframe/object/embed/form 等危险标签
+ * 与 on* 事件属性。DOMPurify 默认已 strip 事件属性与 javascript: URI，
+ * 这里显式 FORBID_TAGS 做双保险。
+ */
+export function sanitizeKnowledgeHtml(html: string): string {
+  return DOMPurify.sanitize(html ?? "", {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form", "input", "button"],
+  });
 }
 
 /**
