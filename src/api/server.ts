@@ -302,11 +302,11 @@ export async function generateEchKey(publicName?: string) {
 }
 
 /** Mieru 流量特征伪装：浏览器本地生成 Base64 Traffic Pattern */
-export async function generateMieruTrafficPattern() {
+export async function generateMieruTrafficPattern(options?: any) {
   const { generateMieruTrafficPattern: gen } = await import(
     "@/lib/mieru-traffic-pattern"
   );
-  return { traffic_pattern: gen() };
+  return { traffic_pattern: gen(options) };
 }
 
 /* ============ 协议定义 ============ */

@@ -8,6 +8,8 @@
  *   optional bool unlockAll = 2;
  *   optional TCPFragment tcpFragment = 3;
  *   optional NoncePattern nonce = 4;
+ *   optional PaddingPattern padding = 5;
+ *   optional LowEntropyPattern lowEntropy = 6;
  * }
  */
 
@@ -17,6 +19,90 @@ export const NONCE_TYPE = {
   PRINTABLE: 1,
   PRINTABLE_SUBSET: 2,
   FIXED: 3,
+  NONCE_TYPE_RANDOM: 0,
+  NONCE_TYPE_PRINTABLE: 1,
+  NONCE_TYPE_PRINTABLE_SUBSET: 2,
+  NONCE_TYPE_FIXED: 3,
+} as const;
+
+/** LowEntropyMode：与 mieru appctlpb.LowEntropyMode 对齐 */
+export const LOW_ENTROPY_MODE = {
+  OFF: 0,
+  MODE_32: 1,
+  MODE_40: 2,
+  MODE_48: 3,
+  MODE_56: 4,
+  LOW_ENTROPY_MODE_OFF: 0,
+  LOW_ENTROPY_MODE_32: 1,
+  LOW_ENTROPY_MODE_40: 2,
+  LOW_ENTROPY_MODE_48: 3,
+  LOW_ENTROPY_MODE_56: 4,
+} as const;
+
+/** LowEntropyMaskRotation：与 mieru appctlpb.LowEntropyMaskRotation 对齐 */
+export const LOW_ENTROPY_MASK_ROTATION = {
+  NO_ROTATION: 0,
+  ROTATE_RIGHT_1: 1,
+  ROTATE_RIGHT_2: 2,
+  ROTATE_RIGHT_3: 3,
+  ROTATE_RIGHT_4: 4,
+  ROTATE_RIGHT_5: 5,
+  ROTATE_RIGHT_6: 6,
+  ROTATE_RIGHT_7: 7,
+  ROTATE_RIGHT_8: 8,
+  ROTATE_RIGHT_9: 9,
+  ROTATE_RIGHT_10: 10,
+  ROTATE_RIGHT_11: 11,
+  ROTATE_RIGHT_12: 12,
+  ROTATE_RIGHT_13: 13,
+  ROTATE_RIGHT_14: 14,
+  ROTATE_RIGHT_15: 15,
+  ROTATE_LEFT_1: 16,
+  ROTATE_LEFT_2: 32,
+  ROTATE_LEFT_3: 48,
+  ROTATE_LEFT_4: 64,
+  ROTATE_LEFT_5: 80,
+  ROTATE_LEFT_6: 96,
+  ROTATE_LEFT_7: 112,
+  ROTATE_LEFT_8: 128,
+  ROTATE_LEFT_9: 144,
+  ROTATE_LEFT_10: 160,
+  ROTATE_LEFT_11: 176,
+  ROTATE_LEFT_12: 192,
+  ROTATE_LEFT_13: 208,
+  ROTATE_LEFT_14: 224,
+  ROTATE_LEFT_15: 240,
+  LOW_ENTROPY_MASK_NO_ROTATION: 0,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_1: 1,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_2: 2,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_3: 3,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_4: 4,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_5: 5,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_6: 6,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_7: 7,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_8: 8,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_9: 9,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_10: 10,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_11: 11,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_12: 12,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_13: 13,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_14: 14,
+  LOW_ENTROPY_MASK_ROTATE_RIGHT_15: 15,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_1: 16,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_2: 32,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_3: 48,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_4: 64,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_5: 80,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_6: 96,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_7: 112,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_8: 128,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_9: 144,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_10: 160,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_11: 176,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_12: 192,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_13: 208,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_14: 224,
+  LOW_ENTROPY_MASK_ROTATE_LEFT_15: 240,
 } as const;
 
 export interface MieruTrafficPatternOptions {
@@ -36,6 +122,18 @@ export interface MieruTrafficPatternOptions {
     minLen?: number;
     /** 0–12，且 ≥ minLen */
     maxLen?: number;
+    /** FIXED 模式下使用的自定义 nonce 前缀 hex 串列表 */
+    customHexStrings?: string[];
+  };
+  padding?: {
+    /** 0–255 */
+    maxMiddlePaddingLen?: number;
+    /** 0–255 */
+    maxEndPaddingLen?: number;
+  };
+  lowEntropy?: {
+    mode?: number;
+    maskRotation?: number;
   };
 }
 
@@ -52,13 +150,9 @@ function encodeVarint(n: number): number[] {
 
 /** 有符号 int32 的 zigzag 前先按 protobuf int32 处理：直接 varint 其补码位模式 */
 function encodeInt32(n: number): number[] {
-  // protobuf int32 使用符号扩展到 64-bit 的 varint；对正数即普通 varint。
-  // 我们的 seed 始终用正 int32。
   if (n < 0) {
-    // 负 int32：按 64-bit 符号扩展 varint（10 字节）
     let v = BigInt(n);
     const out: number[] = [];
-    // 转成无符号 64 位 twos-complement
     v = BigInt.asUintN(64, v);
     while (v > 0x7fn) {
       out.push(Number(v & 0x7fn) | 0x80);
@@ -90,63 +184,133 @@ function fieldBytes(fieldNumber: number, payload: number[]): number[] {
   ];
 }
 
-function encodeTcpFragment(enable: boolean, maxSleepMs: number): number[] {
+function fieldString(fieldNumber: number, value: string): number[] {
+  const bytes: number[] = [];
+  for (let i = 0; i < value.length; i++) {
+    bytes.push(value.charCodeAt(i) & 0xff);
+  }
+  // UTF-8 encode properly
+  const utf8 = new TextEncoder().encode(value);
   return [
-    ...fieldBool(1, enable),
-    ...fieldVarint(2, Math.max(0, Math.min(100, maxSleepMs | 0))),
+    ...tag(fieldNumber, 2),
+    ...encodeVarint(utf8.length),
+    ...Array.from(utf8),
   ];
 }
 
-function encodeNonce(
-  type: number,
-  applyToAllUDPPacket: boolean,
-  minLen: number,
-  maxLen: number,
-): number[] {
-  const min = Math.max(0, Math.min(12, minLen | 0));
-  const max = Math.max(min, Math.min(12, maxLen | 0));
-  return [
-    ...fieldVarint(1, type | 0),
-    ...fieldBool(2, applyToAllUDPPacket),
-    ...fieldVarint(3, min),
-    ...fieldVarint(4, max),
-  ];
+function encodeTcpFragment(tc: MieruTrafficPatternOptions["tcpFragment"]): number[] {
+  const out: number[] = [];
+  if (!tc) return out;
+  if (typeof tc.enable === "boolean") {
+    out.push(...fieldBool(1, tc.enable));
+  }
+  if (typeof tc.maxSleepMs === "number") {
+    out.push(
+      ...fieldVarint(
+        2,
+        Math.max(0, Math.min(100, tc.maxSleepMs | 0)),
+      ),
+    );
+  }
+  return out;
+}
+
+function encodeNonce(n: MieruTrafficPatternOptions["nonce"]): number[] {
+  const out: number[] = [];
+  if (!n) return out;
+  if (typeof n.type === "number") {
+    out.push(...fieldVarint(1, n.type | 0));
+  }
+  if (typeof n.applyToAllUDPPacket === "boolean") {
+    out.push(...fieldBool(2, n.applyToAllUDPPacket));
+  }
+  if (typeof n.minLen === "number") {
+    out.push(
+      ...fieldVarint(3, Math.max(0, Math.min(12, n.minLen | 0))),
+    );
+  }
+  if (typeof n.maxLen === "number") {
+    const min = typeof n.minLen === "number" ? Math.max(0, Math.min(12, n.minLen | 0)) : 0;
+    const max = Math.max(min, Math.min(12, n.maxLen | 0));
+    out.push(...fieldVarint(4, max));
+  }
+  if (Array.isArray(n.customHexStrings)) {
+    for (const hexStr of n.customHexStrings) {
+      out.push(...fieldString(5, hexStr));
+    }
+  }
+  return out;
+}
+
+function encodePadding(p: MieruTrafficPatternOptions["padding"]): number[] {
+  const out: number[] = [];
+  if (!p) return out;
+  if (typeof p.maxMiddlePaddingLen === "number") {
+    out.push(
+      ...fieldVarint(
+        1,
+        Math.max(0, Math.min(255, p.maxMiddlePaddingLen | 0)),
+      ),
+    );
+  }
+  if (typeof p.maxEndPaddingLen === "number") {
+    out.push(
+      ...fieldVarint(
+        2,
+        Math.max(0, Math.min(255, p.maxEndPaddingLen | 0)),
+      ),
+    );
+  }
+  return out;
+}
+
+function encodeLowEntropy(l: MieruTrafficPatternOptions["lowEntropy"]): number[] {
+  const out: number[] = [];
+  if (!l) return out;
+  if (typeof l.mode === "number") {
+    out.push(...fieldVarint(1, l.mode | 0));
+  }
+  if (typeof l.maskRotation === "number") {
+    out.push(...fieldVarint(2, l.maskRotation | 0));
+  }
+  return out;
 }
 
 /** 将 TrafficPattern 字段编码为 protobuf 字节 */
 export function encodeTrafficPatternBytes(
-  opts: Required<
-    Pick<MieruTrafficPatternOptions, "seed" | "unlockAll">
-  > & {
-    tcpFragment: { enable: boolean; maxSleepMs: number };
-    nonce: {
-      type: number;
-      applyToAllUDPPacket: boolean;
-      minLen: number;
-      maxLen: number;
-    };
-  },
+  opts: MieruTrafficPatternOptions = {},
 ): Uint8Array {
-  const body: number[] = [
-    ...fieldVarint(1, opts.seed | 0),
-    ...fieldBool(2, opts.unlockAll),
-    ...fieldBytes(
-      3,
-      encodeTcpFragment(
-        opts.tcpFragment.enable,
-        opts.tcpFragment.maxSleepMs,
-      ),
-    ),
-    ...fieldBytes(
-      4,
-      encodeNonce(
-        opts.nonce.type,
-        opts.nonce.applyToAllUDPPacket,
-        opts.nonce.minLen,
-        opts.nonce.maxLen,
-      ),
-    ),
-  ];
+  const body: number[] = [];
+  if (typeof opts.seed === "number") {
+    body.push(...fieldVarint(1, opts.seed | 0));
+  }
+  if (typeof opts.unlockAll === "boolean") {
+    body.push(...fieldBool(2, opts.unlockAll));
+  }
+  if (opts.tcpFragment) {
+    const payload = encodeTcpFragment(opts.tcpFragment);
+    if (payload.length > 0) {
+      body.push(...fieldBytes(3, payload));
+    }
+  }
+  if (opts.nonce) {
+    const payload = encodeNonce(opts.nonce);
+    if (payload.length > 0) {
+      body.push(...fieldBytes(4, payload));
+    }
+  }
+  if (opts.padding) {
+    const payload = encodePadding(opts.padding);
+    if (payload.length > 0) {
+      body.push(...fieldBytes(5, payload));
+    }
+  }
+  if (opts.lowEntropy) {
+    const payload = encodeLowEntropy(opts.lowEntropy);
+    if (payload.length > 0) {
+      body.push(...fieldBytes(6, payload));
+    }
+  }
   return new Uint8Array(body);
 }
 
@@ -170,13 +334,13 @@ function randInt(min: number, max: number): number {
  * - unlockAll=false
  * - TCP 分片：开启，分片间隔 5–15ms（抗分析，延迟可控）
  * - Nonce：PRINTABLE / PRINTABLE_SUBSET，长度 6–12
+ * - Padding / LowEntropy：使用官方隐式生成（留空），交由运行时按 seed 展开
  */
 export function generateMieruTrafficPattern(
   options: MieruTrafficPatternOptions = {},
 ): string {
   const seed =
     options.seed ??
-    // 正 int32，避开 0
     randInt(1, 0x7fffffff);
 
   const unlockAll = options.unlockAll ?? false;
@@ -186,7 +350,6 @@ export function generateMieruTrafficPattern(
     options.tcpFragment?.maxSleepMs ??
     (tcpEnable ? randInt(5, 15) : 0);
 
-  // 不用 FIXED（需要 customHexStrings）；不用 RANDOM（默认无伪装意义弱）
   const nonceType =
     options.nonce?.type ??
     (randInt(0, 1) === 0
@@ -200,6 +363,8 @@ export function generateMieruTrafficPattern(
   const maxLen =
     options.nonce?.maxLen ?? randInt(minLen, 12);
 
+  const customHexStrings = options.nonce?.customHexStrings;
+
   const bytes = encodeTrafficPatternBytes({
     seed,
     unlockAll,
@@ -209,7 +374,10 @@ export function generateMieruTrafficPattern(
       applyToAllUDPPacket: applyToAll,
       minLen,
       maxLen,
+      customHexStrings,
     },
+    padding: options.padding,
+    lowEntropy: options.lowEntropy,
   });
 
   return bytesToBase64(bytes);
