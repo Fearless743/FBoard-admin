@@ -60,7 +60,7 @@ import {
   type ProtocolConfigField,
   type ProtocolDefinition,
 } from "@/api/server";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { gbToBytes } from "@/lib/utils";
 import { AdvancedSettingsDialog } from "./advanced-settings-dialog";
 import { NetworkSettingsDialog } from "./network-settings-dialog";
@@ -158,6 +158,7 @@ export function ServerFormDialog({
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
+  const qc = useQueryClient();
 
   const { data: groupsData } = useQuery({
     queryKey: ["server", "groups"],
@@ -216,7 +217,8 @@ export function ServerFormDialog({
   }, [allMachines, machineSearch]);
 
   const { data: nodesData } = useQuery({
-    queryKey: ["servers", "nodes"],
+    // 使用独立 queryKey，避免管理页列表失效刷新时触发一次未过滤的 getNodes
+    queryKey: ["server-form", "nodes"],
     queryFn: () => getNodes(),
     enabled: open,
   });
@@ -444,8 +446,10 @@ export function ServerFormDialog({
         await saveServer(payload);
       }
       toast.success(t("server.form.success"));
-      onSaved();
+      // 先关闭弹窗，再触发列表失效刷新：避免弹窗内未过滤的 getNodes 在过滤状态下被重新请求
       onOpenChange(false);
+      onSaved();
+      qc.invalidateQueries({ queryKey: ["server-form", "nodes"] });
     } catch (e: any) {
       toast.error(t("server.messages.saveFailed"));
     }
