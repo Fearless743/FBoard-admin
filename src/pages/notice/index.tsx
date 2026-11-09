@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlState, listQuerySchema } from "@/hooks/use-url-state";
-import { Plus, Pencil, Trash2, Loader2, GripVertical, Search, Megaphone } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GripVertical, Search, Megaphone, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
@@ -262,18 +262,22 @@ function NoticeFormDialog({
   const [content, setContent] = useState("");
   const [imgUrl, setImgUrl] = useState("");
   const [show, setShow] = useState(true);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   // 编辑时从后端获取完整详情（含 content、img_url）
   const loadDetail = async (id: number) => {
     setLoadingDetail(true);
+    setTags([]);
     try {
       const detail = await fetchNoticeDetail(id);
       setTitle(detail.title || "");
       setContent(detail.content || "");
       setImgUrl(detail.img_url || "");
       setShow(detail.show !== 0);
+      setTags((detail.tags || []).filter(Boolean));
     } catch (e) {
       toast.error(t("notice.messages.loadError"));
     } finally {
@@ -291,9 +295,23 @@ function NoticeFormDialog({
         setContent("");
         setImgUrl("");
         setShow(true);
+        setTags([]);
+        setTagInput("");
       }
     }
   }, [open, notice?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const addTag = () => {
+    const v = tagInput.trim();
+    if (!v) return;
+    if (tags.includes(v)) {
+      setTagInput("");
+      return;
+    }
+    setTags([...tags, v]);
+    setTagInput("");
+  };
+  const removeTag = (i: number) => setTags(tags.filter((_, idx) => idx !== i));
 
   const submit = async () => {
     if (!title) {
@@ -306,6 +324,7 @@ function NoticeFormDialog({
         title,
         content,
         img_url: imgUrl,
+        tags,
         show: show ? 1 : 0,
       };
       if (notice) {
@@ -358,6 +377,44 @@ function NoticeFormDialog({
               onChange={(e) => setImgUrl(e.target.value)}
               placeholder={t("notice.form.fields.img_url.placeholder")}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t("notice.form.fields.tags.label")}</Label>
+            <div className="flex gap-2">
+              <Input
+                value={tagInput}
+                placeholder={t("notice.form.fields.tags.placeholder")}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    addTag();
+                  }
+                  if (e.key === "Backspace" && !tagInput && tags.length) {
+                    setTags(tags.slice(0, -1));
+                  }
+                }}
+              />
+              <Button type="button" variant="outline" size="icon" disabled={!tagInput.trim()} onClick={addTag}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {tags.map((tag, i) => (
+                  <Badge key={`${tag}-${i}`} variant="secondary" className="gap-1 pr-1">
+                    {tag}
+                    <button
+                      type="button"
+                      className="ml-0.5 rounded-sm p-0.5 hover:bg-muted-foreground/20"
+                      onClick={() => removeTag(i)}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">
             <Label className="text-sm font-normal">{t("notice.form.fields.show.label")}</Label>
