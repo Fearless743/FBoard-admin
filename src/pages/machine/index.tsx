@@ -66,6 +66,7 @@ import {
   resetMachineToken,
   saveMachine,
   upgradeMachine,
+  getMachineOpsAck,
   restartMachine,
   stopMachine,
   startMachine,
@@ -738,10 +739,35 @@ export function MachineListPage() {
           if (!upgrading || upgradeSubmitting) return;
           setUpgradeSubmitting(true);
           try {
-            await upgradeMachine(upgrading.id);
-            toast.success(t("machine.operations.upgradeSubmitted", { name: upgrading.name }));
+            const machine = upgrading;
+            await upgradeMachine(machine.id);
+            toast.success(t("machine.operations.upgradeSubmitted", { name: machine.name }));
             qc.invalidateQueries({ queryKey: ["machines"] });
             setUpgrading(null);
+
+            const started = Date.now();
+            const poll = async () => {
+              while (Date.now() - started < 60000) {
+                await new Promise((r) => setTimeout(r, 2000));
+                try {
+                  const res = await getMachineOpsAck(machine.id, "upgrade");
+                  const ack = (res as { acks?: Record<string, { status?: string; detail?: string }> })?.acks?.upgrade;
+                  if (ack) {
+                    if (ack.status === "ok") {
+                      toast.success(t("machine.operations.upgradeSuccess", { name: machine.name }));
+                    } else {
+                      toast.error(t("machine.operations.upgradeFailed", { name: machine.name, detail: ack.detail || "" }));
+                    }
+                    qc.invalidateQueries({ queryKey: ["machines"] });
+                    return;
+                  }
+                } catch (e) {
+                  console.error("[machine] ops-ack poll failed", machine.id, e);
+                }
+              }
+              toast.warning(t("machine.operations.upgradePending", { name: machine.name }));
+            };
+            void poll();
           } catch (e) {
             // api.ts interceptor already surfaces the message via toast.error;
             // we only need to make sure it is not swallowed silently.

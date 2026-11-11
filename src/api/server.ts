@@ -506,6 +506,17 @@ export async function upgradeMachine(id: number) {
   return adminPost<{ submitted: boolean; machine_id: number }>("/server/machine/upgrade", { id });
 }
 
+export interface MachineOpsAck {
+  machine_id: number;
+  acks: Record<string, { op: string; status: string; detail: string; ts: number; node_id?: number }>;
+}
+
+export async function getMachineOpsAck(id: number, op?: string) {
+  const params: Record<string, any> = { id };
+  if (op) params.op = op;
+  return adminGet<MachineOpsAck>("/server/machine/ops-ack", params);
+}
+
 export async function restartMachine(id: number) {
   return adminPost<{ submitted: boolean; machine_id: number; action?: string }>("/server/machine/restart", { id });
 }
