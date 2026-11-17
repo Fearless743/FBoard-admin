@@ -301,12 +301,26 @@ export async function generateEchKey(publicName?: string) {
   return generateEchKeyPair(publicName);
 }
 
+/** VLESS Encryption 后量子密钥对：浏览器本地生成（ML-KEM-768，兼容 xray vlessenc） */
+export async function generateVlessEncryptionKey() {
+  const { generateVlessEncryptionKeyPair } = await import("@/lib/crypto-keys");
+  return generateVlessEncryptionKeyPair();
+}
+
 /** Mieru 流量特征伪装：浏览器本地生成 Base64 Traffic Pattern */
 export async function generateMieruTrafficPattern(options?: any) {
   const { generateMieruTrafficPattern: gen } = await import(
     "@/lib/mieru-traffic-pattern"
   );
   return { traffic_pattern: gen(options) };
+}
+
+/** AnyTLS 填充方案：浏览器本地生成多行 padding scheme 字符串 */
+export async function generateAnyTLSPaddingScheme() {
+  const { generateAnyTLSPaddingScheme: gen } = await import(
+    "@/lib/anytls-padding-scheme"
+  );
+  return { padding_scheme: gen() };
 }
 
 /* ============ 协议定义 ============ */

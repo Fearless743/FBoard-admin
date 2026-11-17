@@ -2526,7 +2526,8 @@ const translations: Translations = {
           "use_default": "Use Default Scheme",
           "edit_btn": "Edit Padding Scheme",
           "configured": "{{count}} rules configured",
-          "not_configured": "Not configured"
+          "not_configured": "Not configured",
+          "generate": "Сгенерировать схему"
         }
       },
       "shadowsocks": {
@@ -2789,14 +2790,16 @@ const translations: Translations = {
         },
         "encryption": {
           "label": "VLESS Encryption",
-          "description": "Enable VLESS encryption",
-          "server_label": "decryption",
-          "server_placeholder": "./xray vlessenc",
-          "server_description": "Параметр decryption на сервере; сгенерируйте через ./xray vlessenc",
-          "client_label": "encryption",
-          "client_placeholder": "./xray vlessenc",
-          "client_description": "Параметр encryption на клиенте; должен соответствовать серверу",
-          "generate_hint": "./xray vlessenc"
+          "description": "Включить шифрование VLESS",
+          "server_label": "decryption (сервер)",
+          "server_placeholder": "Нажмите значок для генерации постквантовой пары ключей",
+          "server_description": "Серверное значение decryption (ML-KEM-768); нажмите значок для автоматической генерации пары",
+          "client_label": "encryption (клиент)",
+          "client_placeholder": "Нажмите значок для генерации постквантовой пары ключей",
+          "client_description": "Клиентское значение encryption; должно соответствовать серверу",
+          "generate": "Сгенерировать постквантовую пару ключей ML-KEM-768",
+          "generate_success": "Постквантовая пара ключей сгенерирована и заполнена",
+          "generate_hint": "Генерируется локально в браузере; совместимо с ./xray vlessenc"
         }
       },
       "tuic": {

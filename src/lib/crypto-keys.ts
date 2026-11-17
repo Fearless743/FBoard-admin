@@ -6,6 +6,7 @@
  */
 
 import { ed25519, x25519 } from "@noble/curves/ed25519.js";
+import { ml_kem768 } from "@noble/post-quantum/ml-kem.js";
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -198,5 +199,31 @@ export function generateEchKeyPair(
   return {
     key: pemBody("ECH KEYS", echKeysPayload),
     config: pemBody("ECH CONFIGS", echConfigList),
+  };
+}
+
+export interface VlessEncryptionKeyPair {
+  /** 服务端 decryption：mlkem768x25519plus.native.600s.<seed> */
+  decryption: string;
+  /** 客户端 encryption：mlkem768x25519plus.native.0rtt.<ek> */
+  encryption: string;
+}
+
+/**
+ * 生成 VLESS Encryption 后量子密钥对（ML-KEM-768 认证）。
+ * 输出与 `xray vlessenc` 的 Post-Quantum 方案逐字段一致：
+ * - 服务端用 64 字节 seed 作 decapsulation key 种子（600s）
+ * - 客户端用 1184 字节 encapsulation key（0rtt）
+ *
+ * noble 的 ml_kem768.keygen(seed) 与 Go crypto/mlkem 的
+ * NewDecapsulationKey768(seed) 对同一 seed 派生出完全相同的 ek。
+ */
+export function generateVlessEncryptionKeyPair(): VlessEncryptionKeyPair {
+  const seed = crypto.getRandomValues(new Uint8Array(64));
+  const { publicKey } = ml_kem768.keygen(seed);
+
+  return {
+    decryption: `mlkem768x25519plus.native.600s.${bytesToBase64Url(seed)}`,
+    encryption: `mlkem768x25519plus.native.0rtt.${bytesToBase64Url(publicKey)}`,
   };
 }

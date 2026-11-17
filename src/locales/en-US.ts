@@ -2526,7 +2526,8 @@ const translations: Translations = {
           "use_default": "Use Default Scheme",
           "edit_btn": "Edit Padding Scheme",
           "configured": "{{count}} rules configured",
-          "not_configured": "Not configured"
+          "not_configured": "Not configured",
+          "generate": "Generate Scheme"
         }
       },
       "shadowsocks": {
@@ -2790,13 +2791,15 @@ const translations: Translations = {
         "encryption": {
           "label": "VLESS Encryption",
           "description": "Enable VLESS encryption",
-          "server_label": "decryption",
-          "server_placeholder": "./xray vlessenc",
-          "server_description": "Server-side decryption value; generate with ./xray vlessenc",
-          "client_label": "encryption",
-          "client_placeholder": "./xray vlessenc",
+          "server_label": "decryption (server)",
+          "server_placeholder": "Click the icon to generate a post-quantum key pair",
+          "server_description": "Server-side decryption value (ML-KEM-768). Click the icon to generate a matching key pair automatically",
+          "client_label": "encryption (client)",
+          "client_placeholder": "Click the icon to generate a post-quantum key pair",
           "client_description": "Client-side encryption value; must pair with the server",
-          "generate_hint": "./xray vlessenc"
+          "generate": "Generate ML-KEM-768 post-quantum key pair",
+          "generate_success": "Post-quantum key pair generated and filled in",
+          "generate_hint": "Generated locally in the browser; compatible with ./xray vlessenc"
         }
       },
       "tuic": {

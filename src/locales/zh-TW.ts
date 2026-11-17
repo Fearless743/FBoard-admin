@@ -2500,7 +2500,8 @@ const translations: Translations = {
           "configured": "已配置 {{count}} 條規則",
           "not_configured": "未配置",
           "description": "用於混淆流量特徵的填充方案，每行一條規則，支持通配符 *",
-          "use_default": "使用默認方案"
+          "use_default": "使用默認方案",
+          "generate": "產生填充方案"
         }
       },
       "shadowsocks": {
@@ -2764,13 +2765,15 @@ const translations: Translations = {
         "encryption": {
           "label": "VLESS Encryption",
           "description": "啟用 VLESS 加密",
-          "server_label": "decryption",
-          "server_placeholder": "./xray vlessenc 生成",
-          "server_description": "服務端 decryption 參數，可由 ./xray vlessenc 生成",
-          "client_label": "encryption",
-          "client_placeholder": "./xray vlessenc 生成",
+          "server_label": "decryption（服務端）",
+          "server_placeholder": "點擊右側圖標一鍵生成後量子密鑰對",
+          "server_description": "服務端 decryption 參數（ML-KEM-768）；點擊右側圖標自動生成配對的密鑰對",
+          "client_label": "encryption（客戶端）",
+          "client_placeholder": "點擊右側圖標一鍵生成後量子密鑰對",
           "client_description": "客戶端 encryption 參數，需與服務端配對",
-          "generate_hint": "./xray vlessenc 生成"
+          "generate": "生成 ML-KEM-768 後量子密鑰對",
+          "generate_success": "後量子密鑰對已生成並填入",
+          "generate_hint": "瀏覽器本地生成，與 ./xray vlessenc 格式相容"
         }
       },
       "tuic": {

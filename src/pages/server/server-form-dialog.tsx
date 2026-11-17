@@ -1731,6 +1731,83 @@ function ProtocolConfigFields({
           );
         }
 
+        // VLESS Encryption：一键生成 ML-KEM-768 后量子密钥对（decryption + encryption）
+        if (prefix === "encryption" && (key === "decryption" || key === "encryption")) {
+          const isServer = key === "decryption";
+          const ns = "server.dynamic_form.vless.encryption";
+          const side = isServer ? "server" : "client";
+          return (
+            <div key={key} className="space-y-1.5">
+              <Label>
+                {t(`${ns}.${side}_label`)}
+                {requiredFor(fieldPath) ? (
+                  <span className="ml-0.5 text-destructive">*</span>
+                ) : null}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {t(`${ns}.${side}_description`)}
+              </p>
+              <div className="relative">
+                <Input
+                  placeholder={t(`${ns}.${side}_placeholder`)}
+                  className="pr-10 font-mono text-xs"
+                  {...register(`protocol_settings.${fieldPath}`, {
+                    ...(requiredFor(fieldPath)
+                      ? {
+                          required: true,
+                          validate: (v: any) => !!String(v ?? "").trim(),
+                        }
+                      : {}),
+                  })}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
+                  title={t(`${ns}.generate`)}
+                  disabled={generatingKey === "vless-encryption"}
+                  onClick={async () => {
+                    setGeneratingKey("vless-encryption");
+                    try {
+                      const { generateVlessEncryptionKey } =
+                        await import("@/api/server");
+                      const res = await generateVlessEncryptionKey();
+                      setValue(
+                        "protocol_settings.encryption.decryption",
+                        res.decryption,
+                        { shouldValidate: true, shouldDirty: true },
+                      );
+                      setValue(
+                        "protocol_settings.encryption.encryption",
+                        res.encryption,
+                        { shouldValidate: true, shouldDirty: true },
+                      );
+                      setValue("protocol_settings.encryption.enabled", true, {
+                        shouldDirty: true,
+                      });
+                      toast.success(t(`${ns}.generate_success`));
+                    } catch {
+                      /* ignore */
+                    } finally {
+                      setGeneratingKey(null);
+                    }
+                  }}
+                >
+                  {generatingKey === "vless-encryption" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {errorFor(fieldPath) ? (
+                <p className="text-xs text-destructive">{errorFor(fieldPath)}</p>
+              ) : null}
+            </div>
+          );
+        }
+
         // 多行 string（anytls padding_scheme / ECH PEM 等）用 textarea
         const isEchPemField =
           (key === "config" || key === "key") &&
@@ -1742,14 +1819,50 @@ function ProtocolConfigFields({
             (typeof field.default === "string" && field.default.includes("\n")));
 
         if (isMultilineString) {
+          const isPaddingScheme = key === "padding_scheme";
           return (
             <div key={key} className="space-y-1.5">
-              <Label>
-                {fieldName}
-                {requiredFor(fieldPath) ? (
-                  <span className="ml-0.5 text-destructive">*</span>
-                ) : null}
-              </Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>
+                  {fieldName}
+                  {requiredFor(fieldPath) ? (
+                    <span className="ml-0.5 text-destructive">*</span>
+                  ) : null}
+                </Label>
+                {isPaddingScheme && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 shrink-0 px-2 text-xs"
+                    disabled={generatingKey === "anytls-padding"}
+                    onClick={async () => {
+                      setGeneratingKey("anytls-padding");
+                      try {
+                        const { generateAnyTLSPaddingScheme } =
+                          await import("@/api/server");
+                        const res = await generateAnyTLSPaddingScheme();
+                        setValue(
+                          `protocol_settings.${fieldPath}`,
+                          res.padding_scheme,
+                          { shouldValidate: true, shouldDirty: true },
+                        );
+                      } catch {
+                        /* ignore */
+                      } finally {
+                        setGeneratingKey(null);
+                      }
+                    }}
+                  >
+                    {generatingKey === "anytls-padding" ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                    {t("server.dynamic_form.anytls.padding_scheme.generate")}
+                  </Button>
+                )}
+              </div>
               {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
               <Controller
                 control={control}
