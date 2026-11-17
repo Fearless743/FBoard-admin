@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import DOMPurify from "dompurify";
+import { isSafePluginUrl } from "@/lib/plugin-action";
 import { NotFound } from "@/pages/not-found";
 import { getExtension } from "./registry";
 import { usePlugins } from "./provider";
@@ -43,7 +44,7 @@ export function PluginPageHost({ page }: { page: AdminUiPage }) {
 
   return (
     <iframe
-      src={page.url ?? ""}
+      src={typeof page.url === "string" && isSafePluginUrl(page.url) ? page.url : undefined}
       title={page.title || page.path}
       sandbox="allow-scripts"
       className="w-full rounded-md border bg-background"

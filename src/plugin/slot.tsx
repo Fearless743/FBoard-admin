@@ -5,7 +5,11 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { executePluginAction } from "@/api/misc";
-import { applyPluginActionResult, unwrapPluginActionResponse } from "@/lib/plugin-action";
+import {
+  applyPluginActionResult,
+  isSafePluginUrl,
+  unwrapPluginActionResponse,
+} from "@/lib/plugin-action";
 import { usePlugins } from "./provider";
 import { getExtension } from "./registry";
 import { normalizePage, pageMatches } from "./page";
@@ -119,7 +123,7 @@ export function ExtensionRenderer({
   } else if (extension.type === "iframe") {
     node = (
       <iframe
-        src={extension.url ?? ""}
+        src={typeof extension.url === "string" && isSafePluginUrl(extension.url) ? extension.url : undefined}
         title={extension.title || extension.id}
         sandbox="allow-scripts"
         className="h-64 w-full rounded-md border bg-background"
